@@ -1,0 +1,6 @@
+add_subdirectory("access_point")
+add_subdirectory("client")
+add_subdirectory("device")
+add_subdirectory("server")
+add_subdirectory("shared_memory")
+add_subdirectory("station")

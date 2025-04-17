@@ -1,0 +1,8 @@
+add_subdirectory("config")
+add_subdirectory("os")
+add_subdirectory("siblings")
+add_subdirectory("wireless")
+add_subdirectory("ring_share")
+add_subdirectory("sync")
+add_subdirectory("shared_state")
+add_subdirectory("routing")
