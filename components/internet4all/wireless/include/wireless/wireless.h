@@ -3,10 +3,12 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include "connectivity/device.h"
 
 typedef struct wireless_t {
     wireless_callbacks_t callbacks;
     void *context;
+    DevicePtr device_ptr;
 } wireless_t;
 
 typedef struct wireless_callbacks {
