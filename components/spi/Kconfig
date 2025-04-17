@@ -1,0 +1,33 @@
+menu "Internet for all: SPI Configuration"
+    choice SPI_FREQ
+        prompt "SPI Freq"
+        default SPI_FREQ_8M
+
+    config SPI_FREQ_8M
+        bool "SPI_FREQ_8M"
+    config SPI_FREQ_9M
+        bool "SPI_FREQ_9M"
+    config SPI_FREQ_10M
+        bool "SPI_FREQ_10M"
+    config SPI_FREQ_11M
+        bool "SPI_FREQ_11M"
+    config SPI_FREQ_13M
+        bool "SPI_FREQ_13M"
+    config SPI_FREQ_16M
+        bool "SPI_FREQ_16M"
+    config SPI_FREQ_20M
+        bool "SPI_FREQ_20M"
+    config SPI_FREQ_26M
+        bool "SPI_FREQ_26M"
+    config SPI_FREQ_40M
+        bool "SPI_FREQ_40M"
+    config SPI_FREQ_80M
+        bool "SPI_FREQ_80M"
+    endchoice
+
+    config SPI_BUFFER_SIZE
+        int "SPI Buffer size"
+        range 200 600
+        default 240
+
+endmenu
