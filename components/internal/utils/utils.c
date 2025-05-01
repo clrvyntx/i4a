@@ -10,9 +10,9 @@ void print_route_table(void)
     {
         printf("------------------------\n");
         printf("IPv4 route table for %s:\n", netif->name);
-        printf("ip4: %s\n", ip4addr_ntoa(&netif->ip_addr.u_addr));
-        printf("netmask: %s\n", ip4addr_ntoa(&netif->netmask.u_addr));
-        printf("gw: %s\n", ip4addr_ntoa(&netif->gw.u_addr));
+        printf("ip4: %s\n", ip4addr_ntoa(ip_2_ip4(&netif->ip_addr)));
+        printf("netmask: %s\n", ip4addr_ntoa(ip_2_ip4(&netif->netmask)));
+        printf("gw: %s\n", ip4addr_ntoa(ip_2_ip4(&netif->gw)));
         printf("ip6 linklocal: %s\n", ip6addr_ntoa(&netif->ip6_addr->u_addr.ip6) );
     }
     printf("------------------------\n");
@@ -136,7 +136,7 @@ struct pbuf *udp_create_test_packet_ipv6(u16_t length, u16_t dst_port, u16_t src
 }
 
 
-struct pbuf *udp_create_test_packet_ipv6_(u16_t length, u16_t dst_port, u16_t src_port, const ip6_addr_t *dst_addr, const ip6_addr_t *src_addr, u8_t test_data)
+struct pbuf *udp_create_test_packet_ipv6_(u16_t length, u16_t dst_port, u16_t src_port, const ip6_addr_t *dst_addr, const ip6_addr_t *src_addr, u8_t *test_data)
 {
     err_t err;
     u8_t ret;
