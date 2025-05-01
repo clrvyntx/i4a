@@ -1,0 +1,10 @@
+idf_component_register(
+    SRCS
+        "src/shared_state.c"
+    INCLUDE_DIRS
+        "include"
+    REQUIRES
+        routing_config
+        ring_share
+        sync
+)

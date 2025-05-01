@@ -1,0 +1,11 @@
+idf_component_register(
+    SRCS
+        "src/sync.c"
+        "src/leader.c"
+        "src/follower.c"
+    INCLUDE_DIRS
+        "include"
+    REQUIRES
+        routing_config
+        ring_share
+)

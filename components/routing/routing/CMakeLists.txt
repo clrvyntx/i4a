@@ -1,0 +1,19 @@
+idf_component_register(
+    SRCS
+        "src/routing.c"
+        "src/forwarder/forwarder.c"
+        "src/forwarder/peer.c"
+        "src/forwarder/sibling.c"
+        "src/home.c"
+        "src/root.c"
+        "src/routing_table.c"
+        "src/utils.c"
+    INCLUDE_DIRS
+        "include"
+    REQUIRES
+        routing_config
+        sync
+        ring_share
+        shared_state
+        wireless
+)
