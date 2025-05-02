@@ -33,7 +33,7 @@
 #define KEEPALIVE_INTERVAL CONFIG_EXAMPLE_KEEPALIVE_INTERVAL
 #define KEEPALIVE_COUNT CONFIG_EXAMPLE_KEEPALIVE_COUNT
 
-static const char *LOGGING_TAG = "example";
+static const char *LOGGING_TAG = "tcp_server";
 
 static void do_retransmit(const int sock) {
   int len;
