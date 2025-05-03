@@ -1,7 +1,7 @@
 # Server Component
 
 Responsabilities:
-- Creates an UDP server.
+- Creates a TCP server.
 - Listens for incoming messages.
 - Sends messages to the clients.
 
@@ -9,7 +9,7 @@ Responsabilities:
 ## Server contract
 
 What the Server component should do:
-- Create an UDP server.
+- Create a TCP server.
 - Listen for incoming messages.
 - Send messages to the clients.
 
