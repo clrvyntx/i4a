@@ -3,28 +3,16 @@
 
 #include "esp_err.h"
 
-// Event data structure for Peer Connected event
-typedef struct peer_connected_data_t {
-    uint32_t network;
-    uint32_t mask;
-} peer_connected_data_t;
+// Peer connected handler
+esp_err_t on_peer_connected(void *ctx, uint32_t network, uint32_t mask);
 
-// Event data structure for Peer Message event
-typedef struct peer_message_data_t {
-    uint8_t *msg;
-    uint16_t len;
-} peer_message_data_t;
+// Peer message handler
+esp_err_t on_peer_message(void *ctx, const uint8_t *msg, uint16_t len);
 
-// Event data structure for Peer Lost event
-typedef struct peer_lost_data_t {
-    uint32_t network;
-    uint32_t mask;
-} peer_lost_data_t;
+// Peer lost handler
+esp_err_t on_peer_lost(void *ctx, uint32_t network, uint32_t mask);
 
-// Event data structure for Sibling Message event
-typedef struct sibling_message_data_t {
-    uint8_t *msg;
-    uint16_t len;
-} sibling_message_data_t;
+// Sibling message handler
+esp_err_t on_sibling_message(void *ctx, const uint8_t *msg, uint16_t len);
 
 #endif  // _EVENT_H_
