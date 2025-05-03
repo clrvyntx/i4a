@@ -54,7 +54,7 @@ void tcp_send_task(void *pvParameters) {
 }
 
 // Wrapper function to start the TCP send task
-bool send_message_task(const char *ip, const uint8_t *msg, uint16_t len) {
+bool send_message(const char *ip, const uint8_t *msg, uint16_t len) {
     // Allocate memory for task parameters
     tcp_task_params_t *params = (tcp_task_params_t *)malloc(sizeof(tcp_task_params_t));
     if (!params) {
