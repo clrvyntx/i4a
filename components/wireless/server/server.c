@@ -7,7 +7,7 @@
 
 static const char *LOGGING_TAG = "tcp_server";
 
-static void do_retransmit(const int sock) {
+static void socket_read_payload(const int sock) {
   int len;
   char rx_buffer[512];
 
@@ -95,7 +95,7 @@ static void tcp_server_task(void *pvParameters) {
     }
     ESP_LOGI(LOGGING_TAG, "Socket accepted ip address: %s", addr_str);
 
-    do_retransmit(sock);
+    socket_read_payload(sock);
 
     shutdown(sock, 0);
     close(sock);
