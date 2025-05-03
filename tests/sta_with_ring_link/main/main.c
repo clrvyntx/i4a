@@ -33,7 +33,6 @@ void app_main(void) {
 
     device_start_station(device_ptr);
     device_connect_station(device_ptr);
-    create_client();
 
     vTaskDelay(pdMS_TO_TICKS(5000));
 
