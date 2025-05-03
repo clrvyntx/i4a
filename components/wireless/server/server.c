@@ -1,15 +1,16 @@
 #include "server.h"
 
-#define PORT CONFIG_EXAMPLE_PORT
-#define KEEPALIVE_IDLE CONFIG_EXAMPLE_KEEPALIVE_IDLE
-#define KEEPALIVE_INTERVAL CONFIG_EXAMPLE_KEEPALIVE_INTERVAL
-#define KEEPALIVE_COUNT CONFIG_EXAMPLE_KEEPALIVE_COUNT
+#define PORT 3999
+#define KEEPALIVE_IDLE 5
+#define KEEPALIVE_INTERVAL 5
+#define KEEPALIVE_COUNT 3
+#define BUFFER_SIZE 512
 
 static const char *LOGGING_TAG = "tcp_server";
 
 static void socket_read_payload(const int sock) {
   int len;
-  char rx_buffer[512];  // Buffer for receiving data
+  char rx_buffer[BUFFER_SIZE];  // Buffer for receiving data
   char addr_str[128];   // Buffer for client's IP address
   struct sockaddr_storage peer_addr;
   socklen_t addr_len = sizeof(peer_addr);
@@ -68,11 +69,6 @@ static void tcp_server_task(void *pvParameters) {
   }
   int opt = 1;
   setsockopt(listen_sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-#if defined(CONFIG_EXAMPLE_IPV4) && defined(CONFIG_EXAMPLE_IPV6)
-  // Note that by default IPV6 binds to both protocols, it is must be disabled
-  // if both protocols used at the same time (used in CI)
-  setsockopt(listen_sock, IPPROTO_IPV6, IPV6_V6ONLY, &opt, sizeof(opt));
-#endif
 
   ESP_LOGI(LOGGING_TAG, "Socket created");
 
