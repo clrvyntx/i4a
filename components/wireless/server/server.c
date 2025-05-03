@@ -37,7 +37,7 @@ static const char *LOGGING_TAG = "tcp_server";
 
 static void do_retransmit(const int sock) {
   int len;
-  char rx_buffer[128];
+  char rx_buffer[512];
 
   do {
     len = recv(sock, rx_buffer, sizeof(rx_buffer) - 1, 0);
@@ -46,7 +46,6 @@ static void do_retransmit(const int sock) {
     } else if (len == 0) {
       ESP_LOGW(LOGGING_TAG, "Connection closed");
     } else {
-      rx_buffer[len] = 0;  // Null-terminate whatever is received and treat it like a string
       ESP_LOGI(LOGGING_TAG, "Received %d bytes: %s", len, rx_buffer);
 
       // send() can return less bytes than supplied length.
