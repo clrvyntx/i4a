@@ -1,16 +1,16 @@
 # Client Component
 
 Responsabilities:
-- Creates an UDP Client.
-- Connect to an UDP server.
+- Creates a TCP Client.
+- Connect to a TCP server.
 - Sends messages to the server and receive messages back.
 
 
 ## Client contract
 
 What the Client component should do:
-- Create an UDP Client.
-- Connect to an UDP server.
+- Create a TCP Client.
+- Connect to a TCP server.
 - Send messages to the server and receive messages back.
 
 What the Client component should NOT do:
