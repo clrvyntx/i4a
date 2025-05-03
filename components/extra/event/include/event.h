@@ -3,14 +3,6 @@
 
 #include "esp_err.h"
 
-// Event types
-typedef enum {
-    ROUTING_EVENT_PEER_CONNECTED,
-    ROUTING_EVENT_PEER_MESSAGE,
-    ROUTING_EVENT_PEER_LOST,
-    ROUTING_EVENT_SIBLING_MESSAGE
-} routing_event_type_t;
-
 // Event data structure for Peer Connected event
 typedef struct peer_connected_data_t {
     uint32_t network;
@@ -34,11 +26,5 @@ typedef struct sibling_message_data_t {
     uint8_t *msg;
     uint16_t len;
 } sibling_message_data_t;
-
-// Event data structure
-typedef struct routing_event_t {
-    routing_event_type_t event_type; // Type of the event
-    void *data;                      // Data associated with the event
-} routing_event_t;
 
 #endif  // _EVENT_H_
