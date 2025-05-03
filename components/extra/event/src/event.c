@@ -1,52 +1,46 @@
 #include "event.h"
+#include "esp_log.h"
 
-// Log tag for the event handlers
-static const char *TAG = "EventHandlers";
+static const char *TAG = "RoutingEventHandlers";
 
 // Handle peer connected event
-esp_err_t handle_peer_connected(void *data) {
-    peer_connected_data_t *connected_data = (peer_connected_data_t *)data;
-    if (connected_data == NULL) {
-        ESP_LOGE(TAG, "Null data for peer connected event");
-        return ESP_ERR_INVALID_ARG;
-    }
-    ESP_LOGI(TAG, "Peer connected: Network %u, Mask %u", connected_data->network, connected_data->mask);
+esp_err_t on_peer_connected(void *ctx, uint32_t network, uint32_t mask) {
+    (void)ctx;  // suppress unused warning if ctx not used
+    ESP_LOGI(TAG, "Peer connected: Network %u, Mask %u", network, mask);
     // Additional handling logic
     return ESP_OK;
 }
 
 // Handle peer message event
-esp_err_t handle_peer_message(void *data) {
-    peer_message_data_t *message_data = (peer_message_data_t *)data;
-    if (message_data == NULL) {
-        ESP_LOGE(TAG, "Null data for peer message event");
+esp_err_t on_peer_message(void *ctx, const uint8_t *msg, uint16_t len) {
+    (void)ctx;
+    if (msg == NULL || len == 0) {
+        ESP_LOGE(TAG, "Invalid message data");
         return ESP_ERR_INVALID_ARG;
     }
-    ESP_LOGI(TAG, "Received message: %s", message_data->msg);
+    ESP_LOGI(TAG, "Received message of length %u", len);
+    ESP_LOG_BUFFER_HEX(TAG, msg, len);  // safer than assuming null-terminated string
     // Additional handling logic
     return ESP_OK;
 }
 
 // Handle peer lost event
-esp_err_t handle_peer_lost(void *data) {
-    peer_lost_data_t *lost_data = (peer_lost_data_t *)data;
-    if (lost_data == NULL) {
-        ESP_LOGE(TAG, "Null data for peer lost event");
-        return ESP_ERR_INVALID_ARG;
-    }
-    ESP_LOGI(TAG, "Peer lost: Network %u, Mask %u", lost_data->network, lost_data->mask);
+esp_err_t on_peer_lost(void *ctx, uint32_t network, uint32_t mask) {
+    (void)ctx;
+    ESP_LOGI(TAG, "Peer lost: Network %u, Mask %u", network, mask);
     // Additional handling logic
     return ESP_OK;
 }
 
 // Handle sibling message event
-esp_err_t handle_sibling_message(void *data) {
-    sibling_message_data_t *sibling_data = (sibling_message_data_t *)data;
-    if (sibling_data == NULL) {
-        ESP_LOGE(TAG, "Null data for sibling message event");
+esp_err_t on_sibling_message(void *ctx, const uint8_t *msg, uint16_t len) {
+    (void)ctx;
+    if (msg == NULL || len == 0) {
+        ESP_LOGE(TAG, "Invalid sibling message data");
         return ESP_ERR_INVALID_ARG;
     }
-    ESP_LOGI(TAG, "Sibling message received: %s", sibling_data->msg);
+    ESP_LOGI(TAG, "Sibling message received of length %u", len);
+    ESP_LOG_BUFFER_HEX(TAG, msg, len);
     // Additional handling logic
     return ESP_OK;
 }
