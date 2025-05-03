@@ -1,5 +1,4 @@
 #include "event.h"
-#include "esp_log.h"
 
 // Log tag for the event handlers
 static const char *TAG = "EventHandlers";
