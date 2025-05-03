@@ -1,7 +1,6 @@
 #include "client.h"
 
 #define PORT 3999
-#define BUFFER_SIZE 512
 
 static const char *LOGGING_TAG = "udp_client";
 
