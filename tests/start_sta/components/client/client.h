@@ -1,1 +1,0 @@
-void client(const char* ip);
