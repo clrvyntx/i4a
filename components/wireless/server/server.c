@@ -11,7 +11,7 @@ static void do_retransmit(const int sock) {
   int len;
   char rx_buffer[512];
 
- len = recv(sock, rx_buffer, sizeof(rx_buffer) - 1, 0);
+ len = recv(sock, rx_buffer, sizeof(rx_buffer), 0);
  if (len < 0) {
    ESP_LOGE(LOGGING_TAG, "Error occurred during receiving: errno %d", errno);
  } else if (len == 0) {
