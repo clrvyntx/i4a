@@ -68,8 +68,3 @@ static void udp_server_task(void *pvParameters) {
 void create_server() {
   xTaskCreate(udp_server_task, "udp_server", 4096, NULL, 5, NULL);
 }
-
-
-void create_server() {
-  xTaskCreate(tcp_server_task, "tcp_server", 4096, (void *)AF_INET, 5, NULL);
-}
