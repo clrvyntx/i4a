@@ -1,123 +1,74 @@
 #include "server.h"
 
 #define PORT 3999
-#define KEEPALIVE_IDLE 5
-#define KEEPALIVE_INTERVAL 5
-#define KEEPALIVE_COUNT 3
 #define BUFFER_SIZE 512
 
-static const char *LOGGING_TAG = "tcp_server";
+static const char *LOGGING_TAG = "udp_server";
 
-static void socket_read_payload(const int sock) {
-  int len;
-  char rx_buffer[BUFFER_SIZE];  // Buffer for receiving data
-  char addr_str[128];   // Buffer for client's IP address
-  struct sockaddr_storage peer_addr;
-  socklen_t addr_len = sizeof(peer_addr);
-
-  // Get the client (peer) IP address using getpeername()
-  if (getpeername(sock, (struct sockaddr *)&peer_addr, &addr_len) != 0) {
-      ESP_LOGE(LOGGING_TAG, "Unable to get peer address: errno %d", errno);
-      return;
-  }
-
-  // Convert the IP address to a string (if IPv4)
-  if (peer_addr.ss_family == AF_INET) {
-      struct sockaddr_in *peer_addr_ip4 = (struct sockaddr_in *)&peer_addr;
-      inet_ntoa_r(peer_addr_ip4->sin_addr, addr_str, sizeof(addr_str) - 1);
-      ESP_LOGI(LOGGING_TAG, "Client IP address: %s", addr_str);
-  }
-
-  // Receive data from the client (sock)
-  len = recv(sock, rx_buffer, sizeof(rx_buffer), 0);
-  if (len < 0) {
-   ESP_LOGE(LOGGING_TAG, "Error occurred during receiving: errno %d", errno);
-  } else if (len == 0) {
-   ESP_LOGW(LOGGING_TAG, "Connection closed");
-  } else {
-   ESP_LOGI(LOGGING_TAG, "Received %d bytes: %s", len, rx_buffer);
-  
-   // call on_peer_message(rx_buffer,len,addr_str) 
-  
-  }
-
-}
-
-static void tcp_server_task(void *pvParameters) {
+static void udp_server_task(void *pvParameters) {
+  uint8_t rx_buffer[BUFFER_SIZE];
   char addr_str[128];
-  int addr_family = (int)pvParameters;
-  int ip_protocol = 0;
-  int keepAlive = 1;
-  int keepIdle = KEEPALIVE_IDLE;
-  int keepInterval = KEEPALIVE_INTERVAL;
-  int keepCount = KEEPALIVE_COUNT;
-  struct sockaddr_storage dest_addr;
+  struct sockaddr_storage source_addr;
+  socklen_t socklen = sizeof(source_addr);
 
-  if (addr_family == AF_INET) {
-    struct sockaddr_in *dest_addr_ip4 = (struct sockaddr_in *)&dest_addr;
-    dest_addr_ip4->sin_addr.s_addr = htonl(INADDR_ANY);
-    dest_addr_ip4->sin_family = AF_INET;
-    dest_addr_ip4->sin_port = htons(PORT);
-    ip_protocol = IPPROTO_IP;
-  }
+  int addr_family = AF_INET;
+  int ip_protocol = IPPROTO_IP;
 
-  int listen_sock = socket(addr_family, SOCK_STREAM, ip_protocol);
-  if (listen_sock < 0) {
+  struct sockaddr_in dest_addr;
+  dest_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+  dest_addr.sin_family = AF_INET;
+  dest_addr.sin_port = htons(PORT);
+
+  int sock = socket(addr_family, SOCK_DGRAM, ip_protocol);
+  if (sock < 0) {
     ESP_LOGE(LOGGING_TAG, "Unable to create socket: errno %d", errno);
     vTaskDelete(NULL);
     return;
   }
-  int opt = 1;
-  setsockopt(listen_sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 
   ESP_LOGI(LOGGING_TAG, "Socket created");
 
-  int err = bind(listen_sock, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
-  if (err != 0) {
+  int err = bind(sock, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
+  if (err < 0) {
     ESP_LOGE(LOGGING_TAG, "Socket unable to bind: errno %d", errno);
-    ESP_LOGE(LOGGING_TAG, "IPPROTO: %d", addr_family);
-    goto CLEAN_UP;
+    close(sock);
+    vTaskDelete(NULL);
+    return;
   }
+
   ESP_LOGI(LOGGING_TAG, "Socket bound, port %d", PORT);
 
-  err = listen(listen_sock, 1);
-  if (err != 0) {
-    ESP_LOGE(LOGGING_TAG, "Error occurred during listen: errno %d", errno);
-    goto CLEAN_UP;
-  }
-
   while (1) {
-    ESP_LOGI(LOGGING_TAG, "Socket listening");
+    ESP_LOGI(LOGGING_TAG, "Waiting for data...");
+    int len = recvfrom(sock, rx_buffer, sizeof(rx_buffer), 0,
+                       (struct sockaddr *)&source_addr, &socklen);
 
-    struct sockaddr_storage source_addr;  // Large enough for both IPv4 or IPv6
-    socklen_t addr_len = sizeof(source_addr);
-    int sock = accept(listen_sock, (struct sockaddr *)&source_addr, &addr_len);
-    if (sock < 0) {
-      ESP_LOGE(LOGGING_TAG, "Unable to accept connection: errno %d", errno);
+    if (len < 0) {
+      ESP_LOGE(LOGGING_TAG, "recvfrom failed: errno %d", errno);
       break;
+    } else {
+      // Convert address to readable form
+      if (source_addr.ss_family == AF_INET) {
+        inet_ntoa_r(((struct sockaddr_in *)&source_addr)->sin_addr,
+                    addr_str, sizeof(addr_str) - 1);
+      } else {
+        strcpy(addr_str, "Unknown AF");
+      }
+
+      ESP_LOGI(LOGGING_TAG, "Received %d bytes from %s", len, addr_str);
+
+      // call on_peer_message(rx_buffer, len);
     }
-
-    // Set tcp keepalive option
-    setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, &keepAlive, sizeof(int));
-    setsockopt(sock, IPPROTO_TCP, TCP_KEEPIDLE, &keepIdle, sizeof(int));
-    setsockopt(sock, IPPROTO_TCP, TCP_KEEPINTVL, &keepInterval, sizeof(int));
-    setsockopt(sock, IPPROTO_TCP, TCP_KEEPCNT, &keepCount, sizeof(int));
-    // Convert ip address to string
-    if (source_addr.ss_family == PF_INET) {
-      inet_ntoa_r(((struct sockaddr_in *)&source_addr)->sin_addr, addr_str, sizeof(addr_str) - 1);
-    }
-    ESP_LOGI(LOGGING_TAG, "Socket accepted ip address: %s", addr_str);
-
-    socket_read_payload(sock);
-
-    shutdown(sock, 0);
-    close(sock);
   }
 
-CLEAN_UP:
-  close(listen_sock);
+  close(sock);
   vTaskDelete(NULL);
 }
+
+void create_server() {
+  xTaskCreate(udp_server_task, "udp_server", 4096, NULL, 5, NULL);
+}
+
 
 void create_server() {
   xTaskCreate(tcp_server_task, "tcp_server", 4096, (void *)AF_INET, 5, NULL);
