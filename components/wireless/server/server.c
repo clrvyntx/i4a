@@ -9,19 +9,36 @@ static const char *LOGGING_TAG = "tcp_server";
 
 static void socket_read_payload(const int sock) {
   int len;
-  char rx_buffer[512];
+  char rx_buffer[512];  // Buffer for receiving data
+  char addr_str[128];   // Buffer for client's IP address
+  struct sockaddr_storage peer_addr;
+  socklen_t addr_len = sizeof(peer_addr);
 
- len = recv(sock, rx_buffer, sizeof(rx_buffer), 0);
- if (len < 0) {
+  // Get the client (peer) IP address using getpeername()
+  if (getpeername(sock, (struct sockaddr *)&peer_addr, &addr_len) != 0) {
+      ESP_LOGE(LOGGING_TAG, "Unable to get peer address: errno %d", errno);
+      return;
+  }
+
+  // Convert the IP address to a string (if IPv4)
+  if (peer_addr.ss_family == AF_INET) {
+      struct sockaddr_in *peer_addr_ip4 = (struct sockaddr_in *)&peer_addr;
+      inet_ntoa_r(peer_addr_ip4->sin_addr, addr_str, sizeof(addr_str) - 1);
+      ESP_LOGI(LOGGING_TAG, "Client IP address: %s", addr_str);
+  }
+
+  // Receive data from the client (sock)
+  len = recv(sock, rx_buffer, sizeof(rx_buffer), 0);
+  if (len < 0) {
    ESP_LOGE(LOGGING_TAG, "Error occurred during receiving: errno %d", errno);
- } else if (len == 0) {
+  } else if (len == 0) {
    ESP_LOGW(LOGGING_TAG, "Connection closed");
- } else {
+  } else {
    ESP_LOGI(LOGGING_TAG, "Received %d bytes: %s", len, rx_buffer);
-
-   // Process payload here with wireless message handling event 
-
- }
+  
+   // call on_peer_message(rx_buffer,len,addr_str) 
+  
+  }
 
 }
 
