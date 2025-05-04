@@ -9,4 +9,5 @@
 #include "freertos/task.h"
 #include "esp_log.h"
 
-bool send_message(const char *ip, const uint8_t *msg, uint16_t len);
+void client_connect(const char *ip);
+bool client_send_message(const uint8_t *msg, uint16_t len);
