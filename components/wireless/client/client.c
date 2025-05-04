@@ -77,7 +77,7 @@ static void tcp_client_task(void *pvParameters) {
     vTaskDelete(NULL);
 }
 
-void client_create(const char *ip) {
+void client_connect(const char *ip) {
     xTaskCreate(tcp_client_task, "tcp_client", 4096, (void *)ip, 5, NULL);
 }
 
