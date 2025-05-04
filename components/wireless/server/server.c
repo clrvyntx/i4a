@@ -111,7 +111,7 @@ static void tcp_server_task(void *pvParameters) {
   vTaskDelete(NULL);
 }
 
-void create_server() {
+void open_server() {
   xTaskCreate(tcp_server_task, "tcp_server", 4096, NULL, 5, NULL);
 }
 
