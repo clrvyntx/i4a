@@ -95,6 +95,13 @@ void client_disconnect() {
     } else {
         ESP_LOGW(LOGGING_TAG, "Client is not connected, nothing to disconnect");
     }
+
+    // If the TCP client task is still running, delete it
+    if (tcp_client_task_handle != NULL) {
+        ESP_LOGI(LOGGING_TAG, "Killing TCP client task.");
+        vTaskDelete(tcp_client_task_handle);
+        tcp_client_task_handle = NULL;  // Reset the task handle
+    }
 }
 
 void client_connect(const char *ip) {
