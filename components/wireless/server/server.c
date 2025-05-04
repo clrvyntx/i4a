@@ -8,6 +8,8 @@
 
 static const char *LOGGING_TAG = "tcp_server";
 
+static int client_sock = -1;
+
 static void socket_read_loop(const int sock, const char *client_ip) {
   uint8_t rx_buffer[BUFFER_SIZE];
 
@@ -80,6 +82,7 @@ static void tcp_server_task(void *pvParameters) {
     }
 
     ESP_LOGI(LOGGING_TAG, "Accepted connection from %s", addr_str);
+    client_sock = sock;
     // call on_peer_connected()
 
     // Enable TCP Keep-Alive
@@ -97,6 +100,7 @@ static void tcp_server_task(void *pvParameters) {
 
     // Cleanup once connection has been closed
     ESP_LOGI(LOGGING_TAG, "Closing connection from %s", addr_str);
+    client_sock = -1;
     // call on_peer_lost();
     shutdown(sock, 0);
     close(sock);
@@ -109,4 +113,27 @@ static void tcp_server_task(void *pvParameters) {
 
 void create_server() {
   xTaskCreate(tcp_server_task, "tcp_server", 4096, NULL, 5, NULL);
+}
+
+bool server_send_message(const uint8_t *msg, uint16_t len) {
+
+    if (client_sock < 0) {
+        ESP_LOGW(LOGGING_TAG, "No valid client connected, cannot send message");
+        return false;
+    }
+
+    if (!msg || len == 0) {
+        ESP_LOGE(LOGGING_TAG, "Invalid message: msg is NULL or length is 0");
+        return false;
+    }
+
+    int sent = send(client_sock, msg, len, 0);
+    if (sent == len) {
+        ESP_LOGI(LOGGING_TAG, "Sent %d bytes to client", sent);
+        return true;
+    } else {
+        ESP_LOGE(LOGGING_TAG, "Failed to send message: errno %d", errno);
+        return false;
+    }
+  
 }
