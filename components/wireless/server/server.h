@@ -10,3 +10,4 @@
 #include "freertos/task.h"
 
 void create_server();
+bool server_send_message(const uint8_t *msg, uint16_t len);
