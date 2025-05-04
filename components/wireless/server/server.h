@@ -9,5 +9,5 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-void create_server();
+void open_server();
 bool server_send_message(const uint8_t *msg, uint16_t len);
