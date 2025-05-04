@@ -10,4 +10,5 @@
 #include "esp_log.h"
 
 void client_connect(const char *ip);
+void client_disconnect();
 bool client_send_message(const uint8_t *msg, uint16_t len);
