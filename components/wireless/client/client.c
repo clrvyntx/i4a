@@ -1,15 +1,5 @@
 #include "client.h"
 
-#include <string.h>
-#include <errno.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <unistd.h>
-#include "esp_log.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-
 #define SERVER_PORT 3999
 #define BUFFER_SIZE 512
 #define MAX_RETRIES 3
