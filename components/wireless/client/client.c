@@ -13,7 +13,7 @@
 #define SERVER_PORT 3999
 #define BUFFER_SIZE 512
 #define MAX_RETRIES 3
-#define RETRY_DELAY_MS 1000  // Delay between retries in milliseconds
+#define RETRY_DELAY_MS 5000
 
 static const char *LOGGING_TAG = "tcp_client";
 
@@ -42,15 +42,12 @@ static void tcp_client_task(void *pvParameters) {
     const char *server_ip = (const char *)pvParameters;
     struct sockaddr_in server_addr;
 
-    // Attempt to connect to the server with retries
-    int retries = 0;
-    while (retries < MAX_RETRIES) {
+    while (1) {
         client_sock = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
         if (client_sock < 0) {
             ESP_LOGE(LOGGING_TAG, "Unable to create socket: errno %d", errno);
-            vTaskDelay(RETRY_DELAY_MS / portTICK_PERIOD_MS);
-            retries++;
-            continue;
+            vTaskDelay(RETRY_DELAY_MS / portTICK_PERIOD_MS);  // Wait before retrying
+            continue;  // Retry socket creation
         }
 
         server_addr.sin_family = AF_INET;
@@ -64,26 +61,20 @@ static void tcp_client_task(void *pvParameters) {
             ESP_LOGE(LOGGING_TAG, "Socket unable to connect: errno %d", errno);
             close(client_sock);
             client_sock = -1;
-            retries++;
-            vTaskDelay(RETRY_DELAY_MS / portTICK_PERIOD_MS);
+            vTaskDelay(RETRY_DELAY_MS / portTICK_PERIOD_MS);  // Wait before retrying
+            continue;  // Retry connection
         } else {
             ESP_LOGI(LOGGING_TAG, "Successfully connected to %s", server_ip);
             // call on_peer_connected()
             socket_read_loop(client_sock, server_ip);
-            break;
+            break;  // Exit loop after successful connection
         }
     }
 
-    // Cleanup once connection has been closed
-    if (client_sock >= 0) {
-        ESP_LOGI(LOGGING_TAG, "Closing connection from %s", server_ip);
-        client_disconnect();
-        // call on_peer_lost();
-    }
+    ESP_LOGI(LOGGING_TAG, "Closing connection from %s", server_ip);
+    client_disconnect();
+    // call on_peer_lost();
 
-    // Delete task if no connection or after successful disconnection
-    tcp_client_task_handle = NULL;
-    vTaskDelete(NULL);
 }
 
 void client_disconnect() {
