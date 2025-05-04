@@ -43,6 +43,6 @@ void app_main(void) {
     device_start_ap(device_ptr);
 
     print_route_table();
-    create_server();
+    open_server();
 
 }
