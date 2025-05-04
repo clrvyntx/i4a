@@ -41,9 +41,9 @@ void app_main(void) {
     uint16_t len = sizeof(message) / sizeof(message[0]);
     int messages = 0;
     while (messages < 10) {
-        client_send_message(message, len);
+        bool success = client_send_message(message, len);
+        if(success) messages++;
         vTaskDelay(pdMS_TO_TICKS(5000));
-        messages++;
     }
 
     client_disconnect();
