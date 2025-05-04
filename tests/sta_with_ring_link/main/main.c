@@ -36,11 +36,15 @@ void app_main(void) {
 
     vTaskDelay(pdMS_TO_TICKS(5000));
 
+    client_connect("10.0.0.1");
     const uint8_t message[] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0xFF, 0xAA, 0xBB, 0xCC };
     uint16_t len = sizeof(message) / sizeof(message[0]);
-    while (1) {
-        send_message("10.0.0.1", message, len);
+    int messages = 0;
+    while (messages < 10) {
+        client_send_message(message, len);
         vTaskDelay(pdMS_TO_TICKS(5000));
+        messages++;
     }
 
+    client_disconnect();
 }
