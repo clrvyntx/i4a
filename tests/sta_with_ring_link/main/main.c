@@ -37,14 +37,18 @@ void app_main(void) {
     vTaskDelay(pdMS_TO_TICKS(5000));
 
     client_connect("10.0.0.1");
+
+    vTaskDelay(pdMS_TO_TICKS(5000));
+
     const uint8_t message[] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0xFF, 0xAA, 0xBB, 0xCC };
     uint16_t len = sizeof(message) / sizeof(message[0]);
-    int messages = 0;
-    while (messages < 10) {
+    while (1) {
         bool success = client_send_message(message, len);
-        if(success) messages++;
         vTaskDelay(pdMS_TO_TICKS(5000));
+        if(!success){
+            ESP_LOGW(TAG, "Message send failed, retrying in 10 seconds...");
+            vTaskDelay(pdMS_TO_TICKS(10000));
+        }
     }
 
-    client_disconnect();
 }
