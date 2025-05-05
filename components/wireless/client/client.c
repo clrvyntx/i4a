@@ -60,11 +60,11 @@ static void tcp_client_task(void *pvParameters) {
 
             // Cleanup once connection has been closed
             ESP_LOGI(LOGGING_TAG, "Closing connection from %s", server_ip);
+            // call on_peer_lost()
             server_sock = -1;
             shutdown(sock, 0);
             close(sock);
-
-            continue; // Retry connection
+            vTaskDelete(NULL);
         }
     }
 
@@ -94,4 +94,3 @@ bool client_send_message(const uint8_t *msg, uint16_t len) {
         return false;
     }
 }
-
