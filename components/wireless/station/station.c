@@ -46,6 +46,7 @@ void station_init(StationPtr stationPtr, const char* wifi_ssid_like, uint16_t or
 
   esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta();
   assert(sta_netif);
+
 }
 
 void station_find_ap(StationPtr stationPtr) {
@@ -137,6 +138,8 @@ void station_start(StationPtr stationPtr) {
 void station_connect(StationPtr stationPtr) {
   ESP_LOGI(LOGGING_TAG, "Connecting to %s...", stationPtr->wifi_config.sta.ssid);
   ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &stationPtr->wifi_config));
+  ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
+  ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, NULL));
   ESP_ERROR_CHECK(esp_wifi_connect());
   stationPtr->state = s_active;
 }
