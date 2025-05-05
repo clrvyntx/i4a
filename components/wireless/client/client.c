@@ -30,20 +30,20 @@ static void tcp_client_task(void *pvParameters) {
     const char *server_ip = (const char *)pvParameters;
     struct sockaddr_in server_addr;
 
-    sock = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
-    if (sock < 0) {
-        ESP_LOGE(LOGGING_TAG, "Unable to create socket: errno %d", errno);
-        vTaskDelete(NULL);
-        return;
-    }
-
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_port = htons(SERVER_PORT);
-    inet_pton(AF_INET, server_ip, &server_addr.sin_addr);
-
-    ESP_LOGI(LOGGING_TAG, "Connecting to %s:%d...", server_ip, SERVER_PORT);
-
     while (1) {
+        int sock = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
+        if (sock < 0) {
+            ESP_LOGE(LOGGING_TAG, "Unable to create socket: errno %d, retrying in 5 seconds...", errno);
+            vTaskDelay(RETRY_DELAY_MS / portTICK_PERIOD_MS);  // Wait before retrying
+            continue;  // Retry connection
+        }
+
+        server_addr.sin_family = AF_INET;
+        server_addr.sin_port = htons(SERVER_PORT);
+        inet_pton(AF_INET, server_ip, &server_addr.sin_addr);
+
+        ESP_LOGI(LOGGING_TAG, "Connecting to %s:%d...", server_ip, SERVER_PORT);
+
         int err = connect(sock, (struct sockaddr *)&server_addr, sizeof(server_addr));
         if (err != 0) {
             ESP_LOGE(LOGGING_TAG, "Socket unable to connect: errno %d, retrying in 5 seconds...", errno);
@@ -51,23 +51,22 @@ static void tcp_client_task(void *pvParameters) {
             vTaskDelay(RETRY_DELAY_MS / portTICK_PERIOD_MS);  // Wait before retrying
             continue;  // Retry connection
         } else {
-            break; // Successfully connected
+            ESP_LOGI(LOGGING_TAG, "Successfully connected to %s", server_ip);
+            server_sock = sock;
+            // call on_peer_connected()
+
+            // Handle incoming data
+            socket_read_loop(server_sock, server_ip);
+
+            // Cleanup once connection has been closed
+            ESP_LOGI(LOGGING_TAG, "Closing connection from %s", server_ip);
+            server_sock = -1;
+            shutdown(sock, 0);
+            close(sock);
+
+            continue; // Retry connection
         }
     }
-
-    ESP_LOGI(LOGGING_TAG, "Successfully connected to %s", server_ip);
-    server_sock = sock;
-    // call on_peer_connected()
-
-    // Handle incoming data
-    socket_read_loop(server_sock, server_ip);
-
-    // Cleanup once connection has been closed
-    ESP_LOGI(LOGGING_TAG, "Closing connection from %s", server_ip);
-    server_sock = -1;
-    // call on_peer_lost();
-    shutdown(sock, 0);
-    close(sock);
 
 }
 
@@ -95,3 +94,4 @@ bool client_send_message(const uint8_t *msg, uint16_t len) {
         return false;
     }
 }
+
