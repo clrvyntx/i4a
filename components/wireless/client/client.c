@@ -5,8 +5,25 @@
 #define RETRY_DELAY_MS 5000
 
 static const char *LOGGING_TAG = "tcp_client";
-
 static int server_sock = -1;
+
+static bool is_wifi_connected() {
+    wifi_ap_record_t ap_info;
+    return esp_wifi_sta_get_ap_info(&ap_info) == ESP_OK;
+}
+
+static bool get_gateway_ip(char *ip_str, size_t ip_str_len) {
+    esp_netif_ip_info_t ip_info;
+    esp_netif_t *netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
+
+    if (!netif || esp_netif_get_ip_info(netif, &ip_info) != ESP_OK) {
+        ESP_LOGE(LOGGING_TAG, "Failed to get gateway IP");
+        return false;
+    }
+
+    inet_ntoa_r(ip_info.gw, ip_str, ip_str_len);
+    return true;
+}
 
 static void socket_read_loop(const int sock, const char *server_ip) {
     uint8_t rx_buffer[BUFFER_SIZE];
@@ -27,51 +44,65 @@ static void socket_read_loop(const int sock, const char *server_ip) {
 }
 
 static void tcp_client_task(void *pvParameters) {
-    const char *server_ip = (const char *)pvParameters;
+    (void) pvParameters;  // unused
+
     struct sockaddr_in server_addr;
+    char gateway_ip[INET_ADDRSTRLEN];
 
     while (1) {
+        if (!is_wifi_connected()) {
+            ESP_LOGW(LOGGING_TAG, "Wi-Fi not connected, retrying in 5 seconds...");
+            vTaskDelay(RETRY_DELAY_MS / portTICK_PERIOD_MS);
+            continue;
+        }
+
+        if (!get_gateway_ip(gateway_ip, sizeof(gateway_ip))) {
+            ESP_LOGE(LOGGING_TAG, "Failed to get gateway IP, retrying...");
+            vTaskDelay(RETRY_DELAY_MS / portTICK_PERIOD_MS);
+            continue;
+        }
+
+        ESP_LOGI(LOGGING_TAG, "Connecting to gateway at %s:%d...", gateway_ip, SERVER_PORT);
+
         int sock = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
         if (sock < 0) {
-            ESP_LOGE(LOGGING_TAG, "Unable to create socket: errno %d, retrying in 5 seconds...", errno);
-            vTaskDelay(RETRY_DELAY_MS / portTICK_PERIOD_MS);  // Wait before retrying
-            continue;  // Retry connection
+            ESP_LOGE(LOGGING_TAG, "Unable to create socket: errno %d", errno);
+            vTaskDelay(RETRY_DELAY_MS / portTICK_PERIOD_MS);
+            continue;
         }
 
         server_addr.sin_family = AF_INET;
         server_addr.sin_port = htons(SERVER_PORT);
-        inet_pton(AF_INET, server_ip, &server_addr.sin_addr);
-
-        ESP_LOGI(LOGGING_TAG, "Connecting to %s:%d...", server_ip, SERVER_PORT);
+        inet_pton(AF_INET, gateway_ip, &server_addr.sin_addr);
 
         int err = connect(sock, (struct sockaddr *)&server_addr, sizeof(server_addr));
         if (err != 0) {
-            ESP_LOGE(LOGGING_TAG, "Socket unable to connect: errno %d, retrying in 5 seconds...", errno);
+            ESP_LOGE(LOGGING_TAG, "Socket connect failed: errno %d", errno);
             close(sock);
-            vTaskDelay(RETRY_DELAY_MS / portTICK_PERIOD_MS);  // Wait before retrying
-            continue;  // Retry connection
-        } else {
-            ESP_LOGI(LOGGING_TAG, "Successfully connected to %s", server_ip);
-            server_sock = sock;
-            // call on_peer_connected()
-
-            // Handle incoming data
-            socket_read_loop(server_sock, server_ip);
-
-            // Cleanup once connection has been closed
-            ESP_LOGI(LOGGING_TAG, "Closing connection from %s", server_ip);
-            // call on_peer_lost()
-            server_sock = -1;
-            shutdown(sock, 0);
-            close(sock);
-            vTaskDelete(NULL);
+            vTaskDelay(RETRY_DELAY_MS / portTICK_PERIOD_MS);
+            continue;
         }
-    }
 
+        ESP_LOGI(LOGGING_TAG, "Connected to %s", gateway_ip);
+        server_sock = sock;
+        // on_peer_connected();
+
+        socket_read_loop(server_sock, gateway_ip);
+
+        ESP_LOGW(LOGGING_TAG, "Connection to %s lost. Reconnecting...", gateway_ip);
+        // on_peer_lost();
+
+        server_sock = -1;
+        shutdown(sock, 0);
+        close(sock);
+
+        // Retry connection
+        vTaskDelay(RETRY_DELAY_MS / portTICK_PERIOD_MS);
+    }
 }
 
-void client_connect(const char *ip) {
-    xTaskCreate(tcp_client_task, "tcp_client", 4096, (void *)ip, 5, NULL);
+void client_create() {
+    xTaskCreate(tcp_client_task, "tcp_client", 4096, NULL, 5, NULL);
 }
 
 bool client_send_message(const uint8_t *msg, uint16_t len) {
