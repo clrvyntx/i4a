@@ -143,7 +143,7 @@ void device_connect_station(DevicePtr device_ptr) {
     station_connect(device_ptr->station_ptr);
   } else {
     ESP_LOGE(LOGGING_TAG, "No wifi found, trying to reconnect in 10 seconds");
-    sleep(10);
+    vTaskDelay(pdMS_TO_TICKS(10000));
     // Retry to connect
     device_connect_station(device_ptr);
   }
