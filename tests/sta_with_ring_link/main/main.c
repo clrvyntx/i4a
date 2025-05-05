@@ -33,12 +33,7 @@ void app_main(void) {
 
     device_start_station(device_ptr);
     device_connect_station(device_ptr);
-
-    vTaskDelay(pdMS_TO_TICKS(5000));
-
-    client_connect("10.0.0.1");
-
-    vTaskDelay(pdMS_TO_TICKS(5000));
+    client_create();
 
     const uint8_t message[] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0xFF, 0xAA, 0xBB, 0xCC };
     uint16_t len = sizeof(message) / sizeof(message[0]);
@@ -46,8 +41,7 @@ void app_main(void) {
         bool success = client_send_message(message, len);
         vTaskDelay(pdMS_TO_TICKS(5000));
         if(!success){
-            ESP_LOGW(TAG, "Message send failed, retrying in 10 seconds...");
-            vTaskDelay(pdMS_TO_TICKS(10000));
+            device_connect_station(device_ptr);
         }
     }
 
