@@ -29,7 +29,7 @@ static void socket_read_loop(const int sock, const char *server_ip) {
     uint8_t rx_buffer[BUFFER_SIZE];
 
     while (1) {
-        int len = recv(sock, rx_buffer, sizeof(rx_buffer) - 1, 0);
+        int len = recv(sock, rx_buffer, sizeof(rx_buffer), 0);
         if (len < 0) {
             ESP_LOGE(LOGGING_TAG, "Receive error from %s: errno %d", server_ip, errno);
             break;
