@@ -51,9 +51,9 @@ static void tcp_client_task(void *pvParameters) {
 
     while (1) {
         if (!is_wifi_connected()) {
-            ESP_LOGW(LOGGING_TAG, "Wi-Fi not connected, retrying in 5 seconds...");
-            vTaskDelay(RETRY_DELAY_MS / portTICK_PERIOD_MS);
-            continue;
+            ESP_LOGW(LOGGING_TAG, "Wi-Fi not connected, stopping task...");
+            // Stop task if Wi-Fi is not connected
+            vTaskDelete(NULL);
         }
 
         if (!get_gateway_ip(gateway_ip, sizeof(gateway_ip))) {
