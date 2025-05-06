@@ -15,7 +15,7 @@
 #include "station.h"
 #include <string.h>
 #include "utils.c"
-// #include "../client/client.h"
+#include "../client/client.h"
 
 #define DEFAULT_SCAN_LIST_SIZE 10
 #define EXAMPLE_ESP_MAXIMUM_RETRY 10
@@ -26,7 +26,6 @@ static EventGroupHandle_t s_wifi_event_group;
  * - we failed to connect after the maximum amount of retries */
 #define WIFI_CONNECTED_BIT BIT0
 #define WIFI_FAIL_BIT BIT1
-#define PORT 3333
 
 static const char* LOGGING_TAG = "station";
 
@@ -108,11 +107,11 @@ static void event_handler(void* arg, esp_event_base_t event_base,
     if (s_retry_num < EXAMPLE_ESP_MAXIMUM_RETRY) {
       esp_wifi_connect();
       s_retry_num++;
-      ESP_LOGI(LOGGING_TAG, "retry to connect to the AP");
+      ESP_LOGI(LOGGING_TAG, "Connection lost, retrying to connect to the AP...");
     } else {
       xEventGroupSetBits(s_wifi_event_group, WIFI_FAIL_BIT);
+      ESP_LOGI(LOGGING_TAG, "Reconnection to AP failed");
     }
-    ESP_LOGI(LOGGING_TAG, "connect to the AP fail");
   } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
     ip_event_got_ip_t* event = (ip_event_got_ip_t*)event_data;
     ESP_LOGI(LOGGING_TAG, "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
@@ -123,10 +122,9 @@ static void event_handler(void* arg, esp_event_base_t event_base,
     ESP_LOGI(LOGGING_TAG, "IP Address: " IPSTR, IP2STR(&ip_info.ip));
     ESP_LOGI(LOGGING_TAG, "Netmask: " IPSTR, IP2STR(&ip_info.netmask));
     ESP_LOGI(LOGGING_TAG, "Gateway: " IPSTR, IP2STR(&ip_info.gw));
-    // client(inet_ntoa(ip_info.gw));
     s_retry_num = 0;
     xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
-    // xTaskCreate(udp_server_task, "udp_server", 4096, (void*)AF_INET, 5, NULL);
+    client_create();
   }
 }
 
