@@ -1,6 +1,18 @@
+#include "esp_event.h"
+#include "esp_log.h"
+#include "esp_event.h"
+#include "esp_netif.h"
+#include "esp_system.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/event_groups.h"
+#include "freertos/task.h"
+#include "nvs_flash.h"
+#include <string.h>
+#include <unistd.h>
+
 #include "device.h"
 
-#define LOGGING_TAG "DEVICE"
+static const char *LOGGING_TAG = "device";
 
 // Function to initialize NVS (non-volatile storage)
 static esp_err_t init_nvs() {
@@ -17,7 +29,7 @@ esp_err_t wifi_init() {
   // Initialize NVS
   esp_err_t ret = init_nvs();
   if (ret != ESP_OK) {
-    ESP_LOGE(TAG, "NVS initialization failed");
+    ESP_LOGE(LOGGING_TAG, "NVS initialization failed");
     return ret;
   }
 
@@ -142,18 +154,34 @@ void device_start_station(DevicePtr device_ptr) {
   }
 };
 
-void device_connect_station(DevicePtr device_ptr) {
-  station_find_ap(device_ptr->station_ptr);
-  if (station_found_ap(device_ptr->station_ptr)) {
-    ESP_LOGI(LOGGING_TAG, "WIFI FOUND! Initiating connection.");
-    station_connect(device_ptr->station_ptr);
-  } else {
-    ESP_LOGE(LOGGING_TAG, "No wifi found, trying to reconnect in 10 seconds");
+static void device_connect_station_task(void* arg) {
+  DevicePtr device_ptr = (DevicePtr)arg;  // Get the device pointer from the task argument
+
+  while (1) {
+    // If station is disconnected, start scanning for APs
+    if (!station_is_active(device_ptr->station_ptr)) {
+      ESP_LOGI(LOGGING_TAG, "Wi-Fi not connected. Scanning for available networks...");
+      station_find_ap(device_ptr->station_ptr);
+
+      if (station_found_ap(device_ptr->station_ptr)) {
+        ESP_LOGI(LOGGING_TAG, "Wi-Fi found! Attempting to connect.");
+        station_connect(device_ptr->station_ptr);
+      } else {
+        ESP_LOGE(LOGGING_TAG, "No Wi-Fi found. Re-scanning in 10 seconds.");
+      }
+
+      // Wait before trying again
+      vTaskDelay(pdMS_TO_TICKS(10000));  // Scan every 10 seconds
+    }
+
     vTaskDelay(pdMS_TO_TICKS(10000));
-    // Retry to connect
-    device_connect_station(device_ptr);
   }
-};
+
+}
+
+void device_connect_station(DevicePtr device_ptr) {
+  xTaskCreate(device_connect_station_task, "device_connect_station_task", 4096, device_ptr, 5, NULL);
+}
 
 void device_disconnect_station(DevicePtr device_ptr) {
   station_disconnect(device_ptr->station_ptr);
