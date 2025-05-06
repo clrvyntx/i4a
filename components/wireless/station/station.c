@@ -34,7 +34,6 @@ void station_init(StationPtr stationPtr, const char* wifi_ssid_like, uint16_t or
   strcpy(stationPtr->password, password);
   stationPtr->device_orientation = orientation;
   stationPtr->initialized = true;
-  stationPtr->ap_found = false;
   stationPtr->state = s_inactive;
 
   esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta();
@@ -106,7 +105,7 @@ static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_
       ESP_LOGE(LOGGING_TAG, "Failed to connect after %d attempts", s_retry_num);
       s_retry_num = 0;
       stationPtr->ap_found = false;
-      station_disconnect(stationPtr);
+      stationPtr->state = s_inactive;
     }
   } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
     ip_event_got_ip_t* event = (ip_event_got_ip_t*)event_data;
@@ -138,6 +137,7 @@ void station_connect(StationPtr stationPtr) {
 }
 
 void station_disconnect(StationPtr stationPtr) {
+  s_retry_num = EXAMPLE_ESP_MAXIMUM_RETRY + 1;
   stationPtr->state = s_inactive;
   ESP_ERROR_CHECK(esp_wifi_disconnect());
 }
