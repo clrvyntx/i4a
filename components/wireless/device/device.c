@@ -1,15 +1,3 @@
-#include "esp_event.h"
-#include "esp_log.h"
-#include "esp_event.h"
-#include "esp_netif.h"
-#include "esp_system.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/event_groups.h"
-#include "freertos/task.h"
-#include "nvs_flash.h"
-#include <string.h>
-#include <unistd.h>
-
 #include "device.h"
 
 #define LOGGING_TAG "DEVICE"
