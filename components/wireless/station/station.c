@@ -34,6 +34,7 @@ void station_init(StationPtr stationPtr, const char* wifi_ssid_like, uint16_t or
   strcpy(stationPtr->password, password);
   stationPtr->device_orientation = orientation;
   stationPtr->initialized = true;
+  stationPtr->ap_found = false;
   stationPtr->state = s_inactive;
 
   esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta();
