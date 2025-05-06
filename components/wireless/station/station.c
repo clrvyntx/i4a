@@ -138,7 +138,6 @@ void station_connect(StationPtr stationPtr) {
 
 void station_disconnect(StationPtr stationPtr) {
   s_retry_num = EXAMPLE_ESP_MAXIMUM_RETRY + 1;
-  stationPtr->state = s_inactive;
   ESP_ERROR_CHECK(esp_wifi_disconnect());
 }
 
