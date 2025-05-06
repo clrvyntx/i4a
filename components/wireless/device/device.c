@@ -14,6 +14,38 @@
 
 #define LOGGING_TAG "DEVICE"
 
+// Function to initialize NVS (non-volatile storage)
+static esp_err_t init_nvs() {
+  esp_err_t ret = nvs_flash_init();
+  if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+    ESP_ERROR_CHECK(nvs_flash_erase());
+    ret = nvs_flash_init();
+  }
+  return ret;
+}
+
+// Function to initialize the Wi-Fi interface
+esp_err_t wifi_init() {
+  // Initialize NVS
+  esp_err_t ret = init_nvs();
+  if (ret != ESP_OK) {
+    ESP_LOGE(TAG, "NVS initialization failed");
+    return ret;
+  }
+
+  // Initialize the ESP-NETIF library (for network interface management)
+  ESP_ERROR_CHECK(esp_netif_init());
+
+  // Create default event loop
+  ESP_ERROR_CHECK(esp_event_loop_create_default());
+
+  // Initialize Wi-Fi configuration structure
+  wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+  ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+
+  return ESP_OK;
+}
+
 void device_init(DevicePtr device_ptr, const char *device_uuid, uint8_t device_orientation, const char *wifi_network_prefix, const char *wifi_network_password, uint8_t ap_channel_to_emit, uint8_t ap_max_sta_connections, uint8_t device_is_root, Device_Mode mode) {
   device_ptr->mode = NAN;
   device_ptr->state = d_inactive;
@@ -26,20 +58,6 @@ void device_init(DevicePtr device_ptr, const char *device_uuid, uint8_t device_o
   Station station = {};
   device_ptr->station = station;
   device_ptr->station_ptr = &device_ptr->station; 
-
-  // Initialize NVS
-  esp_err_t ret = nvs_flash_init();
-  if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-    ESP_ERROR_CHECK(nvs_flash_erase());
-    ret = nvs_flash_init();
-  }
-  ESP_ERROR_CHECK(ret);
-
-  ESP_ERROR_CHECK(esp_netif_init());
-  ESP_ERROR_CHECK(esp_event_loop_create_default());
-
-  wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-  ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
   if (mode == AP) {
     device_init_ap(device_ptr, ap_channel_to_emit, wifi_network_prefix, device_uuid, wifi_network_password, ap_max_sta_connections);
