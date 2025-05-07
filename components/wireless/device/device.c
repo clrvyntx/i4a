@@ -158,7 +158,6 @@ void device_start_station(DevicePtr device_ptr) {
 
 static void device_connect_station_task(void* arg) {
   DevicePtr device_ptr = (DevicePtr)arg;  // Get the device pointer from the task argument
-  wifi_mode_t current_mode;
 
   while (is_on_connect_loop) {
 
