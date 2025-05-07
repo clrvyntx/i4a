@@ -138,8 +138,13 @@ void station_disconnect(StationPtr stationPtr) {
   ESP_ERROR_CHECK(esp_wifi_disconnect());
 }
 
+void station_stop(StationPtr stationPtr) {
+  ESP_ERROR_CHECK(esp_wifi_stop());
+}
+
 void station_restart(StationPtr stationPtr) {
   station_disconnect(stationPtr);
+  station_stop(stationPtr);
   station_start(stationPtr);
 }
 
