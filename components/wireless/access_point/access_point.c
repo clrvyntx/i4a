@@ -102,7 +102,6 @@ void ap_set_network(AccessPointPtr ap, const char *network_cidr, const char *net
 void ap_start(AccessPointPtr ap) {
   ESP_LOGI(LOGGING_TAG, "Starting AP");
   ap->state = active;
-  ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &(wifi_config_t){ 0 }));
   ESP_ERROR_CHECK(esp_wifi_start());
 };
 
