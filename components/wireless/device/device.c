@@ -13,6 +13,7 @@
 #include "device.h"
 
 static const char *LOGGING_TAG = "device";
+static bool is_on_connect_loop = false;
 
 // Function to initialize NVS (non-volatile storage)
 static esp_err_t init_nvs() {
@@ -91,10 +92,8 @@ void device_set_network_ap(DevicePtr device_ptr, const char *network_cidr, const
 void device_reset(DevicePtr device_ptr) {
   if (device_ptr->state == d_active) {
     if (device_ptr->mode == AP) {
-      device_ptr->mode = NAN;
       device_stop_ap(device_ptr);
     } else if (device_ptr->mode == STATION) {
-      device_ptr->mode = NAN;
       device_disconnect_station(device_ptr);
     } 
     // else if (device_ptr->mode == ap_station) {
@@ -102,7 +101,7 @@ void device_reset(DevicePtr device_ptr) {
     // }
     device_ptr->state = d_inactive;
   }
-
+  device_ptr->mode = NAN;
 }
 
 void device_set_mode(DevicePtr device_ptr, Device_Mode mode) {
@@ -160,14 +159,7 @@ static void device_connect_station_task(void* arg) {
   DevicePtr device_ptr = (DevicePtr)arg;  // Get the device pointer from the task argument
   wifi_mode_t current_mode;
 
-  while (1) {
-
-    // If the current mode is not STA, kill the task
-    if (device_ptr->mode != STATION) {
-      ESP_LOGI(LOGGING_TAG, "Wi-Fi is not in STA mode, killing the task.");
-      vTaskDelete(NULL);  // Delete the task
-      return;  // Ensure we return so the task doesn't continue
-    }
+  while (is_on_connect_loop) {
 
     // If station is disconnected, start scanning for APs
     if (!station_is_active(device_ptr->station_ptr)) {
@@ -188,13 +180,18 @@ static void device_connect_station_task(void* arg) {
     vTaskDelay(pdMS_TO_TICKS(10000)); // Wait 10 seconds before checking if station is disconnected
   }
 
+  ESP_LOGI(LOGGING_TAG, "Station not on connect loop, killing the task.");
+  vTaskDelete(NULL);  // Delete the task
+
 }
 
 void device_connect_station(DevicePtr device_ptr) {
+  is_on_connect_loop = true;
   xTaskCreate(device_connect_station_task, "device_connect_station_task", 4096, device_ptr, 5, NULL);
 }
 
 void device_disconnect_station(DevicePtr device_ptr) {
+  is_on_connect_loop = false;
   station_disconnect(device_ptr->station_ptr);
 };
 
