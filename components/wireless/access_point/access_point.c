@@ -115,6 +115,7 @@ void ap_restart(AccessPointPtr ap) {
   ap_stop(ap);
   ap_start(ap);
 };
+
 void ap_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
     if (event_base == WIFI_EVENT) {
         switch (event_id) {
