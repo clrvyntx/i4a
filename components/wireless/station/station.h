@@ -36,6 +36,7 @@ void station_start(StationPtr stationPtr);
 void station_connect(StationPtr stationPtr);
 void station_disconnect(StationPtr stationPtr);
 void station_restart(StationPtr stationPtr);
+void station_stop(StationPtr stationPtr);
 bool station_is_initialized(StationPtr stationPtr);
 bool station_is_active(StationPtr stationPtr);
 void station_find_ap(StationPtr stationPtr);
