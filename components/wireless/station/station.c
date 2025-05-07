@@ -38,6 +38,7 @@ void station_init(StationPtr stationPtr, const char* wifi_ssid_like, uint16_t or
 
   esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta();
   assert(sta_netif);
+  stationPtr->netif = sta_netif;
 
 }
 
@@ -146,6 +147,16 @@ void station_restart(StationPtr stationPtr) {
   station_disconnect(stationPtr);
   station_stop(stationPtr);
   station_start(stationPtr);
+}
+
+void station_destroy_netif(StationPtr stationPtr) {
+  if (stationPtr->netif) {
+    ESP_LOGI(LOGGING_TAG, "Destroying default STA netif...");
+    esp_netif_destroy_default_wifi(stationPtr->netif);
+    stationPtr->netif = NULL;  // Prevent reuse or double free
+  } else {
+    ESP_LOGI(LOGGING_TAG, "AP netif already destroyed or not initialized.");
+  }
 }
 
 bool station_is_initialized(StationPtr stationPtr) {
