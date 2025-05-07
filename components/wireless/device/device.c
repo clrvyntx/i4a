@@ -47,7 +47,7 @@ esp_err_t wifi_init() {
 }
 
 void device_init(DevicePtr device_ptr, const char *device_uuid, uint8_t device_orientation, const char *wifi_network_prefix, const char *wifi_network_password, uint8_t ap_channel_to_emit, uint8_t ap_max_sta_connections, uint8_t device_is_root, Device_Mode mode) {
-  device_ptr->mode = NAN;
+  device_ptr->mode = mode;
   device_ptr->state = d_inactive;
   device_ptr->device_is_root = device_is_root;
 
@@ -91,8 +91,10 @@ void device_set_network_ap(DevicePtr device_ptr, const char *network_cidr, const
 void device_reset(DevicePtr device_ptr) {
   if (device_ptr->state == d_active) {
     if (device_ptr->mode == AP) {
+      device_ptr->mode = NAN;
       device_stop_ap(device_ptr);
     } else if (device_ptr->mode == STATION) {
+      device_ptr->mode = NAN;
       device_disconnect_station(device_ptr);
     } 
     // else if (device_ptr->mode == ap_station) {
@@ -100,7 +102,7 @@ void device_reset(DevicePtr device_ptr) {
     // }
     device_ptr->state = d_inactive;
   }
-  device_ptr->mode = NAN;
+
 }
 
 void device_set_mode(DevicePtr device_ptr, Device_Mode mode) {
@@ -156,8 +158,17 @@ void device_start_station(DevicePtr device_ptr) {
 
 static void device_connect_station_task(void* arg) {
   DevicePtr device_ptr = (DevicePtr)arg;  // Get the device pointer from the task argument
+  wifi_mode_t current_mode;
 
   while (1) {
+
+    // If the current mode is not STA, kill the task
+    if (device_ptr->mode != STATION) {
+      ESP_LOGI(LOGGING_TAG, "Wi-Fi is not in STA mode, killing the task.");
+      vTaskDelete(NULL);  // Delete the task
+      return;  // Ensure we return so the task doesn't continue
+    }
+
     // If station is disconnected, start scanning for APs
     if (!station_is_active(device_ptr->station_ptr)) {
       ESP_LOGI(LOGGING_TAG, "Wi-Fi not connected. Scanning for available networks...");
