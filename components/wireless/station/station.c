@@ -90,25 +90,39 @@ void station_find_ap(StationPtr stationPtr) {
  */
 static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data) {
   StationPtr stationPtr = (StationPtr)arg;
-  if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
-    esp_wifi_connect();
-  } else if (event_base == WIFI_EVENT &&
-    event_id == WIFI_EVENT_STA_DISCONNECTED) {
-    client_close();
-    if (s_retry_num < EXAMPLE_ESP_MAXIMUM_RETRY) {
-      esp_wifi_connect();
-      s_retry_num++;
-      ESP_LOGI(LOGGING_TAG, "Connection failed, retrying to connect to the AP");
-    } else {
-      ESP_LOGE(LOGGING_TAG, "Failed to connect after %d attempts", s_retry_num);
-      s_retry_num = 0;
-      stationPtr->ap_found = false;
-      stationPtr->state = s_inactive;
+
+  if (event_base == WIFI_EVENT) {
+    switch (event_id) {
+      case WIFI_EVENT_STA_START:
+        s_retry_num = 0;
+        stationPtr->state = s_active;
+        esp_wifi_connect();
+        break;
+
+      case WIFI_EVENT_STA_DISCONNECTED:
+        client_close();
+        if (s_retry_num < EXAMPLE_ESP_MAXIMUM_RETRY) {
+          esp_wifi_connect();
+          s_retry_num++;
+          ESP_LOGI(LOGGING_TAG, "Connection failed, retrying to connect to the AP");
+        } else {
+          ESP_LOGE(LOGGING_TAG, "Failed to connect after %d attempts", s_retry_num);
+          s_retry_num = 0;
+          stationPtr->ap_found = false;
+          stationPtr->state = s_inactive;
+        }
+        break;
     }
-    } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
-      s_retry_num = 0;
-      client_open();
+  }
+
+  if (event_base == IP_EVENT) {
+    switch (event_id) {
+      case IP_EVENT_STA_GOT_IP:
+        client_open();
+        break;
     }
+  }
+
 }
 
 void station_start(StationPtr stationPtr) {
