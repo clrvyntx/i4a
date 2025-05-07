@@ -35,14 +35,15 @@ void app_main(void) {
     const uint8_t device_is_root = 1;
     Device_Mode mode = AP;
 
-    device_init(device_ptr, device_uuid, device_orientation, wifi_network_prefix, wifi_network_password, ap_channel_to_emit, ap_max_sta_connections, device_is_root, mode);
+    ESP_ERROR_CHECK(wifi_init());
 
     ESP_ERROR_CHECK(ring_link_init());
 
+    device_init(device_ptr, device_uuid, device_orientation, wifi_network_prefix, wifi_network_password, ap_channel_to_emit, ap_max_sta_connections, device_is_root, mode);
     device_set_network_ap(device_ptr, network_cidr, network_gateway, network_mask);
     device_start_ap(device_ptr);
 
-    print_route_table();
-    open_server();
+    vTaskDelay(pdMS_TO_TICKS(10000));
+    device_reset(device_ptr);
 
 }
