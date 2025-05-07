@@ -143,7 +143,9 @@ void station_restart(StationPtr stationPtr) {
 
 void station_destroy_netif(StationPtr stationPtr) {
   if (stationPtr->netif) {
-    ESP_LOGI(LOGGING_TAG, "Destroying default STA netif...");
+    ESP_LOGW(LOGGING_TAG, "Destroying default STA netif...");
+    ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler));
+    ESP_ERROR_CHECK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler));
     esp_netif_destroy_default_wifi(stationPtr->netif);
     stationPtr->netif = NULL;  // Prevent reuse or double free
   } else {
