@@ -180,7 +180,7 @@ static void device_connect_station_task(void* arg) {
     vTaskDelay(pdMS_TO_TICKS(10000)); // Wait 10 seconds before checking if station is disconnected
   }
 
-  ESP_LOGI(LOGGING_TAG, "Station not on connect loop, killing the task.");
+  ESP_LOGW(LOGGING_TAG, "Station not on connect loop, killing the task.");
   vTaskDelete(NULL);  // Delete the task
 
 }
