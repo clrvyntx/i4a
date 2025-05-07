@@ -97,6 +97,7 @@ static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_
     esp_wifi_connect();
   } else if (event_base == WIFI_EVENT &&
     event_id == WIFI_EVENT_STA_DISCONNECTED) {
+    client_close();
     if (s_retry_num < EXAMPLE_ESP_MAXIMUM_RETRY) {
       esp_wifi_connect();
       s_retry_num++;
@@ -118,7 +119,7 @@ static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_
       ESP_LOGI(LOGGING_TAG, "Netmask: " IPSTR, IP2STR(&ip_info.netmask));
       ESP_LOGI(LOGGING_TAG, "Gateway: " IPSTR, IP2STR(&ip_info.gw));
       s_retry_num = 0;
-      client_create();
+      client_open();
     }
 }
 
