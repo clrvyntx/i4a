@@ -14,7 +14,7 @@
 #include "nvs_flash.h"
 
 #include "access_point.h"
-// #include "../server/server.h"
+#include "../server/server.h"
 
 #include <string.h>
 
@@ -100,14 +100,15 @@ void ap_set_network(AccessPointPtr ap, const char *network_cidr, const char *net
 };
 
 void ap_start(AccessPointPtr ap) {
-  ESP_LOGI(LOGGING_TAG, "Stoping AP");
+  ESP_LOGI(LOGGING_TAG, "Starting AP");
   ap->state = active;
   ESP_ERROR_CHECK(esp_wifi_start());
 };
 
 void ap_stop(AccessPointPtr ap){
-  ESP_LOGI(LOGGING_TAG, "Stoping AP");
+  ESP_LOGI(LOGGING_TAG, "Stopping AP");
   ap->state = inactive;
+  server_close();
   ESP_ERROR_CHECK(esp_wifi_stop());
 };
 
@@ -127,5 +128,8 @@ void ap_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, 
   } else if (event_base == IP_EVENT && event_id == IP_EVENT_AP_STAIPASSIGNED) {
     ip_event_ap_staipassigned_t *event = (ip_event_ap_staipassigned_t *)event_data;
     ESP_LOGI(LOGGING_TAG, "station ip:" IPSTR ", mac:" MACSTR "", IP2STR(&event->ip), MAC2STR(event->mac));
+  } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_AP_START) {
+    ESP_LOGI(LOGGING_TAG, "Access Point started");
+    server_create();
   }
 }
