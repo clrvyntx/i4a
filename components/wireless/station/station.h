@@ -26,6 +26,7 @@ struct Station {
   Station_State state;
   wifi_config_t wifi_config;
   wifi_ap_record_t wifi_ap_found;
+  esp_netif_t *netif;
 };
 
 typedef struct Station Station;
@@ -37,6 +38,7 @@ void station_connect(StationPtr stationPtr);
 void station_disconnect(StationPtr stationPtr);
 void station_restart(StationPtr stationPtr);
 void station_stop(StationPtr stationPtr);
+void station_destroy_netif(StationPtr stationPtr);
 bool station_is_initialized(StationPtr stationPtr);
 bool station_is_active(StationPtr stationPtr);
 void station_find_ap(StationPtr stationPtr);
