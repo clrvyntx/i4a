@@ -6,11 +6,7 @@
 
 static const char *LOGGING_TAG = "tcp_client";
 static int server_sock = -1;
-
-static bool is_wifi_connected() {
-    wifi_ap_record_t ap_info;
-    return esp_wifi_sta_get_ap_info(&ap_info) == ESP_OK;
-}
+static bool sta_is_up = false;
 
 static bool get_gateway_ip(char *ip_str, size_t ip_str_len) {
     esp_netif_ip_info_t ip_info;
@@ -49,12 +45,7 @@ static void tcp_client_task(void *pvParameters) {
     struct sockaddr_in server_addr;
     char gateway_ip[INET_ADDRSTRLEN];
 
-    while (1) {
-        if (!is_wifi_connected()) {
-            ESP_LOGW(LOGGING_TAG, "Wi-Fi not connected, stopping task...");
-            // Stop task if Wi-Fi is not connected
-            vTaskDelete(NULL);
-        }
+    while (sta_is_up) {
 
         if (!get_gateway_ip(gateway_ip, sizeof(gateway_ip))) {
             ESP_LOGE(LOGGING_TAG, "Failed to get gateway IP, retrying...");
@@ -99,10 +90,19 @@ static void tcp_client_task(void *pvParameters) {
         // Retry connection
         vTaskDelay(RETRY_DELAY_MS / portTICK_PERIOD_MS);
     }
+
+    ESP_LOGW(LOGGING_TAG, "STA not connected, stopping task...");
+    // Stop task if STA is not connected
+    vTaskDelete(NULL);
 }
 
-void client_create() {
+void client_open() {
+    sta_is_up = true;
     xTaskCreate(tcp_client_task, "tcp_client", 4096, NULL, 5, NULL);
+}
+
+void client_close() {
+    sta_is_up = false;
 }
 
 bool client_send_message(const uint8_t *msg, uint16_t len) {
