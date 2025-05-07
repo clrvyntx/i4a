@@ -53,33 +53,31 @@ void station_find_ap(StationPtr stationPtr) {
   ESP_ERROR_CHECK(esp_wifi_scan_get_ap_records(&number, ap_info));
   ESP_LOGI(LOGGING_TAG, "Total APs scanned = %u, actual AP number ap_info holds = %u", ap_count, number);
 
-  uint16_t networks_to_scan;
-  if (ap_count > number) {
-    networks_to_scan = number;
-  } else {
-    networks_to_scan = ap_count;
-  }
+  uint16_t networks_to_scan = (ap_count > number) ? number : ap_count;
+
+  wifi_ap_record_t *best_ap = NULL;
+  int best_rssi = -128; // Minimum possible RSSI (very weak signal)
 
   for (int i = 0; i < networks_to_scan; i++) {
-    // Verificamos el prefix de la red
     if (is_network_allowed(stationPtr->device_uuid, stationPtr->ssid_like, (char*)ap_info[i].ssid)) {
-      ESP_LOGI(LOGGING_TAG, "SSID \t\t%s", ap_info[i].ssid);
-      ESP_LOGI(LOGGING_TAG, "RSSI \t\t%d", ap_info[i].rssi);
-      ESP_LOGI(LOGGING_TAG, "Channel \t\t%d", ap_info[i].primary);
-      ESP_LOGI(LOGGING_TAG, "Index \t\t%u", i);
-      memcpy(&stationPtr->wifi_ap_found, &ap_info[i], sizeof(ap_info[i]));
-      stationPtr->ap_found = true;
-      break;
+      ESP_LOGI(LOGGING_TAG, "Allowed SSID: %s | RSSI: %d | Channel: %d", ap_info[i].ssid, ap_info[i].rssi, ap_info[i].primary);
+      if (ap_info[i].rssi > best_rssi) {
+        best_ap = &ap_info[i];
+        best_rssi = ap_info[i].rssi;
+      }
     }
-
   }
 
-  if (!stationPtr->ap_found) {
-    ESP_LOGI(LOGGING_TAG, "No AP found");
-  } else {
-    ESP_LOGI(LOGGING_TAG, "AP found");
+  if (best_ap) {
+    memcpy(&stationPtr->wifi_ap_found, best_ap, sizeof(*best_ap));
+    stationPtr->ap_found = true;
+    ESP_LOGI(LOGGING_TAG, "Best AP found: SSID: %s | RSSI: %d | Channel: %d", best_ap->ssid, best_ap->rssi, best_ap->primary);
     transform_wifi_ap_record_to_config(stationPtr);
+  } else {
+    ESP_LOGI(LOGGING_TAG, "No allowed APs found");
+    stationPtr->ap_found = false;
   }
+
 }
 
 /*
