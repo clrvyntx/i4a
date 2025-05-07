@@ -102,6 +102,7 @@ void device_reset(DevicePtr device_ptr) {
     // }
     device_ptr->state = d_inactive;
   }
+  device_destroy_netif(device_ptr);
   device_ptr->mode = NAN;
 }
 
@@ -121,6 +122,14 @@ void device_set_mode(DevicePtr device_ptr, Device_Mode mode) {
   // else if (mode == ap_station) {
   //   device_start_ap_station(device_ptr);
   // }
+}
+
+void device_destroy_netif(DevicePtr device_ptr){
+  if (device_ptr->mode == AP) {
+    ap_destroy_netif(device_ptr->access_point_ptr);
+  } else if (device_ptr->mode == STATION) {
+    station_destroy_netif(device_ptr->station_ptr);
+  }
 }
 
 // AP
