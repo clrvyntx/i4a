@@ -87,27 +87,7 @@ void station_find_ap(StationPtr stationPtr) {
 static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data) {
     StationPtr station = (StationPtr)arg;
 
-    if (event_base == WIFI_EVENT) {
-        switch (event_id) {
-            case WIFI_EVENT_STA_START:
-                esp_wifi_connect();
-                break;
-
-            case WIFI_EVENT_STA_DISCONNECTED:
-                client_close();
-                if (s_retry_num < EXAMPLE_ESP_MAXIMUM_RETRY) {
-                    esp_wifi_connect();
-                    s_retry_num++;
-                    ESP_LOGI(LOGGING_TAG, "Connection failed, retrying (%d/%d)", s_retry_num, EXAMPLE_ESP_MAXIMUM_RETRY);
-                } else {
-                    ESP_LOGE(LOGGING_TAG, "Failed to connect after %d attempts", s_retry_num);
-                    s_retry_num = 0;
-                    station->ap_found = false;
-                    station->state = s_inactive;
-                }
-                break;
-        }
-    } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
+    if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
         ip_event_got_ip_t* event = (ip_event_got_ip_t*)event_data;
         ESP_LOGI(LOGGING_TAG, "Got IP: " IPSTR, IP2STR(&event->ip_info.ip));
 
@@ -119,8 +99,21 @@ static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_
 
         s_retry_num = 0;
         client_open();
+    } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
+        client_close();
+        if (s_retry_num < EXAMPLE_ESP_MAXIMUM_RETRY) {
+            esp_wifi_connect();
+            s_retry_num++;
+            ESP_LOGI(LOGGING_TAG, "Connection failed, retrying (%d/%d)", s_retry_num, EXAMPLE_ESP_MAXIMUM_RETRY);
+        } else {
+            ESP_LOGE(LOGGING_TAG, "Failed to connect after %d attempts", s_retry_num);
+            s_retry_num = 0;
+            station->ap_found = false;
+            station->state = s_inactive;
+        }
     }
 }
+
 
 void station_start(StationPtr stationPtr) {
   ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
