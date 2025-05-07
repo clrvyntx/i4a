@@ -52,7 +52,7 @@ void station_find_ap(StationPtr stationPtr) {
   ESP_ERROR_CHECK(esp_wifi_scan_get_ap_num(&ap_count));
   ESP_ERROR_CHECK(esp_wifi_scan_get_ap_records(&number, ap_info));
   ESP_LOGI(LOGGING_TAG, "Total APs scanned = %u, actual AP number ap_info holds = %u", ap_count, number);
-  
+
   uint16_t networks_to_scan;
   if (ap_count > number) {
     networks_to_scan = number;
@@ -96,7 +96,7 @@ static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_
   if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
     esp_wifi_connect();
   } else if (event_base == WIFI_EVENT &&
-              event_id == WIFI_EVENT_STA_DISCONNECTED) {
+    event_id == WIFI_EVENT_STA_DISCONNECTED) {
     if (s_retry_num < EXAMPLE_ESP_MAXIMUM_RETRY) {
       esp_wifi_connect();
       s_retry_num++;
@@ -107,19 +107,19 @@ static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_
       stationPtr->ap_found = false;
       stationPtr->state = s_inactive;
     }
-  } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
-    ip_event_got_ip_t* event = (ip_event_got_ip_t*)event_data;
-    ESP_LOGI(LOGGING_TAG, "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
+    } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
+      ip_event_got_ip_t* event = (ip_event_got_ip_t*)event_data;
+      ESP_LOGI(LOGGING_TAG, "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
 
-    // Retrieve and print IP address, netmask, and gateway
-    esp_netif_ip_info_t ip_info;
-    esp_netif_get_ip_info(esp_netif_get_handle_from_ifkey("WIFI_STA_DEF"), &ip_info);
-    ESP_LOGI(LOGGING_TAG, "IP Address: " IPSTR, IP2STR(&ip_info.ip));
-    ESP_LOGI(LOGGING_TAG, "Netmask: " IPSTR, IP2STR(&ip_info.netmask));
-    ESP_LOGI(LOGGING_TAG, "Gateway: " IPSTR, IP2STR(&ip_info.gw));
-    s_retry_num = 0;
-    client_create();
-  }
+      // Retrieve and print IP address, netmask, and gateway
+      esp_netif_ip_info_t ip_info;
+      esp_netif_get_ip_info(esp_netif_get_handle_from_ifkey("WIFI_STA_DEF"), &ip_info);
+      ESP_LOGI(LOGGING_TAG, "IP Address: " IPSTR, IP2STR(&ip_info.ip));
+      ESP_LOGI(LOGGING_TAG, "Netmask: " IPSTR, IP2STR(&ip_info.netmask));
+      ESP_LOGI(LOGGING_TAG, "Gateway: " IPSTR, IP2STR(&ip_info.gw));
+      s_retry_num = 0;
+      client_create();
+    }
 }
 
 void station_start(StationPtr stationPtr) {
