@@ -10,14 +10,12 @@ static const char *LOGGING_TAG = "tcp_server";
 
 static int client_sock = -1;
 static bool server_is_up = false;
-static bool is_on_loop = false;
 
 // Function to read data from the client socket
 static void socket_read_loop(const int sock, const char *client_ip) {
   uint8_t rx_buffer[BUFFER_SIZE];
-  is_on_loop = true;
 
-  while (is_on_loop) {
+  while (server_is_up) {
     int len = recv(sock, rx_buffer, sizeof(rx_buffer), 0);
     if (len < 0) {
       ESP_LOGE(LOGGING_TAG, "Receive error from %s: errno %d", client_ip, errno);
@@ -31,7 +29,6 @@ static void socket_read_loop(const int sock, const char *client_ip) {
       // call on_peer_message(rx_buffer, len);
     }
   }
-  is_on_loop = false;
 }
 
 // Function to handle the server task
@@ -131,10 +128,6 @@ void server_create() {
 void server_close() {
   if (server_is_up) {
     server_is_up = false;
-
-    if (is_on_loop) {
-      is_on_loop = false;
-    }
 
   } else {
     ESP_LOGW(LOGGING_TAG, "Server is not running, cannot close it.");
