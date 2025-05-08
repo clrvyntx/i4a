@@ -107,7 +107,7 @@ static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_
           s_retry_num++;
           ESP_LOGI(LOGGING_TAG, "Connection failed, retrying to connect to the AP");
         } else {
-          ESP_LOGE(LOGGING_TAG, "Failed to connect, scanning for new networks", s_retry_num);
+          ESP_LOGE(LOGGING_TAG, "Failed to connect, disconnecting", s_retry_num);
           s_retry_num = 0;
           stationPtr->ap_found = false;
           stationPtr->state = s_inactive;
