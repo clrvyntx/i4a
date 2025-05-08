@@ -97,12 +97,30 @@ static void tcp_client_task(void *pvParameters) {
 }
 
 void client_open() {
-    sta_is_up = true;
-    xTaskCreate(tcp_client_task, "tcp_client", 4096, NULL, 5, NULL);
+    if (!sta_is_up) {
+        sta_is_up = true;
+        xTaskCreate(tcp_client_task, "tcp_client", 4096, NULL, 5, NULL);
+        ESP_LOGI(LOGGING_TAG, "Client started");
+    } else {
+        ESP_LOGW(LOGGING_TAG, "Client is already running");
+    }
 }
 
 void client_close() {
-    sta_is_up = false;
+    if (sta_is_up) {
+        ESP_LOGW(LOGGING_TAG, "Closing client...");
+
+        sta_is_up = false;
+
+        if (server_sock >= 0) {
+            shutdown(server_sock, 0);
+            close(server_sock);
+            server_sock = -1;
+        }
+
+    } else {
+        ESP_LOGW(LOGGING_TAG, "Client is not running");
+    }
 }
 
 bool client_send_message(const uint8_t *msg, uint16_t len) {
