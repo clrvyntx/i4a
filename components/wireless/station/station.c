@@ -73,7 +73,7 @@ void station_find_ap(StationPtr stationPtr) {
     ESP_LOGI(LOGGING_TAG, "Best AP found: SSID: %s | RSSI: %d | Channel: %d", best_ap->ssid, best_ap->rssi, best_ap->primary);
     transform_wifi_ap_record_to_config(stationPtr);
   } else {
-    ESP_LOGI(LOGGING_TAG, "No allowed APs found");
+    ESP_LOGW(LOGGING_TAG, "No allowed APs found");
     stationPtr->ap_found = false;
   }
 
