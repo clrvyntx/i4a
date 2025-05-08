@@ -110,9 +110,9 @@ static void tcp_server_task(void *pvParameters) {
     shutdown(sock, 0);
     close(sock);
   }
-
+  
+  CLEAN_UP:
   close(listen_sock);
-
   ESP_LOGI(LOGGING_TAG, "Server task is shutting down...");
   vTaskDelete(NULL);
 }
