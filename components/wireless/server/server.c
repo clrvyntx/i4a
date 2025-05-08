@@ -15,6 +15,7 @@ static bool is_on_loop = false;
 // Function to read data from the client socket
 static void socket_read_loop(const int sock, const char *client_ip) {
   uint8_t rx_buffer[BUFFER_SIZE];
+  is_on_loop = true;
 
   while (is_on_loop) {
     int len = recv(sock, rx_buffer, sizeof(rx_buffer), 0);
@@ -30,6 +31,7 @@ static void socket_read_loop(const int sock, const char *client_ip) {
       // call on_peer_message(rx_buffer, len);
     }
   }
+  is_on_loop = false;
 }
 
 // Function to handle the server task
@@ -88,7 +90,6 @@ static void tcp_server_task(void *pvParameters) {
 
     ESP_LOGI(LOGGING_TAG, "Accepted connection from %s", addr_str);
     client_sock = sock;
-    is_on_loop = true;
 
     // Enable TCP Keep-Alive
     int keepAlive = 1;
@@ -105,7 +106,6 @@ static void tcp_server_task(void *pvParameters) {
 
     // Cleanup once connection has been closed
     ESP_LOGI(LOGGING_TAG, "Closing connection from %s", addr_str);
-    is_on_loop = false;
     client_sock = -1;
     shutdown(sock, 0);
     close(sock);
