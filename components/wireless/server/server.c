@@ -11,10 +11,12 @@ static const char *LOGGING_TAG = "tcp_server";
 static int client_sock = -1;
 static int listen_sock = -1;
 static bool server_is_up = false;
+static bool is_connected = false;
 
 // Function to read data from the client socket
 static void socket_read_loop(const int sock, const char *client_ip) {
   uint8_t rx_buffer[BUFFER_SIZE];
+  is_connected = true;
 
   while (1) {
     int len = recv(sock, rx_buffer, sizeof(rx_buffer), 0);
@@ -30,6 +32,8 @@ static void socket_read_loop(const int sock, const char *client_ip) {
       // call on_peer_message(rx_buffer, len);
     }
   }
+  
+  is_connected = false;
 }
 
 // Function to handle the server task
@@ -87,7 +91,6 @@ static void tcp_server_task(void *pvParameters) {
     }
 
     ESP_LOGI(LOGGING_TAG, "Accepted connection from %s", addr_str);
-    client_sock = sock;
 
     // Enable TCP Keep-Alive
     int keepAlive = 1;
@@ -104,7 +107,6 @@ static void tcp_server_task(void *pvParameters) {
 
     // Cleanup once connection has been closed
     ESP_LOGI(LOGGING_TAG, "Closing connection from %s", addr_str);
-    client_sock = -1;
     shutdown(sock, 0);
     close(sock);
   }
@@ -144,7 +146,7 @@ void server_close() {
 
 bool server_send_message(const uint8_t *msg, uint16_t len) {
 
-  if (client_sock < 0) {
+  if (!is_connected) {
     ESP_LOGW(LOGGING_TAG, "No valid client connected, cannot send message");
     return false;
   }
