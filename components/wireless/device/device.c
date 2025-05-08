@@ -135,7 +135,6 @@ void device_destroy_netif(DevicePtr device_ptr){
 // AP
 
 void device_start_ap(DevicePtr device_ptr) {
-  ESP_LOGI(LOGGING_TAG, "Starting AP");
   if (ap_is_initialized(device_ptr->access_point_ptr)) {
     ap_start(device_ptr->access_point_ptr);
     device_ptr->state = d_active;
