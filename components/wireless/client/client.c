@@ -23,8 +23,6 @@ static bool get_gateway_ip(char *ip_str, size_t ip_str_len) {
 
 static void socket_read_loop(const int sock, const char *server_ip) {
     uint8_t rx_buffer[BUFFER_SIZE];
-    server_sock = sock;
-    // on_peer_connected();
 
     while (1) {
         int len = recv(sock, rx_buffer, sizeof(rx_buffer), 0);
@@ -39,9 +37,6 @@ static void socket_read_loop(const int sock, const char *server_ip) {
             // call on_peer_message(rx_buffer, len);
         }
     }
-
-    // on_peer_lost();
-    server_sock = -1;
 }
 
 static void tcp_client_task(void *pvParameters) {
@@ -80,23 +75,24 @@ static void tcp_client_task(void *pvParameters) {
         }
 
         ESP_LOGI(LOGGING_TAG, "Connected to %s", gateway_ip);
-        
-        // Handle incoming data
+        server_sock = sock;
+        // on_peer_connected();
+
         socket_read_loop(server_sock, gateway_ip);
 
-        // Cleanup once connection has been closed
         ESP_LOGW(LOGGING_TAG, "Connection to %s lost. Reconnecting...", gateway_ip);
-        if(sock >= 0){
+        // on_peer_lost();
+
+        server_sock = -1;
         shutdown(sock, 0);
         close(sock);
-        }
 
         // Retry connection
         vTaskDelay(RETRY_DELAY_MS / portTICK_PERIOD_MS);
     }
 
-    // Stop task if STA is not connected
     ESP_LOGW(LOGGING_TAG, "STA not connected, stopping task...");
+    // Stop task if STA is not connected
     vTaskDelete(NULL);
 }
 
@@ -113,19 +109,12 @@ void client_open() {
 void client_close() {
     if (sta_is_up) {
         ESP_LOGW(LOGGING_TAG, "Closing client...");
-
         sta_is_up = false;
-
-        if (server_sock >= 0) {
-            shutdown(server_sock, 0);
-            close(server_sock);
-            server_sock = -1;
-        }
-
     } else {
         ESP_LOGW(LOGGING_TAG, "Client is not running");
     }
 }
+
 
 bool client_send_message(const uint8_t *msg, uint16_t len) {
     if (server_sock < 0) {
