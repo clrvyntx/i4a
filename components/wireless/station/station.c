@@ -138,7 +138,6 @@ void station_connect(StationPtr stationPtr) {
   ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, stationPtr));
   ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, stationPtr));
   ESP_ERROR_CHECK(esp_wifi_connect());
-  stationPtr->state = s_active;
 }
 
 void station_disconnect(StationPtr stationPtr) {
