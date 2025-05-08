@@ -86,8 +86,10 @@ static void tcp_client_task(void *pvParameters) {
 
         // Cleanup once connection has been closed
         ESP_LOGW(LOGGING_TAG, "Connection to %s lost. Reconnecting...", gateway_ip);
+        if(sock >= 0){
         shutdown(sock, 0);
         close(sock);
+        }
 
         // Retry connection
         vTaskDelay(RETRY_DELAY_MS / portTICK_PERIOD_MS);
