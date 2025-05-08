@@ -17,8 +17,8 @@
 #include "utils.c"
 #include "../client/client.h"
 
-#define DEFAULT_SCAN_LIST_SIZE 10
-#define EXAMPLE_ESP_MAXIMUM_RETRY 10
+#define SCAN_LIST_SIZE 10
+#define MAX_RETRIES 10
 
 static const char* LOGGING_TAG = "station";
 
@@ -44,8 +44,8 @@ void station_init(StationPtr stationPtr, const char* wifi_ssid_like, uint16_t or
 }
 
 void station_find_ap(StationPtr stationPtr) {
-  uint16_t number = DEFAULT_SCAN_LIST_SIZE;
-  wifi_ap_record_t ap_info[DEFAULT_SCAN_LIST_SIZE];
+  uint16_t number = SCAN_LIST_SIZE;
+  wifi_ap_record_t ap_info[SCAN_LIST_SIZE];
   uint16_t ap_count = 0;
   memset(ap_info, 0, sizeof(ap_info));
 
@@ -102,12 +102,12 @@ static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_
 
       case WIFI_EVENT_STA_DISCONNECTED:
         client_close();
-        if (s_retry_num < EXAMPLE_ESP_MAXIMUM_RETRY) {
+        if (s_retry_num < MAX_RETRIES) {
           esp_wifi_connect();
           s_retry_num++;
           ESP_LOGI(LOGGING_TAG, "Connection failed, retrying to connect to the AP");
         } else {
-          ESP_LOGE(LOGGING_TAG, "Failed to connect after %d attempts", s_retry_num);
+          ESP_LOGE(LOGGING_TAG, "Failed to connect, scanning for new networks", s_retry_num);
           s_retry_num = 0;
           stationPtr->ap_found = false;
           stationPtr->state = s_inactive;
@@ -142,7 +142,7 @@ void station_connect(StationPtr stationPtr) {
 }
 
 void station_disconnect(StationPtr stationPtr) {
-  s_retry_num = EXAMPLE_ESP_MAXIMUM_RETRY;
+  s_retry_num = MAX_RETRIES;
   ESP_ERROR_CHECK(esp_wifi_disconnect());
 }
 
