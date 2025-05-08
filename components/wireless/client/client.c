@@ -115,7 +115,6 @@ void client_close() {
     }
 }
 
-
 bool client_send_message(const uint8_t *msg, uint16_t len) {
     if (server_sock < 0) {
         ESP_LOGW(LOGGING_TAG, "Not connected to server");
