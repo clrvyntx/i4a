@@ -113,12 +113,8 @@ static void tcp_server_task(void *pvParameters) {
   }
   
   CLEAN_UP:
-  if(listen_sock >= 0){
-    shutdown(listen_sock, SHUT_RDWR);
-    close(listen_sock);
-  }
-
-  ESP_LOGI(LOGGING_TAG, "Server task is shutting down...");
+  close(listen_sock);
+  ESP_LOGW(LOGGING_TAG, "Server task is shutting down...");
   vTaskDelete(NULL);
 }
 
@@ -135,13 +131,8 @@ void server_create() {
 
 void server_close() {
   if (server_is_up) {
-    server_is_up = false;
-
-    if(listen_sock >= 0){
-      shutdown(listen_sock, SHUT_RDWR);
-      close(listen_sock);
-    }
-
+      ESP_LOGW(LOGGING_TAG, "Closing server...");
+      server_is_up = false;
   } else {
     ESP_LOGW(LOGGING_TAG, "Server is not running, cannot close it.");
   }
