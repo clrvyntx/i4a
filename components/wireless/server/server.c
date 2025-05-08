@@ -9,13 +9,14 @@
 static const char *LOGGING_TAG = "tcp_server";
 
 static int client_sock = -1;
+static int listen_sock = -1;
 static bool server_is_up = false;
 
 // Function to read data from the client socket
 static void socket_read_loop(const int sock, const char *client_ip) {
   uint8_t rx_buffer[BUFFER_SIZE];
 
-  while (server_is_up) {
+  while (1) {
     int len = recv(sock, rx_buffer, sizeof(rx_buffer), 0);
     if (len < 0) {
       ESP_LOGE(LOGGING_TAG, "Receive error from %s: errno %d", client_ip, errno);
@@ -43,7 +44,7 @@ static void tcp_server_task(void *pvParameters) {
   dest_addr.sin_port = htons(PORT);
 
   // Create the listening socket
-  int listen_sock = socket(addr_family, SOCK_STREAM, ip_protocol);
+  listen_sock = socket(addr_family, SOCK_STREAM, ip_protocol);
   if (listen_sock < 0) {
     ESP_LOGE(LOGGING_TAG, "Unable to create socket: errno %d", errno);
     vTaskDelete(NULL);
@@ -109,7 +110,10 @@ static void tcp_server_task(void *pvParameters) {
   }
   
   CLEAN_UP:
-  close(listen_sock);
+  if(listen_sock >= 0){
+    close(listen_sock);
+  }
+
   ESP_LOGI(LOGGING_TAG, "Server task is shutting down...");
   vTaskDelete(NULL);
 }
@@ -128,6 +132,10 @@ void server_create() {
 void server_close() {
   if (server_is_up) {
     server_is_up = false;
+
+    if(listen_sock >= 0){
+      close(listen_sock);
+    }
 
   } else {
     ESP_LOGW(LOGGING_TAG, "Server is not running, cannot close it.");
