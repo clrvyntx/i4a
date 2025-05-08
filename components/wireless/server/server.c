@@ -14,6 +14,8 @@ static bool server_is_up = false;
 
 // Function to read data from the client socket
 static void socket_read_loop(const int sock, const char *client_ip) {
+
+  // call on_peer_connected()
   uint8_t rx_buffer[BUFFER_SIZE];
   client_sock = sock;
 
@@ -27,12 +29,12 @@ static void socket_read_loop(const int sock, const char *client_ip) {
       break;
     } else {
       ESP_LOGI(LOGGING_TAG, "Received %d bytes from %s", len, client_ip);
-      // Process received message here
       // call on_peer_message(rx_buffer, len);
     }
   }
-  
+
   client_sock = -1;
+  // call on_peer_lost()
 }
 
 // Function to handle the server task
