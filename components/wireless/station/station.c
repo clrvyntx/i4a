@@ -24,9 +24,6 @@ static const char* LOGGING_TAG = "station";
 
 static int s_retry_num = 0;
 
-/*
- * @brief Initialize the WiFi stack in station mode
- */
 void station_init(StationPtr stationPtr, const char* wifi_ssid_like, uint16_t orientation, char* device_uuid, const char* password) {
 
   strcpy(stationPtr->ssid_like, wifi_ssid_like);
@@ -82,13 +79,6 @@ void station_find_ap(StationPtr stationPtr) {
 
 }
 
-/*
- * @brief Event handler for WiFi events for station mode
- * @param arg The argument passed during handler registration
- * @param event_base The event base
- * @param event_id The event id
- * @param event_data The event data
- */
 static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data) {
   StationPtr stationPtr = (StationPtr)arg;
 
