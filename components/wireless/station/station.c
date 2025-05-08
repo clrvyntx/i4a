@@ -127,12 +127,12 @@ void station_start(StationPtr stationPtr) {
 }
 
 void station_connect(StationPtr stationPtr) {
+  s_retry_num = 0;
+  stationPtr->state = s_active;
   ESP_LOGI(LOGGING_TAG, "Connecting to %s...", stationPtr->wifi_config.sta.ssid);
   ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &stationPtr->wifi_config));
   ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, stationPtr));
   ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, stationPtr));
-  s_retry_num = 0;
-  stationPtr->state = s_active;
   ESP_ERROR_CHECK(esp_wifi_connect());
 }
 
