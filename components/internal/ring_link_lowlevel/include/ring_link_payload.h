@@ -42,7 +42,7 @@ typedef struct
 {
     ring_link_payload_id_t id;
     ring_link_payload_buffer_type_t buffer_type;
-    uint8_t len;
+    uint16_t len;
     uint8_t ttl;
     config_id_t src_id;
     config_id_t dst_id;
