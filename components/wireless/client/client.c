@@ -8,7 +8,13 @@ static const char *LOGGING_TAG = "tcp_client";
 static int server_sock = -1;
 static bool sta_is_up = false;
 
-static bool get_gateway_ip(char *ip_str, size_t ip_str_len) {
+// These accumulate bytes and are reset every second
+// 32 bits should be enough
+static uint32_t tx_bytes = 0;
+static uint32_t rx_bytes = 0;
+
+static bool get_gateway_ip(char *ip_str, size_t ip_str_len)
+{
     esp_netif_ip_info_t ip_info;
     esp_netif_t *netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
 
@@ -21,11 +27,27 @@ static bool get_gateway_ip(char *ip_str, size_t ip_str_len) {
     return true;
 }
 
-static void socket_read_loop(const int sock, const char *server_ip) {
+static void tcp_server_stats_task(void *pvParameters)
+{
+	while (sta_is_up) {
+		ESP_LOGI(LOGGING_TAG, "TX %.2f kbps, RX %.2f kbps",
+			 tx_bytes * 8.0 / 1000.0, rx_bytes * 8.0 / 1000.0);
+		tx_bytes = 0;
+		rx_bytes = 0;
+		vTaskDelay(pdMS_TO_TICKS(1000));
+	}
+
+	vTaskDelete(NULL);
+}
+
+static void socket_read_loop(const int sock, const char *server_ip)
+{
     uint8_t rx_buffer[BUFFER_SIZE];
 
     while (1) {
         int len = recv(sock, rx_buffer, sizeof(rx_buffer), 0);
+		if (len >= 0)
+			rx_bytes += len;
         if (len < 0) {
             ESP_LOGE(LOGGING_TAG, "Receive error from %s: errno %d", server_ip, errno);
             break;
@@ -100,6 +122,8 @@ void client_open() {
     if (!sta_is_up) {
         sta_is_up = true;
         xTaskCreate(tcp_client_task, "tcp_client", 4096, NULL, 5, NULL);
+		xTaskCreate(tcp_server_stats_task, "tcp_server_stats", 4096,
+			    NULL, 5, NULL);
         ESP_LOGI(LOGGING_TAG, "Client started");
     } else {
         ESP_LOGW(LOGGING_TAG, "Client is already running");
@@ -127,6 +151,7 @@ bool client_send_message(const uint8_t *msg, uint16_t len) {
     }
 
     int sent = send(server_sock, msg, len, 0);
+	tx_bytes += sent;
     if (sent == len) {
         ESP_LOGI(LOGGING_TAG, "Sent %d bytes to server", sent);
         return true;
