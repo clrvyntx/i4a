@@ -12,6 +12,10 @@ static int client_sock = -1;
 static int listen_sock = -1;
 static bool server_is_up = false;
 
+// These accumulate bytes and are reset every second
+static uint32_t tx_bytes = 0;
+static uint32_t rx_bytes = 0;
+
 // Function to read data from the client socket
 static void socket_read_loop(const int sock, const char *client_ip) {
 
@@ -21,6 +25,8 @@ static void socket_read_loop(const int sock, const char *client_ip) {
 
   while (1) {
     int len = recv(sock, rx_buffer, sizeof(rx_buffer), 0);
+		if (len >= 0)
+			rx_bytes += len;
     if (len < 0) {
       ESP_LOGE(LOGGING_TAG, "Receive error from %s: errno %d", client_ip, errno);
       break;
@@ -35,6 +41,19 @@ static void socket_read_loop(const int sock, const char *client_ip) {
 
   client_sock = -1;
   // call on_peer_lost()
+}
+
+static void tcp_server_stats_task(void *pvParameters)
+{
+	while (server_is_up) {
+		ESP_LOGI(LOGGING_TAG, "TX %.2f kbps, RX %.2f kbps",
+			 tx_bytes * 8.0 / 1000.0, rx_bytes * 8.0 / 1000.0);
+		tx_bytes = 0;
+		rx_bytes = 0;
+		vTaskDelay(pdMS_TO_TICKS(1000));
+	}
+
+	vTaskDelete(NULL);
 }
 
 // Function to handle the server task
@@ -127,6 +146,8 @@ void server_create() {
   if (!server_is_up) {  // Prevent starting the server if it's already running
     server_is_up = true;
     xTaskCreate(tcp_server_task, "tcp_server", 4096, NULL, 5, NULL);
+		xTaskCreate(tcp_server_stats_task, "tcp_server_stats", 4096,
+			    NULL, 5, NULL);
     ESP_LOGI(LOGGING_TAG, "Server started");
   } else {
     ESP_LOGW(LOGGING_TAG, "Server is already running");
@@ -160,6 +181,7 @@ bool server_send_message(const uint8_t *msg, uint16_t len) {
   }
 
   int sent = send(client_sock, msg, len, 0);
+	tx_bytes += len;
   if (sent == len) {
     ESP_LOGI(LOGGING_TAG, "Sent %d bytes to client", sent);
     return true;
