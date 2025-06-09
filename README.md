@@ -1,4 +1,4 @@
-# ESP32 SPI Ring Connection Project
+# ESP32 Ring Network Connection Project
 
 ## Project Overview
 
