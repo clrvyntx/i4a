@@ -1,4 +1,4 @@
-# ESP32 Ring Network Connection Project
+# ComNetAR: ESP32 Ring Network Connection Project
 
 ## Project Overview
 
