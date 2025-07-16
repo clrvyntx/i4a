@@ -59,11 +59,9 @@ esp_netif_ip_info_t config_get_rx_ip_info(void);
 
 esp_netif_ip_info_t config_get_tx_ip_info(void);
 
-bool config_is_access_point(void);
+bool config_mode_is(config_mode_t);
 
-bool config_is_peer_link(void);
-
-bool config_is_root(void);
+bool config_orientation_is(config_orientation_t);
 
 #ifdef __cplusplus
 }

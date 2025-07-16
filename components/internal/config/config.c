@@ -67,7 +67,7 @@ void config_setup(void)
         s_config.orientation = CONFIG_ORIENTATION_NONE;
     }
     s_config.rx_ip_addr = ESP_IP4TOADDR(192, 168, 0, (int)(s_config.orientation) + 1);
-    s_config.tx_ip_addr = ESP_IP4TOADDR(192, 168, 1, (int)(s_config.orientation) + 1);
+    s_config.tx_ip_addr = ESP_IP4TOADDR(192, 168, 0, (int)(s_config.orientation) + 10);
 }
 
 config_id_t config_get_id(void)
@@ -90,29 +90,26 @@ esp_netif_ip_info_t config_get_tx_ip_info(void)
     esp_netif_ip_info_t ip_info = {
         .ip = {.addr = s_config.tx_ip_addr},
         .gw = {.addr = s_config.tx_ip_addr},
-        .netmask = {.addr = ESP_IP4TOADDR(0, 0, 0, 0)},
+        .netmask = {.addr = ESP_IP4TOADDR(255, 255, 0, 0)},
     };
     return ip_info;
 }
 
 void config_print(void)
 {
+    ESP_LOGI(TAG, "=============== Board Config ===============");
     ESP_LOGI(TAG, "Board ID: '%i'", s_config.id);
     ESP_LOGI(TAG, "Board Mode: '%i'", s_config.mode);
     ESP_LOGI(TAG, "Board Orientation: '%i'", s_config.orientation);
+    ESP_LOGI(TAG, "============================================");
 }
 
-bool config_is_access_point(void)
+bool config_mode_is(config_mode_t mode)
 {
-    return s_config.mode == CONFIG_MODE_ACCESS_POINT;
+    return s_config.mode == mode;
 }
 
-bool config_is_peer_link(void)
+bool config_orientation_is(config_orientation_t orientation)
 {
-    return s_config.mode == CONFIG_MODE_PEER_LINK;
-}
-
-bool config_is_root(void)
-{
-    return s_config.mode == CONFIG_MODE_ROOT;
+    return s_config.orientation == orientation;
 }

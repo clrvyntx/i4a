@@ -50,40 +50,40 @@ esp_err_t ring_link_rx_netif_receive(ring_link_payload_t *p)
         return ESP_OK;
     }
 
-    ip4_addr_t src_ip;
-    src_ip.addr = ip_header->src.addr;
+    // ip4_addr_t src_ip;
+    // src_ip.addr = ip_header->src.addr;
 
-    // Convert IP address to host format (little-endian if needed)
-    uint32_t addr_ = ntohl(src_ip.addr); // Convert address to host format
+    // // Convert IP address to host format (little-endian if needed)
+    // uint32_t addr_ = ntohl(src_ip.addr); // Convert address to host format
 
-    // Extract octets
-    uint8_t octet1_ = (addr_ >> 24) & 0xFF; // First octet
-    uint8_t octet2_ = (addr_ >> 16) & 0xFF; // Second octet
+    // // Extract octets
+    // uint8_t octet1_ = (addr_ >> 24) & 0xFF; // First octet
+    // uint8_t octet2_ = (addr_ >> 16) & 0xFF; // Second octet
 
-    // Print IP address for debugging
-    ESP_LOGI(TAG, "SRC IP: %d.%d.%d.%d", 
-        octet1_, octet2_, (int)((addr_ >> 8) & 0xFF), (int)(addr_ & 0xFF));
+    // // Print IP address for debugging
+    // ESP_LOGD(TAG, "SRC IP: %d.%d.%d.%d", 
+    //     octet1_, octet2_, (int)((addr_ >> 8) & 0xFF), (int)(addr_ & 0xFF));
 
-    // Print destination IP address
-    ip4_addr_t dest_ip;
-    dest_ip.addr = ip_header->dest.addr;
+    // // Print destination IP address
+    // ip4_addr_t dest_ip;
+    // dest_ip.addr = ip_header->dest.addr;
 
-    // Convert IP address to host format (little-endian if needed)
-    uint32_t addr = ntohl(dest_ip.addr); // Convert address to host format
+    // // Convert IP address to host format (little-endian if needed)
+    // uint32_t addr = ntohl(dest_ip.addr); // Convert address to host format
 
-    // Extract octets
-    uint8_t octet1 = (addr >> 24) & 0xFF; // First octet
-    uint8_t octet2 = (addr >> 16) & 0xFF; // Second octet
+    // // Extract octets
+    // uint8_t octet1 = (addr >> 24) & 0xFF; // First octet
+    // uint8_t octet2 = (addr >> 16) & 0xFF; // Second octet
 
-    // Print IP address for debugging
-    ESP_LOGI(TAG, "Destination IP: %d.%d.%d.%d", 
-        octet1, octet2, (int)((addr >> 8) & 0xFF), (int)(addr & 0xFF));
+    // // Print IP address for debugging
+    // ESP_LOGD(TAG, "Destination IP: %d.%d.%d.%d", 
+    //     octet1, octet2, (int)((addr >> 8) & 0xFF), (int)(addr & 0xFF));
 
     // Filter by subnet 192.170.x.x
-    if (octet1 != 192 || octet2 != 170) {
-        ESP_LOGW(TAG, "Discarding packet not in 192.170.x.x subnet.");
-        return ESP_OK;
-    }
+    // if (octet1 != 192 || octet2 != 170) {
+    //     ESP_LOGW(TAG, "Discarding packet not in 192.170.x.x subnet.");
+    //     return ESP_OK;
+    // }
 
     // Total IP packet size from header
     u16_t iphdr_len = lwip_ntohs(IPH_LEN(ip_header));
@@ -106,7 +106,8 @@ esp_err_t ring_link_rx_netif_receive(ring_link_payload_t *p)
     q->next = NULL;
     q->len = iphdr_len;
     q->tot_len = iphdr_len;
-    ip4_debug_print(q);
+    
+    //ip4_debug_print(q);
 
     // Pass pbuf to esp_netif
     error = esp_netif_receive(ring_link_rx_netif, q, q->tot_len, NULL);

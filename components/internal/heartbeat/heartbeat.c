@@ -4,32 +4,31 @@ static const char *TAG = "==> heartbeat";
 
 static bool s_node_online = false;
 static int s_heartbeat_id = 0;
-static int s_failure_count = 0;
+static int s_fail_streak = 0;
 
-static void online_board_callback(){
+static void node_online_callback(){
     ESP_LOGI(TAG, "Node is ONLINE.");
     s_heartbeat_id = 0;
 }
 
-static void offline_board_callback(){
+static void node_offline_callback(){
     ESP_LOGE(TAG, "Maximum failures reached. Node considered OFFLINE.");
 }
 
 static void heartbeat_callback() {
     bool succeded = broadcast_to_siblings(HEARTBEAT_PAYLOAD, sizeof(HEARTBEAT_PAYLOAD));
-
     if (succeded) {
-        s_failure_count = 0;  // reset counter after each success
-        ESP_LOGD(TAG, "Heartbeat %d succeded.", s_heartbeat_id);
+        s_fail_streak = 0;  // reset counter after each success
+        ESP_LOGD(TAG, "Heartbeat %d succeeded.", s_heartbeat_id);
         if (!s_node_online) {
-            online_board_callback();
+            node_online_callback();
             s_node_online = true;
         }
     } else {
-        s_failure_count++;
-        ESP_LOGW(TAG, "Heartbeat %d failed. Failure #%d", s_heartbeat_id, s_failure_count);
-        if (s_node_online && (s_failure_count >= HEARTBEAT_MAX_FAILURES)) {
-            offline_board_callback();
+        s_fail_streak++;
+        ESP_LOGW(TAG, "Heartbeat %d failed. Failure #%d", s_heartbeat_id, s_fail_streak);
+        if (s_node_online && (s_fail_streak >= HEARTBEAT_FAIL_THRESHOLD)) {
+            node_offline_callback();
             s_node_online = false;
         }
     }

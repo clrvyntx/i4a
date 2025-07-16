@@ -49,12 +49,17 @@ esp_err_t wifi_netif_init(void)
                                                         NULL,
                                                         NULL));
 #ifdef CONFIG_WIFI_TEST_MODE
-    ESP_LOGI(WIFI_TAG, "TEST_MODE: wifi_netif_init: I'm AP! Configuring as AP.");
-    wifi_ap_netif_init();
+    if (config_mode_is(CONFIG_MODE_ACCESS_POINT) || config_orientation_is(CONFIG_ORIENTATION_NORTH)) {
+        ESP_LOGI(WIFI_TAG, "TEST_MODE: wifi_netif_init: I'm AP! Configuring as AP.");
+        wifi_ap_netif_init();
+    } else {
+        ESP_LOGI(WIFI_TAG, "TEST_MODE: wifi_netif_init: I'm not root! I'm gonna be a STAr!");
+        wifi_sta_netif_init();
+    }
 #endif
 
 #ifdef CONFIG_WIFI_NORMAL_MODE
-    if (config_is_access_point()) {
+    if (config_mode_is(CONFIG_MODE_ACCESS_POINT)) {
         ESP_LOGI(WIFI_TAG, "wifi_netif_init: I'm AP! Configuring as AP.");
         wifi_ap_netif_init();
     } else {
@@ -110,8 +115,8 @@ esp_err_t get_wifi_ip_info(esp_netif_ip_info_t *ip_info) {
     }
 
     uint8_t last_octet = mac[5];
-    ip_info->ip.addr = ESP_IP4TOADDR(CONFIG_WIFI_AP_IP_FIRST_OCTET, CONFIG_WIFI_AP_IP_SECOND_OCTET, last_octet, 1);
-    ip_info->gw.addr = ESP_IP4TOADDR(CONFIG_WIFI_AP_IP_FIRST_OCTET, CONFIG_WIFI_AP_IP_SECOND_OCTET, last_octet, 1);
+    ip_info->ip.addr = ESP_IP4TOADDR(CONFIG_WIFI_AP_IP_FIRST_OCTET, 168, config_get_id() + 1, 1);
+    ip_info->gw.addr = ESP_IP4TOADDR(CONFIG_WIFI_AP_IP_FIRST_OCTET, 168, config_get_id() + 1, 1);
     ip_info->netmask.addr = ESP_IP4TOADDR(CONFIG_WIFI_AP_NETMASK_FIRST_OCTET, 
                                           CONFIG_WIFI_AP_NETMASK_SECOND_OCTET, 
                                           CONFIG_WIFI_AP_NETMASK_THIRD_OCTET, 
