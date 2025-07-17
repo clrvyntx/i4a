@@ -16,8 +16,7 @@
 ## 2. Internal Communication
 
 ## 2.1 Low-Level Protocol
-At the very bottom, this project rely on SPI for communication. aunque se puede configurar ya que el codigo permite extenderlo a otro tipos de comunicacion de bajo nivel siempre y cuando se definan las primitivas:
-PRIMITIVAS
+At the very bottom, this project relies on SPI for communication, although it can be changed as long as the primitives for the new low-level communication protocol get implemented.
 
 Message format structure:
 
