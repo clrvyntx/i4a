@@ -62,36 +62,6 @@ Payload Types:
 - `INTERNAL_HEARTBEAT (0x12)`: Monitoring heartbeat
 - `ESP_NETIF (0x80)`: Network communication
 
-
-#### Thread-safety
-
-The SPI driver and most of low-level drivers are not thread-safe so we added different serialization mechanisms to ensure a correct operation.
-
-<-- lowlevel IO diagram-->
-
-- Reception: Considering that reception is a constant polling operation regardless of the type of message, we use a single task that is continuously calling lowlevelreceive and sends the message to a queue. Note that this is the only task where the function lowlevelreceive is called.
-In a different task, this queue is consumed and sent to specific queues based on the buffer type field to be consumed by the correct handler.
-
-<-- receive pipeline diagram -->
-
-- Transmission: As opposed to the reception, the lowleveltransmit operation is called on-demand from different parts of the code, so we added a mutex lock around the shared resource to ensure thread-safety.
-
-
-
-### 2.2 Internal Protocol
-- handler diagram
-
-
-On top of this, we have 2 applications running:
-- heartbeat
-- broadcast
-
-### 2.3 Network Interface
-
-intro for esp-netif
-primitives
-
-
 ### 3. Node Configuration
 
 GPIO-based configuration system:
