@@ -52,8 +52,8 @@ For detailed installation instructions, visit [ESP-IDF Get Started Guide](https:
 
 1. Clone this repo and cd into it:
    ```bash
-   git clone https://github.com/changeemma/esp32-internet-for-all.git
-   cd esp32-internet-for-all
+   git clone https://github.com/clrvyntx/i4a
+   cd i4a
    ```
 
 2. Set up the ESP-IDF environment:
