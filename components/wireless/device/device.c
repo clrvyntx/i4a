@@ -13,6 +13,7 @@
 #include "device.h"
 
 static const char *LOGGING_TAG = "device";
+static const char *dev_orientation[5] = {"_N_", "_S_", "_E_", "_W_", "_C_"};
 static bool is_on_connect_loop = false;
 
 // Function to initialize NVS (non-volatile storage)
@@ -61,19 +62,19 @@ void device_init(DevicePtr device_ptr, const char *device_uuid, uint8_t device_o
   device_ptr->station_ptr = &device_ptr->station; 
 
   if (mode == AP) {
-    device_init_ap(device_ptr, ap_channel_to_emit, wifi_network_prefix, device_uuid, wifi_network_password, ap_max_sta_connections);
+    device_init_ap(device_ptr, ap_channel_to_emit, wifi_network_prefix, device_uuid, wifi_network_password, ap_max_sta_connections, device_orientation);
   } else if (mode == STATION) {
     device_init_station(device_ptr, wifi_network_prefix, device_orientation, device_uuid, wifi_network_password);
   }
 
 }
 
-void device_init_ap(DevicePtr device_ptr, uint8_t channel, const char *wifi_network_prefix ,const char *device_uuid, const char *password, uint8_t max_sta_connections) {
+void device_init_ap(DevicePtr device_ptr, uint8_t channel, const char *wifi_network_prefix ,const char *device_uuid, const char *password, uint8_t max_sta_connections, uint16_t orientation) {
   // Generate the wifi ssid
   char wifi_ssid[32];
   memset(wifi_ssid, 0, sizeof(wifi_ssid));
   strcpy(wifi_ssid, wifi_network_prefix);
-  strcat(wifi_ssid, "_");
+  strcat(wifi_ssid, dev_orientation[orientation]);
   strcat(wifi_ssid, device_uuid);
 
   ESP_LOGI(LOGGING_TAG, "Initializing AP with SSID: %s", wifi_ssid);
