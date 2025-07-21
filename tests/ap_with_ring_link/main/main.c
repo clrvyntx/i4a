@@ -11,39 +11,48 @@
 
 static const char *TAG = "==> main";
 
-void app_main(void) {
+void generate_uuid_from_mac(char *uuid_out, size_t len) {
+    uint8_t mac[6];
+    esp_read_mac(mac, ESP_MAC_WIFI_SOFTAP);
+    snprintf(uuid_out, len, "%02X%02X%02X", mac[3], mac[4], mac[5]);
+}
 
+void generate_subnet_from_id(uint8_t device_id, char *cidr_out, char *gateway_out, size_t len) {
+    snprintf(cidr_out, len, "10.%d.0.1", device_id);
+    snprintf(gateway_out, len, "10.%d.0.1", device_id);
+}
+
+void app_main(void) {
     config_setup();
     config_print();
 
     Device device;
     Device *device_ptr = &device;
 
-    const char *device_uuid = "ESP_01";
-    const uint8_t device_orientation = 0;
+    char device_uuid[7];
+    generate_uuid_from_mac(device_uuid, sizeof(device_uuid));
 
-    const char *wifi_network_prefix = "AP_Test";
-    const char *wifi_network_password = "test123456";
+    uint8_t device_orientation = config_get_id();
 
-    const uint8_t ap_channel_to_emit = 6;
-    const uint8_t ap_max_sta_connections = 4;
+    char *wifi_network_prefix = "I4A";
+    char *wifi_network_password = "test123456";
 
-    const char *network_cidr = "10.0.0.1";
-    const char *network_gateway = "10.0.0.1";
-    const char *network_mask = "255.0.0.0";
+    uint8_t ap_channel_to_emit = (rand() % 11) + 1;
+    uint8_t ap_max_sta_connections = 4;
 
-    const uint8_t device_is_root = 1;
+    char network_cidr[16];
+    char network_gateway[16];
+    char *network_mask = "255.0.0.0";
+
+    generate_subnet_from_id(device_orientation, network_cidr, network_gateway, sizeof(network_cidr));
+
+    uint8_t device_is_root = 1;
     Device_Mode mode = AP;
 
     ESP_ERROR_CHECK(wifi_init());
-
     ESP_ERROR_CHECK(ring_link_init());
 
     device_init(device_ptr, device_uuid, device_orientation, wifi_network_prefix, wifi_network_password, ap_channel_to_emit, ap_max_sta_connections, device_is_root, mode);
     device_set_network_ap(device_ptr, network_cidr, network_gateway, network_mask);
     device_start_ap(device_ptr);
-
-    vTaskDelay(pdMS_TO_TICKS(10000));
-    device_reset(device_ptr);
-
 }
