@@ -17,9 +17,9 @@ void generate_uuid_from_mac(char *uuid_out, size_t len) {
     snprintf(uuid_out, len, "%02X%02X%02X", mac[3], mac[4], mac[5]);
 }
 
-void generate_subnet_from_id(uint8_t device_id, char *cidr_out, char *gateway_out, size_t len) {
-    snprintf(cidr_out, len, "10.%d.0.1", device_id);
-    snprintf(gateway_out, len, "10.%d.0.1", device_id);
+void generate_subnet_from_id(uint8_t device_id, char *cidr_out, char *gateway_out, size_t len, uint8_t is_root) {
+    snprintf(cidr_out, len, "10.%d.0.1", device_id * 2 + is_root);
+    snprintf(gateway_out, len, "10.%d.0.1", device_id * 2 + is_root);
 }
 
 void app_main(void) {
@@ -28,11 +28,13 @@ void app_main(void) {
 
     Device device;
     Device *device_ptr = &device;
+    Device_Mode mode = AP;
 
     char device_uuid[7];
     generate_uuid_from_mac(device_uuid, sizeof(device_uuid));
 
     uint8_t device_orientation = config_get_id();
+    uint8_t device_is_root = (uint8_t)config_mode_is(CONFIG_MODE_ROOT);
 
     char *wifi_network_prefix = "I4A";
     char *wifi_network_password = "test123456";
@@ -44,10 +46,7 @@ void app_main(void) {
     char network_gateway[16];
     char *network_mask = "255.255.0.0";
 
-    generate_subnet_from_id(device_orientation, network_cidr, network_gateway, sizeof(network_cidr));
-
-    uint8_t device_is_root = 1;
-    Device_Mode mode = AP;
+    generate_subnet_from_id(device_orientation, network_cidr, network_gateway, sizeof(network_cidr), device_is_root);
 
     ESP_ERROR_CHECK(wifi_init());
     ESP_ERROR_CHECK(ring_link_init());
