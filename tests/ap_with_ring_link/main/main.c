@@ -42,7 +42,7 @@ void app_main(void) {
 
     char network_cidr[16];
     char network_gateway[16];
-    char *network_mask = "255.0.0.0";
+    char *network_mask = "255.255.0.0";
 
     generate_subnet_from_id(device_orientation, network_cidr, network_gateway, sizeof(network_cidr));
 
