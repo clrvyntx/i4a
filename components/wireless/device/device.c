@@ -211,3 +211,18 @@ void device_restart_station(DevicePtr device_ptr) {
 void device_stop_station(DevicePtr device_ptr) {
   station_stop(device_ptr->station_ptr);
 };
+
+esp_netif_t *device_get_netif(DevicePtr device_ptr) {
+  if (!device_ptr) return NULL;
+
+  switch (device_ptr->mode) {
+    case AP:
+      return device_ptr->access_point_ptr->netif;
+
+    case STATION:
+      return device_ptr->station_ptr->netif;
+
+    default:
+      return NULL;
+  }
+}
