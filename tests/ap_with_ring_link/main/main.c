@@ -48,7 +48,7 @@ void app_main(void) {
 
     generate_subnet_from_id(device_orientation, network_cidr, network_gateway, sizeof(network_cidr), device_is_root);
 
-    ESP_ERROR_CHECK(wifi_init());
+    ESP_ERROR_CHECK(device_wifi_init());
     ESP_ERROR_CHECK(ring_link_init());
 
     device_init(device_ptr, device_uuid, device_orientation, wifi_network_prefix, wifi_network_password, ap_channel_to_emit, ap_max_sta_connections, device_is_root, mode);
