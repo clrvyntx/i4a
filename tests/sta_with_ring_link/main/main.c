@@ -28,7 +28,7 @@ void app_main(void) {
     uint8_t device_is_root = 0;
     Device_Mode mode = STATION;
 
-    ESP_ERROR_CHECK(wifi_init());
+    ESP_ERROR_CHECK(device_wifi_init());
 
     ESP_ERROR_CHECK(ring_link_init());
 
