@@ -37,7 +37,7 @@ struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t 
         return (struct netif *)esp_netif_get_netif_impl(get_ring_link_tx_netif());
     }
 
-    uint8_t orientation = device->orientation;
+    uint8_t orientation = device->device_orientation;
     uint8_t is_root = device->device_is_root;
 
     ESP_LOGD(TAG, "Device orientation: %d, is_root: %d", orientation, is_root);
