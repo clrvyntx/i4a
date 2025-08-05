@@ -28,7 +28,7 @@ static esp_err_t init_nvs() {
 }
 
 // Function to initialize the Wi-Fi interface
-esp_err_t wifi_init() {
+esp_err_t device_wifi_init() {
   // Initialize NVS
   esp_err_t ret = init_nvs();
   if (ret != ESP_OK) {
