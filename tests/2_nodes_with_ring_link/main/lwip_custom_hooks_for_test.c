@@ -77,9 +77,11 @@ struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t 
 
             uint8_t mac[6];
             if (get_first_sta_mac(mac)) {
-                // Insert static ARP entry for dest IP -> MAC on AP netif
-                struct netif *ap_netif = esp_netif_get_netif_impl(device_get_netif(device));
-                err_t err = etharp_add_static_entry(dest, mac, ap_netif);
+                // Insert static ARP entry for dest IP -> MAC
+                struct eth_addr eth_mac;
+                memcpy(eth_mac.addr, mac, ETH_HWADDR_LEN);
+
+                err_t err = etharp_add_static_entry(dest, &eth_mac);
                 if (err == ERR_OK) {
                     ESP_LOGI(TAG, "Added static ARP entry: %s -> " MACSTR,
                              ip4addr_ntoa(dest), MAC2STR(mac));
