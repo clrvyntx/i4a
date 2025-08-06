@@ -56,6 +56,8 @@ void config_print(void);
 
 config_id_t config_get_id(void);
 
+config_orientation_t config_get_orientation(void);
+
 esp_netif_ip_info_t config_get_rx_ip_info(void);
 
 esp_netif_ip_info_t config_get_tx_ip_info(void);
