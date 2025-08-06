@@ -58,13 +58,12 @@ void config_setup(void)
          (config_bits >> 1) & 1,
          config_bits & 1);
     s_config.id = (config_id_t) config_bits;
+    s_config.orientation = (config_orientation_t)(config_bits & 0x03);
 
     if ((config_bits >> 2) == 0) {
         s_config.mode = CONFIG_MODE_PEER_LINK;
-        s_config.orientation = (config_orientation_t) config_bits;
     } else {
         s_config.mode = (config_mode_t) config_bits;
-        s_config.orientation = CONFIG_ORIENTATION_NONE;
     }
     s_config.rx_ip_addr = ESP_IP4TOADDR(192, 168, 0, (int)(s_config.orientation) + 1);
     s_config.tx_ip_addr = ESP_IP4TOADDR(192, 168, 0, (int)(s_config.orientation) + 10);
@@ -73,6 +72,11 @@ void config_setup(void)
 config_id_t config_get_id(void)
 {
     return s_config.id;
+}
+
+config_orientation_t config_get_orientation(void)
+{
+    return s_config.orientation;
 }
 
 esp_netif_ip_info_t config_get_rx_ip_info(void)
