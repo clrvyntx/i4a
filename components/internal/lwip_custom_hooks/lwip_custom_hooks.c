@@ -3,7 +3,7 @@
 
 static const char *TAG = "custom_ip4_route_src_hook";
 
-bool get_higher_priority_mask(ip4_addr_t* mask1, ip4_addr_t* mask2)
+static bool get_higher_priority_mask(ip4_addr_t* mask1, ip4_addr_t* mask2)
 {
     return ntohl(mask1->addr) > ntohl(mask2->addr);
 }
@@ -27,8 +27,8 @@ struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t 
             if (higher_priority_netif == NULL ||
                 get_higher_priority_mask(netif_ip4_netmask(netif), netif_ip4_netmask(higher_priority_netif))) {
                 ESP_LOGD(TAG, " -> Nueva mejor interfaz encontrada");
-                higher_priority_netif = netif;
-            }
+            higher_priority_netif = netif;
+                }
         }
     }
 
@@ -41,8 +41,8 @@ struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t 
                 !ip4_addr_isany_val(*netif_ip4_addr(netif)) &&
                 ip4_addr_cmp(netif_ip4_gw(higher_priority_netif), netif_ip4_addr(netif))) {
                 ESP_LOGD(TAG, "Interfaz seleccionada (por gateway): %s", ip4addr_ntoa(netif_ip4_addr(netif)));
-                return netif;
-            }
+            return netif;
+                }
         }
     } else {
         ESP_LOGW(TAG, "No se encontró interfaz con red coincidente.");
@@ -56,8 +56,8 @@ struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t 
                 !ip4_addr_isany_val(*netif_ip4_addr(netif)) &&
                 ip4_addr_cmp(src, netif_ip4_addr(netif))) {
                 ESP_LOGD(TAG, "Interfaz seleccionada (por origen): %s", ip4addr_ntoa(netif_ip4_addr(netif)));
-                return netif;
-            }
+            return netif;
+                }
         }
     }
 
