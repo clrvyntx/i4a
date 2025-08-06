@@ -9,6 +9,8 @@
 #include "device.h"
 #include "server.h"
 
+#define IS_ROOT 0
+
 static const char *TAG = "==> main";
 
 void generate_uuid_from_mac(char *uuid_out, size_t len) {
@@ -36,7 +38,7 @@ void app_main(void) {
     generate_uuid_from_mac(device_uuid, sizeof(device_uuid));
 
     uint8_t device_orientation = config_get_orientation();
-    uint8_t device_is_root = (uint8_t)config_mode_is(CONFIG_MODE_ROOT);
+    uint8_t device_is_root = IS_ROOT;
 
     char *wifi_network_prefix = "I4A";
     char *wifi_network_password = "test123456";
