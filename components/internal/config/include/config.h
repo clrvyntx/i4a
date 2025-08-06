@@ -19,6 +19,7 @@ typedef enum __attribute__((__packed__)) {
     CONFIG_ORIENTATION_SOUTH = 1, // 001
     CONFIG_ORIENTATION_EAST  = 2, // 010
     CONFIG_ORIENTATION_WEST  = 3, // 011
+    CONFIG_ORIENTATION_CENTER = 4, // 100
     CONFIG_ORIENTATION_NONE  = 9,
 } config_orientation_t;
 
