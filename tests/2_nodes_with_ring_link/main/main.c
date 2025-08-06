@@ -26,7 +26,7 @@ void app_main(void) {
     config_setup();
     config_print();
 
-    ESP_ERROR_CHECK(wifi_init());
+    ESP_ERROR_CHECK(device_wifi_init());
     ESP_ERROR_CHECK(ring_link_init());
 
     Device device;
