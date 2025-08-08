@@ -8,23 +8,16 @@ static const char *LOGGING_TAG = "tcp_client";
 static int server_sock = -1;
 static bool sta_is_up = false;
 
-static bool get_subnet_first_ip(char *ip_str, size_t ip_str_len) {
+static bool get_gateway_ip(char *ip_str, size_t ip_str_len) {
     esp_netif_ip_info_t ip_info;
     esp_netif_t *netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
 
     if (!netif || esp_netif_get_ip_info(netif, &ip_info) != ESP_OK) {
-        ESP_LOGE(LOGGING_TAG, "Failed to get STA IP info");
+        ESP_LOGE(LOGGING_TAG, "Failed to get gateway IP");
         return false;
     }
 
-    // Mask IP to get subnet base
-    uint32_t subnet_base = ip_info.ip.addr & ip_info.netmask.addr;
-
-    // Add 1 to get the first usable IP (.1)
-    struct in_addr first_ip;
-    first_ip.s_addr = subnet_base | htonl(1); // .1
-
-    inet_ntoa_r(first_ip, ip_str, ip_str_len);
+    inet_ntoa_r(ip_info.gw, ip_str, ip_str_len);
     return true;
 }
 
@@ -54,7 +47,7 @@ static void tcp_client_task(void *pvParameters) {
 
     while (sta_is_up) {
 
-        if (!get_subnet_first_ip(gateway_ip, sizeof(gateway_ip))) {
+        if (!get_gateway_ip(gateway_ip, sizeof(gateway_ip))) {
             ESP_LOGE(LOGGING_TAG, "Failed to get gateway IP, retrying...");
             vTaskDelay(RETRY_DELAY_MS / portTICK_PERIOD_MS);
             continue;
