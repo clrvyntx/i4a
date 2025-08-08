@@ -69,7 +69,6 @@ void device_restart_station(DevicePtr device_ptr);
 void device_stop_station(DevicePtr device_ptr);
 void device_set_network_ap(DevicePtr device_ptr, const char *network_cidr, const char *network_gateway, const char *network_mask);
 void device_destroy_netif(DevicePtr device_ptr);
-DevicePtr get_current_device();
 esp_netif_t *device_get_netif(DevicePtr device_ptr);
 // void device_start_ap_station(DevicePtr device_ptr);
 // void device_stop_ap_station(DevicePtr device_ptr);
