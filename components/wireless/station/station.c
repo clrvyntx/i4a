@@ -116,6 +116,33 @@ void station_start(StationPtr stationPtr) {
   ESP_ERROR_CHECK(esp_wifi_start());
 }
 
+/* MANUAL FIX FOR FAKE GATEWAY, change this into a routine that connects to AP first -> looks up subnet -> disconnects then reconnects with manual DHCP with IP .2 and GW .1
+
+void station_connect(StationPtr stationPtr) {
+  s_retry_num = 0;
+  stationPtr->state = s_active;
+  ESP_LOGI(LOGGING_TAG, "Connecting to %s...", stationPtr->wifi_config.sta.ssid);
+
+  // Stop DHCP so we can set static IP
+  ESP_ERROR_CHECK(esp_netif_dhcpc_stop(stationPtr->netif));
+
+  // Set static IP, gateway, and subnet mask
+  esp_netif_ip_info_t ip_info;
+  IP4_ADDR(&ip_info.ip,      10, 10, 0, 2);   // STA IP
+  IP4_ADDR(&ip_info.gw,      10, 10, 0, 1);   // Gateway (AP IP)
+  IP4_ADDR(&ip_info.netmask, 255, 255, 0, 0); // Subnet mask
+
+  ESP_ERROR_CHECK(esp_netif_set_ip_info(stationPtr->netif, &ip_info));
+
+  // Continue with Wi-Fi setup
+  ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &stationPtr->wifi_config));
+  ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, stationPtr));
+  ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, stationPtr));
+  ESP_ERROR_CHECK(esp_wifi_connect());
+}
+
+*/
+
 void station_connect(StationPtr stationPtr) {
   s_retry_num = 0;
   stationPtr->state = s_active;
