@@ -9,68 +9,43 @@
 #include "device.h"
 #include "server.h"
 
+#define IS_ROOT 0
+
 static const char *TAG = "==> main";
 
-bool get_higher_priority_mask(ip4_addr_t* mask1, ip4_addr_t* mask2)
-{
-    return ntohl(mask1->addr) > ntohl(mask2->addr);
-}
+Device device;
+Device *device_ptr = &device;
+Device_Mode mode = AP;
 
-struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t *dest)
-{
-    struct netif *netif = NULL;
-    struct netif *higher_priority_netif = NULL;
+struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t *dest) {
+    ESP_LOGI(TAG, "Routing hook called for dest: %s", ip4addr_ntoa(dest));
 
-    if ((dest != NULL) && !ip4_addr_isany(dest)) {
-        ESP_LOGD(TAG, "Evaluando rutas para destino: %s", ip4addr_ntoa(dest));
-
-        for (netif = netif_list; netif != NULL; netif = netif->next) {
-            if (!netif_is_up(netif) || !netif_is_link_up(netif)) continue;
-            if (!ip4_addr_netcmp(dest, netif_ip4_addr(netif), netif_ip4_netmask(netif))) continue;
-
-            ESP_LOGD(TAG, "Candidato: %s, mascara: %s",
-                     ip4addr_ntoa(netif_ip4_addr(netif)),
-                     ip4addr_ntoa(netif_ip4_netmask(netif)));
-
-            if (higher_priority_netif == NULL ||
-                get_higher_priority_mask(netif_ip4_netmask(netif), netif_ip4_netmask(higher_priority_netif))) {
-                ESP_LOGD(TAG, " -> Nueva mejor interfaz encontrada");
-            higher_priority_netif = netif;
-                }
-        }
+    if (!device_ptr) {
+        ESP_LOGW(TAG, "No device found, falling back to SPI");
+        return (struct netif *)esp_netif_get_netif_impl(get_ring_link_tx_netif());
     }
 
-    if (higher_priority_netif != NULL) {
-        ESP_LOGD(TAG, "Buscando interfaz con gateway coincidente: %s",
-                 ip4addr_ntoa(netif_ip4_gw(higher_priority_netif)));
+    esp_netif_t *ap_netif = device_get_netif(device_ptr);
+    esp_netif_ip_info_t ip_info;
 
-        for (netif = netif_list; netif != NULL; netif = netif->next) {
-            if (netif_is_up(netif) && netif_is_link_up(netif) &&
-                !ip4_addr_isany_val(*netif_ip4_addr(netif)) &&
-                ip4_addr_cmp(netif_ip4_gw(higher_priority_netif), netif_ip4_addr(netif))) {
-                ESP_LOGD(TAG, "Interfaz seleccionada (por gateway): %s", ip4addr_ntoa(netif_ip4_addr(netif)));
-            return netif;
-                }
-        }
+    if (esp_netif_get_ip_info(ap_netif, &ip_info) != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to get IP info from AP netif");
+        return (struct netif *)esp_netif_get_netif_impl(get_ring_link_tx_netif());
+    }
+
+    // Cast to ip4_addr_t* for logging
+    ESP_LOGI(TAG, "Device AP IP: %s, Netmask: %s",
+             ip4addr_ntoa((const ip4_addr_t *)&ip_info.ip),
+             ip4addr_ntoa((const ip4_addr_t *)&ip_info.netmask));
+
+    // Compare destination with our subnet
+    if (ip4_addr_netcmp(dest, (const ip4_addr_t *)&ip_info.ip, (const ip4_addr_t *)&ip_info.netmask)) {
+        ESP_LOGI(TAG, "Dest is in my subnet -> route via AP");
+        return (struct netif *)esp_netif_get_netif_impl(ap_netif);
     } else {
-        ESP_LOGW(TAG, "No se encontró interfaz con red coincidente.");
+        ESP_LOGI(TAG, "Dest is NOT in my subnet -> route via SPI");
+        return (struct netif *)esp_netif_get_netif_impl(get_ring_link_tx_netif());
     }
-
-    if ((src != NULL) && !ip4_addr_isany(src)) {
-        ESP_LOGD(TAG, "Buscando interfaz por IP de origen: %s", ip4addr_ntoa(src));
-
-        for (netif = netif_list; netif != NULL; netif = netif->next) {
-            if (netif_is_up(netif) && netif_is_link_up(netif) &&
-                !ip4_addr_isany_val(*netif_ip4_addr(netif)) &&
-                ip4_addr_cmp(src, netif_ip4_addr(netif))) {
-                ESP_LOGD(TAG, "Interfaz seleccionada (por origen): %s", ip4addr_ntoa(netif_ip4_addr(netif)));
-            return netif;
-                }
-        }
-    }
-
-    ESP_LOGW(TAG, "No se encontró ninguna interfaz para enrutar el paquete.");
-    return NULL;
 }
 
 void generate_uuid_from_mac(char *uuid_out, size_t len) {
@@ -88,15 +63,11 @@ void app_main(void) {
     config_setup();
     config_print();
 
-    Device device;
-    Device *device_ptr = &device;
-    Device_Mode mode = AP;
-
     char device_uuid[7];
     generate_uuid_from_mac(device_uuid, sizeof(device_uuid));
 
     uint8_t device_orientation = config_get_orientation();
-    uint8_t device_is_root = 0;
+    uint8_t device_is_root = IS_ROOT;
 
     char *wifi_network_prefix = "I4A";
     char *wifi_network_password = "test123456";
