@@ -104,7 +104,7 @@ void app_main(void) {
     char device_uuid[7];
     generate_uuid_from_mac(device_uuid, sizeof(device_uuid));
 
-    uint8_t device_orientation = config_get_orientation();
+    uint8_t device_orientation = 2;
     uint8_t device_is_root = IS_ROOT;
 
     char *wifi_network_prefix = "I4A";
@@ -117,7 +117,7 @@ void app_main(void) {
     char *network_gateway;
     char *network_mask = "255.255.0.0";
 
-    if(device_orientation == 4){ // Center
+    if(device_orientation == CONFIG_ORIENTATION_CENTER){
         Device_Mode mode = AP;
 
         if(device_is_root){
@@ -134,7 +134,7 @@ void app_main(void) {
         device_start_ap(device_ptr);
     }
 
-    if(device_orientation == 2 && device_is_root){ // West and root
+    if(device_orientation == CONFIG_ORIENTATION_EAST && device_is_root){
         Device_Mode mode = AP;
 
         network_cidr = "10.10.0.1";
@@ -145,7 +145,7 @@ void app_main(void) {
         device_start_ap(device_ptr);
     }
 
-    if(device_orientation == 3 && !device_is_root){ // East and non-root
+    if(device_orientation == CONFIG_ORIENTATION_WEST && !device_is_root){
         Device_Mode mode = STATION;
 
         device_init(device_ptr, device_uuid, device_orientation, wifi_network_prefix, wifi_network_password, ap_channel_to_emit, ap_max_sta_connections, device_is_root, mode);
