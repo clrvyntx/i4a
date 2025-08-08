@@ -16,25 +16,6 @@ static const char *TAG = "==> main";
 Device device;
 Device *device_ptr = &device;
 
-bool get_first_sta_mac(uint8_t mac[6]) {
-    wifi_sta_list_t sta_list = {0};
-    esp_err_t err = esp_wifi_ap_get_sta_list(&sta_list);
-    if (err != ESP_OK) {
-        ESP_LOGW(TAG, "Failed to get STA list: %d", err);
-        return false;
-    }
-
-    if (sta_list.num == 0) {
-        ESP_LOGW(TAG, "No stations connected");
-        return false;
-    }
-
-    // Get MAC of the first station
-    memcpy(mac, sta_list.sta[0].mac, 6);
-    ESP_LOGI(TAG, "First connected STA MAC: " MACSTR, MAC2STR(mac));
-    return true;
-}
-
 struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t *dest) {
     ESP_LOGI(TAG, "Routing hook called for dest: %s", ip4addr_ntoa(dest));
 
@@ -80,24 +61,6 @@ struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t 
 
         if (ip4_addr_netcmp(dest, &my_subnet, &mask)) {
             ESP_LOGI(TAG, "Dest is other node -> route via AP");
-
-            uint8_t mac[6];
-            if (get_first_sta_mac(mac)) {
-                // Insert static ARP entry for dest IP -> MAC
-                struct eth_addr eth_mac;
-                memcpy(eth_mac.addr, mac, ETH_HWADDR_LEN);
-
-                err_t err = etharp_add_static_entry(dest, &eth_mac);
-                if (err == ERR_OK) {
-                    ESP_LOGI(TAG, "Added static ARP entry: %s -> " MACSTR,
-                             ip4addr_ntoa(dest), MAC2STR(mac));
-                } else {
-                    ESP_LOGW(TAG, "Failed to add static ARP entry: %d", err);
-                }
-            } else {
-                ESP_LOGW(TAG, "Cannot add ARP entry, no STA MAC found");
-            }
-
             return (struct netif *)esp_netif_get_netif_impl(device_get_netif(device_ptr));
         } else {
             ESP_LOGI(TAG, "Dest is this node -> route via SPI");
@@ -121,7 +84,7 @@ struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t 
     }
 
     // === Default: fallback to ring link TX interface ===
-    ESP_LOGW(TAG, "Falling back to default routing interface");
+    ESP_LOGW(TAG, "Falling back to SPI interface");
     return (struct netif *)esp_netif_get_netif_impl(get_ring_link_tx_netif());
 }
 
@@ -129,11 +92,6 @@ void generate_uuid_from_mac(char *uuid_out, size_t len) {
     uint8_t mac[6];
     esp_read_mac(mac, ESP_MAC_WIFI_SOFTAP);
     snprintf(uuid_out, len, "%02X%02X%02X", mac[3], mac[4], mac[5]);
-}
-
-void generate_subnet_from_id(uint8_t device_id, char *cidr_out, char *gateway_out, size_t len, uint8_t is_root) {
-    snprintf(cidr_out, len, "10.%d.0.1", device_id * 2 + is_root);
-    snprintf(gateway_out, len, "10.%d.0.1", device_id * 2 + is_root);
 }
 
 void app_main(void) {
@@ -155,13 +113,21 @@ void app_main(void) {
     uint8_t ap_channel_to_emit = (rand() % 11) + 1;
     uint8_t ap_max_sta_connections = 4;
 
-    char network_cidr[16];
-    char network_gateway[16];
+    char *network_cidr;
+    char *network_gateway;
     char *network_mask = "255.255.0.0";
 
     if(device_orientation == 4){ // Center
         Device_Mode mode = AP;
-        generate_subnet_from_id(device_orientation, network_cidr, network_gateway, sizeof(network_cidr), device_is_root);
+
+        if(device_is_root){
+            network_cidr = "10.9.0.1";
+            network_gateway = "10.9.0.1";
+        } else {
+            network_cidr = "10.8.0.1";
+            network_gateway = "10.8.0.1";
+
+        }
 
         device_init(device_ptr, device_uuid, device_orientation, wifi_network_prefix, wifi_network_password, ap_channel_to_emit, ap_max_sta_connections, device_is_root, mode);
         device_set_network_ap(device_ptr, network_cidr, network_gateway, network_mask);
@@ -170,7 +136,9 @@ void app_main(void) {
 
     if(device_orientation == 2 && device_is_root){ // West and root
         Device_Mode mode = AP;
-        generate_subnet_from_id(device_orientation, network_cidr, network_gateway, sizeof(network_cidr), device_is_root);
+
+        network_cidr = "10.10.0.1";
+        network_gateway = "10.10.0.2"; // Fake gateway for rerouting to STA
 
         device_init(device_ptr, device_uuid, device_orientation, wifi_network_prefix, wifi_network_password, ap_channel_to_emit, ap_max_sta_connections, device_is_root, mode);
         device_set_network_ap(device_ptr, network_cidr, network_gateway, network_mask);
