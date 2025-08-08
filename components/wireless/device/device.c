@@ -53,6 +53,7 @@ void device_init(DevicePtr device_ptr, const char *device_uuid, uint8_t device_o
   device_ptr->mode = mode;
   device_ptr->state = d_inactive;
   device_ptr->device_is_root = device_is_root;
+  device_ptr->device_orientation = device_orientation;
 
   AccessPoint ap = {};
   device_ptr->access_point = ap;
