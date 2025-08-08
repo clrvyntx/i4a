@@ -216,10 +216,6 @@ void device_stop_station(DevicePtr device_ptr) {
   station_stop(device_ptr->station_ptr);
 };
 
-DevicePtr get_current_device() {
-  return current_device_ptr;
-}
-
 esp_netif_t *device_get_netif(DevicePtr device_ptr) {
   if (!device_ptr) {
     return NULL;
