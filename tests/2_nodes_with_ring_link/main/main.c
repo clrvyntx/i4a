@@ -104,7 +104,7 @@ void app_main(void) {
     char device_uuid[7];
     generate_uuid_from_mac(device_uuid, sizeof(device_uuid));
 
-    uint8_t device_orientation = 2;
+    uint8_t device_orientation = config_get_orientation();
     uint8_t device_is_root = IS_ROOT;
 
     char *wifi_network_prefix = "I4A";
