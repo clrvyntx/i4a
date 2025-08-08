@@ -70,16 +70,17 @@ struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t 
 
     // === Case 3: East and Not Root (device_orientation == 3 && !is_root) ===
     if (orientation == 3 && !is_root) {
-        IP4_ADDR(&my_subnet, 10, 9, 0, 0);
-        ESP_LOGI(TAG, "Device is east non-root, checking for center root subnet 10.9.0.0/16");
+        IP4_ADDR(&my_subnet, 10, 8, 0, 0);
+        ESP_LOGI(TAG, "Device is east non-root, checking for center non-root subnet 10.8.0.0/16");
 
         // Check if dest belongs to my subnet
         if (ip4_addr_netcmp(dest, &my_subnet, &mask)) {
-            ESP_LOGI(TAG, "Dest is other node -> route via STA");
-            return (struct netif *)esp_netif_get_netif_impl(device_get_netif(device_ptr));
-        } else {
             ESP_LOGI(TAG, "Dest is this node -> route via SPI");
-            return (struct netif *)esp_netif_get_netif_impl(get_ring_link_tx_netif());
+	    return (struct netif *)esp_netif_get_netif_impl(get_ring_link_tx_netif());
+
+        } else {
+            ESP_LOGI(TAG, "Dest is other node -> route via STA");
+	    return (struct netif *)esp_netif_get_netif_impl(device_get_netif(device_ptr));
         }
     }
 
