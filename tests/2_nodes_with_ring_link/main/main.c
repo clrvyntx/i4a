@@ -9,9 +9,12 @@
 #include "device.h"
 #include "server.h"
 
-#define IS_ROOT 0
+#define IS_ROOT 1
 
 static const char *TAG = "==> main";
+
+Device device;
+Device *device_ptr = &device;
 
 bool get_first_sta_mac(uint8_t mac[6]) {
     wifi_sta_list_t sta_list = {0};
@@ -35,14 +38,13 @@ bool get_first_sta_mac(uint8_t mac[6]) {
 struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t *dest) {
     ESP_LOGI(TAG, "Routing hook called for dest: %s", ip4addr_ntoa(dest));
 
-    DevicePtr device = get_current_device();
-    if (!device) {
+    if (!device_ptr) {
         ESP_LOGW(TAG, "No device found, falling back to default");
         return (struct netif *)esp_netif_get_netif_impl(get_ring_link_tx_netif());
     }
 
-    uint8_t orientation = device->device_orientation;
-    uint8_t is_root = device->device_is_root;
+    uint8_t orientation = device_ptr->device_orientation;
+    uint8_t is_root = device_ptr->device_is_root;
 
     ESP_LOGI(TAG, "Device orientation: %d, is_root: %d", orientation, is_root);
 
@@ -64,7 +66,7 @@ struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t 
         // Check if dest belongs to my subnet
         if (ip4_addr_netcmp(dest, &my_subnet, &mask)) {
             ESP_LOGI(TAG, "Dest is in my subnet -> route via AP");
-            return (struct netif *)esp_netif_get_netif_impl(device_get_netif(device));
+            return (struct netif *)esp_netif_get_netif_impl(device_get_netif(device_ptr));
         } else {
             ESP_LOGI(TAG, "Dest is NOT in my subnet -> route via SPI");
             return (struct netif *)esp_netif_get_netif_impl(get_ring_link_tx_netif());
@@ -96,7 +98,7 @@ struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t 
                 ESP_LOGW(TAG, "Cannot add ARP entry, no STA MAC found");
             }
 
-            return (struct netif *)esp_netif_get_netif_impl(device_get_netif(device));
+            return (struct netif *)esp_netif_get_netif_impl(device_get_netif(device_ptr));
         } else {
             ESP_LOGI(TAG, "Dest is this node -> route via SPI");
             return (struct netif *)esp_netif_get_netif_impl(get_ring_link_tx_netif());
@@ -111,7 +113,7 @@ struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t 
         // Check if dest belongs to my subnet
         if (ip4_addr_netcmp(dest, &my_subnet, &mask)) {
             ESP_LOGI(TAG, "Dest is other node -> route via STA");
-            return (struct netif *)esp_netif_get_netif_impl(device_get_netif(device));
+            return (struct netif *)esp_netif_get_netif_impl(device_get_netif(device_ptr));
         } else {
             ESP_LOGI(TAG, "Dest is this node -> route via SPI");
             return (struct netif *)esp_netif_get_netif_impl(get_ring_link_tx_netif());
@@ -140,9 +142,6 @@ void app_main(void) {
 
     ESP_ERROR_CHECK(device_wifi_init());
     ESP_ERROR_CHECK(ring_link_init());
-
-    Device device;
-    Device *device_ptr = &device;
 
     char device_uuid[7];
     generate_uuid_from_mac(device_uuid, sizeof(device_uuid));
