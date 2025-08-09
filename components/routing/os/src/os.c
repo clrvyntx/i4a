@@ -19,7 +19,6 @@ bool mutex_lock(mutex_t *m) {
     return false;
 }
 
-
 bool mutex_unlock(mutex_t *m) {
     if (*m == NULL) {
         return false;
@@ -56,7 +55,6 @@ void os_panic(const char *fmt, ...) {
 
     // Reboot the ESP32
     esp_restart();
-
 }
 
 void os_log(os_log_level_t level, const char *tag, const char *fmt, ...) {
