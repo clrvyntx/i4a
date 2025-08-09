@@ -14,6 +14,7 @@
 
 #include "station.h"
 #include <string.h>
+#include <arpa/inet.h>
 #include "utils.c"
 #include "../client/client.h"
 
@@ -23,6 +24,7 @@
 static const char* LOGGING_TAG = "station";
 
 static int s_retry_num = 0;
+static bool is_fully_connected = false;
 
 void station_init(StationPtr stationPtr, const char* wifi_ssid_like, uint16_t orientation, char* device_uuid, const char* password) {
 
@@ -85,7 +87,9 @@ static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_
   if (event_base == WIFI_EVENT) {
     switch (event_id) {
       case WIFI_EVENT_STA_DISCONNECTED:
-        client_close();
+        if(is_fully_connected){
+          client_close();
+        }
         if (s_retry_num < MAX_RETRIES) {
           esp_wifi_connect();
           s_retry_num++;
@@ -93,6 +97,7 @@ static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_
         } else {
           ESP_LOGE(LOGGING_TAG, "Failed to connect, disconnecting");
           s_retry_num = 0;
+          is_fully_connected = false;
           stationPtr->ap_found = false;
           stationPtr->state = s_inactive;
         }
@@ -103,7 +108,25 @@ static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_
   if (event_base == IP_EVENT) {
     switch (event_id) {
       case IP_EVENT_STA_GOT_IP:
-        client_open();
+        if(is_fully_connected){
+          client_open();
+          s_retry_num = 0;
+        } else{
+          ip_event_got_ip_t *event = (ip_event_got_ip_t*) event_data;
+          esp_netif_ip_info_t s_learned_ip_info = event->ip_info;
+          esp_netif_ip_info_t static_ip;
+
+          uint32_t subnet_base_host = ntohl(s_learned_ip_info.ip.addr & s_learned_ip_info.netmask.addr);
+
+          static_ip.gw.addr = htonl(subnet_base_host + 1);
+          static_ip.ip.addr = htonl(subnet_base_host + 2);
+          static_ip.netmask = s_learned_ip_info.netmask;
+
+          esp_netif_dhcpc_stop(stationPtr->netif);
+          ESP_ERROR_CHECK(esp_netif_set_ip_info(stationPtr->netif, &static_ip));
+          is_fully_connected = true;
+        }
+
         break;
     }
   }
@@ -116,37 +139,11 @@ void station_start(StationPtr stationPtr) {
   ESP_ERROR_CHECK(esp_wifi_start());
 }
 
-/* MANUAL FIX FOR FAKE GATEWAY, change this into a routine that connects to AP first -> looks up subnet -> disconnects then reconnects with manual DHCP with IP .2 and GW .1
-
 void station_connect(StationPtr stationPtr) {
   s_retry_num = 0;
   stationPtr->state = s_active;
   ESP_LOGI(LOGGING_TAG, "Connecting to %s...", stationPtr->wifi_config.sta.ssid);
-
-  // Stop DHCP so we can set static IP
-  ESP_ERROR_CHECK(esp_netif_dhcpc_stop(stationPtr->netif));
-
-  // Set static IP, gateway, and subnet mask
-  esp_netif_ip_info_t ip_info;
-  IP4_ADDR(&ip_info.ip,      10, 10, 0, 2);   // STA IP
-  IP4_ADDR(&ip_info.gw,      10, 10, 0, 1);   // Gateway (AP IP)
-  IP4_ADDR(&ip_info.netmask, 255, 255, 0, 0); // Subnet mask
-
-  ESP_ERROR_CHECK(esp_netif_set_ip_info(stationPtr->netif, &ip_info));
-
-  // Continue with Wi-Fi setup
-  ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &stationPtr->wifi_config));
-  ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, stationPtr));
-  ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, stationPtr));
-  ESP_ERROR_CHECK(esp_wifi_connect());
-}
-
-*/
-
-void station_connect(StationPtr stationPtr) {
-  s_retry_num = 0;
-  stationPtr->state = s_active;
-  ESP_LOGI(LOGGING_TAG, "Connecting to %s...", stationPtr->wifi_config.sta.ssid);
+  ESP_ERROR_CHECK(esp_netif_dhcpc_start(stationPtr->netif));
   ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &stationPtr->wifi_config));
   ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, stationPtr));
   ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, stationPtr));
