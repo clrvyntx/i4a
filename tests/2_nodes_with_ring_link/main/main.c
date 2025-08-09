@@ -7,7 +7,6 @@
 #include "wifi.h"
 #include "ring_link.h"
 #include "device.h"
-#include "server.h"
 
 #define IS_ROOT 1
 
@@ -33,8 +32,8 @@ struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t 
     ip4_addr_t mask;
     IP4_ADDR(&mask, 255, 255, 0, 0); // /16
 
-    // === Case 1: Center (device_orientation == 4) ===
-    if (orientation == 4) {
+    // === Case 1: Center ===
+    if (orientation == CONFIG_ORIENTATION_CENTER) {
 
         if (is_root) {
             IP4_ADDR(&my_subnet, 10, 9, 0, 0);
@@ -54,24 +53,25 @@ struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t 
         }
     }
 
-    // === Case 2: West and Root (device_orientation == 2 && is_root) ===
-    if (orientation == 2 && is_root) {
-        IP4_ADDR(&my_subnet, 10, 8, 0, 0);
-        ESP_LOGI(TAG, "Device is west root, checking for center non-root subnet 10.8.0.0/16");
+    // === Case 2: East and Root ===
+    if (orientation == CONFIG_ORIENTATION_EAST && is_root) {
+        IP4_ADDR(&my_subnet, 10, 9, 0, 0);
+        ESP_LOGI(TAG, "Device is east root, checking for center non-root subnet 10.9.0.0/16");
 
         if (ip4_addr_netcmp(dest, &my_subnet, &mask)) {
-            ESP_LOGI(TAG, "Dest is other node -> route via AP");
-            return (struct netif *)esp_netif_get_netif_impl(device_get_netif(device_ptr));
-        } else {
             ESP_LOGI(TAG, "Dest is this node -> route via SPI");
             return (struct netif *)esp_netif_get_netif_impl(get_ring_link_tx_netif());
+        } else {
+            ESP_LOGI(TAG, "Dest is other node -> route via AP");
+            return (struct netif *)esp_netif_get_netif_impl(device_get_netif(device_ptr));
+
         }
     }
 
-    // === Case 3: East and Not Root (device_orientation == 3 && !is_root) ===
-    if (orientation == 3 && !is_root) {
+    // === Case 3: West and Not Root ===
+    if (orientation == CONFIG_ORIENTATION_WEST && !is_root) {
         IP4_ADDR(&my_subnet, 10, 8, 0, 0);
-        ESP_LOGI(TAG, "Device is east non-root, checking for center non-root subnet 10.8.0.0/16");
+        ESP_LOGI(TAG, "Device is west non-root, checking for center non-root subnet 10.8.0.0/16");
 
         // Check if dest belongs to my subnet
         if (ip4_addr_netcmp(dest, &my_subnet, &mask)) {
