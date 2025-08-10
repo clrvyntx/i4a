@@ -91,8 +91,10 @@ void routing_table_show(const rt_routing_table_t *table) {
         const uint8_t *ip = (const uint8_t *)&entry->network;
         char buffer[30];
         snprintf(
-            buffer, 30, " %u.%u.%u.%u/%u -> %u", ip[3], ip[2], ip[1], ip[0], mask_size(entry->mask), entry->output
-        );
+            buffer, 30, " %u.%u.%u.%u/%u -> %u",
+            ip[3], ip[2], ip[1], ip[0],
+            (unsigned int) mask_size(entry->mask),
+            (unsigned int) entry->output);
         log_info(TAG, "%s", buffer);
     }
     log_info(TAG, "==================================");
