@@ -8,7 +8,7 @@ extern "C" {
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "config/config.h"
+#include "routing_config/routing_config.h"
 #include "ring_share/ring_share.h"
 #include "sync/sync.h"
 
