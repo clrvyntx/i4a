@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "config/config.h"
+#include "routing_config/routing_config.h"
 #include "os/os.h"
 #include "ring_share/ring_share.h"
 
