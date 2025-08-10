@@ -32,10 +32,11 @@ void node_setup(){
     current_node_ptr->node_device_orientation = config_get_orientation();
 
     if(current_node_ptr->node_device_orientation == CONFIG_ORIENTATION_CENTER){
-	generate_uuid_from_mac(current_node_ptr->device_uuid, sizeof(device_uuid));
-	current_node_ptr->node_center_is_root = config_mode_is(CONFIG_MODE_ROOT);
-	// stay on loop until i can broadcast these 2 things to the rest of the devices of the node
+		generate_uuid_from_mac(current_node_ptr->node_uuid, sizeof(current_node_ptr->node_uuid));
+		current_node_ptr->node_center_is_root = config_mode_is(CONFIG_MODE_ROOT);
+		// stay on loop until i can broadcast these 2 things to the rest of the devices of the node
     } else {
-	// non center device, stay waiting to receive the broadcast value
+		// non center device, stay waiting to receive the broadcast value
     }
 }
+
