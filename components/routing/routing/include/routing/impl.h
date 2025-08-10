@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#include "config/config.h"
+#include "routing_config/routing_config.h"
 
 // Forward decl
 struct routing;
