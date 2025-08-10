@@ -15,7 +15,6 @@
 static const char *LOGGING_TAG = "device";
 static const char *dev_orientation[5] = {"_N_", "_S_", "_E_", "_W_", "_C_"};
 static bool is_on_connect_loop = false;
-static DevicePtr current_device_ptr = NULL;
 
 // Function to initialize NVS (non-volatile storage)
 static esp_err_t init_nvs() {
@@ -62,8 +61,6 @@ void device_init(DevicePtr device_ptr, const char *device_uuid, uint8_t device_o
   Station station = {};
   device_ptr->station = station;
   device_ptr->station_ptr = &device_ptr->station;
-
-  current_device_ptr = device_ptr;
 
   if (mode == AP) {
     device_init_ap(device_ptr, ap_channel_to_emit, wifi_network_prefix, device_uuid, wifi_network_password, ap_max_sta_connections, device_orientation);
