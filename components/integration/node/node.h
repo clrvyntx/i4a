@@ -1,4 +1,4 @@
-#ifndef _NODE__H_
+#ifndef _NODE_H_
 #define _NODE_H_
 
 #include "config.h"
