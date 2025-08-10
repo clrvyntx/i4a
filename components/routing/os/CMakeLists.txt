@@ -1,2 +1,4 @@
-add_library(i4a_os "src/os.c")
-target_include_directories(i4a_os PUBLIC "include")
+idf_component_register(
+    SRCS "src/os.c"
+    INCLUDE_DIRS "include"
+)
