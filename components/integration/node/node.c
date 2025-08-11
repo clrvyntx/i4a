@@ -37,7 +37,7 @@ void node_set_as_sta(){
     }
 
     char *wifi_network_prefix = NODE_NAME_PREFIX;
-    char *wifi_network_password = "";
+    char *wifi_network_password = NODE_LINK_PASSWORD;
 
     device_init(node_device_ptr, node_uuid, node_device_ptr->device_orientation, wifi_network_prefix, wifi_network_password, 6, 4, 0, STATION);
     device_start_station(node_device_ptr);
