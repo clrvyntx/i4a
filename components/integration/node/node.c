@@ -1,15 +1,13 @@
-#include <arpa/inet.h>
-#include "ring_link.h"
-#include "esp_check.h"
+#include "node.h"
 
 #define NODE_NAME_PREFIX "I4A"
 #define NODE_LINK_PASSWORD "zWfAc2wXq5"
 #define MAX_DEVICES_PER_HOUSE 4
 
-#include "node.h"
+static Device node_device;
+static DevicePtr node_device_ptr = &node_device;
 
-static node_t current_node;
-static node_t *current_node_ptr = &current_node;
+static char node_uuid[7];
 static bool network_is_setup = false;
 
 static void generate_uuid_from_mac(char *uuid_out, size_t len) {
@@ -18,38 +16,38 @@ static void generate_uuid_from_mac(char *uuid_out, size_t len) {
     snprintf(uuid_out, len, "%02X%02X%02X", mac[3], mac[4], mac[5]);
 }
 
-node_t *node_setup(){
+DevicePtr node_setup(){
     config_setup();
     config_print();
 
     ESP_ERROR_CHECK(device_wifi_init());
     ESP_ERROR_CHECK(ring_link_init());
 
-    current_node_ptr->node_device_ptr = &current_node_ptr->node_device;
-    current_node_ptr->node_device_orientation = config_get_orientation();
-    generate_uuid_from_mac(current_node_ptr->node_uuid, sizeof(current_node_ptr->node_uuid));
-    current_node_ptr->node_center_is_root = config_mode_is(CONFIG_MODE_ROOT);
+    node_device_ptr->device_orientation = config_get_orientation();
+    node_device_ptr->device_is_root = (uint8_t) config_mode_is(CONFIG_MODE_ROOT);
 
-    return current_node_ptr;
+    generate_uuid_from_mac(node_uuid, sizeof(node_uuid));
+
+    return node_device_ptr;
 }
 
 void node_set_as_sta(){
     if(network_is_setup){
-        device_reset(current_node_ptr->node_device_ptr);
+        device_reset(node_device_ptr);
     }
 
     char *wifi_network_prefix = NODE_NAME_PREFIX;
     char *wifi_network_password = "";
 
-    device_init(current_node_ptr->node_device_ptr, current_node_ptr->node_uuid, current_node_ptr->node_device_orientation, wifi_network_prefix, wifi_network_password, 6, 4, 0, STATION);
-    device_start_station(current_node_ptr->node_device_ptr);
-    device_connect_station(current_node_ptr->node_device_ptr);
+    device_init(node_device_ptr, node_uuid, node_device_ptr->device_orientation, wifi_network_prefix, wifi_network_password, 6, 4, 0, STATION);
+    device_start_station(node_device_ptr);
+    device_connect_station(node_device_ptr);
     network_is_setup = true;
 }
 
 void node_set_as_ap(uint32_t network, uint32_t mask){
     if(network_is_setup){
-        device_reset(current_node_ptr->node_device_ptr);
+        device_reset(node_device_ptr);
     }
 
     uint32_t node_gateway;
@@ -58,7 +56,7 @@ void node_set_as_ap(uint32_t network, uint32_t mask){
     char *wifi_network_prefix = NODE_NAME_PREFIX;
     char *wifi_network_password;
 
-    if (current_node_ptr->node_device_orientation == CONFIG_ORIENTATION_CENTER) {
+    if (node_device_ptr->device_orientation == CONFIG_ORIENTATION_CENTER) {
         node_gateway = network + 1;
         wifi_network_password = "";
         ap_max_sta_connections = MAX_DEVICES_PER_HOUSE;
@@ -68,21 +66,18 @@ void node_set_as_ap(uint32_t network, uint32_t mask){
         ap_max_sta_connections = 1;
     }
 
-    struct in_addr net_addr = { .s_addr = htonl(network) };
-    struct in_addr gateway_addr = { .s_addr = htonl(node_gateway) };
-    struct in_addr mask_addr = { .s_addr = htonl(mask) };
+    ip4_addr_t net_addr, gateway_addr, mask_addr;
+    net_addr.addr = htonl(network);
+    gateway_addr.addr = htonl(node_gateway);
+    mask_addr.addr = htonl(mask);
 
-    char network_cidr[INET_ADDRSTRLEN];
-    char network_gateway[INET_ADDRSTRLEN];
-    char network_mask[INET_ADDRSTRLEN];
+    const char *network_cidr = ip4addr_ntoa(&net_addr);
+    const char *network_gateway = ip4addr_ntoa(&gateway_addr);
+    const char *network_mask = ip4addr_ntoa(&mask_addr);
 
-    inet_ntop(AF_INET, &net_addr, network_cidr, sizeof(network_cidr));
-    inet_ntop(AF_INET, &gateway_addr, network_gateway, sizeof(network_gateway));
-    inet_ntop(AF_INET, &mask_addr, network_mask, sizeof(network_mask));
-
-    device_init(current_node_ptr->node_device_ptr, current_node_ptr->node_uuid, current_node_ptr->node_device_orientation, wifi_network_prefix, wifi_network_password, ap_channel_to_emit, ap_max_sta_connections, 0, AP);
-    device_set_network_ap(current_node_ptr->node_device_ptr, network_cidr, network_gateway, network_mask);
-    device_start_ap(current_node_ptr->node_device_ptr);
+    device_init(node_device_ptr, node_uuid, node_device_ptr->device_orientation, wifi_network_prefix, wifi_network_password, ap_channel_to_emit, ap_max_sta_connections, 0, AP);
+    device_set_network_ap(node_device_ptr, network_cidr, network_gateway, network_mask);
+    device_start_ap(node_device_ptr);
     network_is_setup = true;
 }
 
