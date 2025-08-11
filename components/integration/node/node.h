@@ -15,7 +15,7 @@ typedef struct node {
 } node_t;
 
 node_t *node_setup();
-void node_set_as_ap(node_t *current_node_ptr, uint32_t network, uint32_t mask);
-void node_set_as_sta(node_t *current_node_ptr);
+void node_set_as_ap(uint32_t network, uint32_t mask);
+void node_set_as_sta();
 
 #endif
