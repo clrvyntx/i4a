@@ -7,18 +7,18 @@
 
 static const char *TAG = "==> main";
 
-static node_t *current_node;
+static DevicePtr device_ptr;
 
 struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t *dest) {
     ESP_LOGI(TAG, "Routing hook called for dest: %s", ip4addr_ntoa(dest));
 
-    if (!current_node->node_device_ptr) {
+    if (!device_ptr) {
         ESP_LOGW(TAG, "No device found, falling back to default");
         return (struct netif *)esp_netif_get_netif_impl(get_ring_link_tx_netif());
     }
 
-    uint8_t orientation = current_node->node_device_ptr->device_orientation;
-    uint8_t is_root = current_node->node_device_ptr->device_is_root;
+    uint8_t orientation = device_ptr->device_orientation;
+    uint8_t is_root = device_ptr->device_is_root;
 
     ESP_LOGI(TAG, "Device orientation: %d, is_root: %d", orientation, is_root);
 
@@ -40,7 +40,7 @@ struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t 
         // Check if dest belongs to my subnet
         if (ip4_addr_netcmp(dest, &my_subnet, &mask)) {
             ESP_LOGI(TAG, "Dest is in my subnet -> route via AP");
-            return (struct netif *)esp_netif_get_netif_impl(device_get_netif(current_node->node_device_ptr));
+            return (struct netif *)esp_netif_get_netif_impl(device_get_netif(device_ptr));
         } else {
             ESP_LOGI(TAG, "Dest is NOT in my subnet -> route via SPI");
             return (struct netif *)esp_netif_get_netif_impl(get_ring_link_tx_netif());
@@ -57,7 +57,7 @@ struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t 
             return (struct netif *)esp_netif_get_netif_impl(get_ring_link_tx_netif());
         } else {
             ESP_LOGI(TAG, "Dest is other node -> route via AP");
-            return (struct netif *)esp_netif_get_netif_impl(device_get_netif(current_node->node_device_ptr));
+            return (struct netif *)esp_netif_get_netif_impl(device_get_netif(device_ptr));
 
         }
     }
@@ -74,7 +74,7 @@ struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t 
 
         } else {
             ESP_LOGI(TAG, "Dest is other node -> route via STA");
-	    return (struct netif *)esp_netif_get_netif_impl(device_get_netif(current_node->node_device_ptr));
+	    return (struct netif *)esp_netif_get_netif_impl(device_get_netif(device_ptr));
         }
     }
 
@@ -84,10 +84,10 @@ struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t 
 }
 
 void app_main(void) {
-    current_node = node_setup();
+    device_ptr = node_setup();
     uint8_t device_is_root = IS_ROOT;
 
-    if(device_orientation == CONFIG_ORIENTATION_CENTER){
+    if(device_ptr->device_orientation == CONFIG_ORIENTATION_CENTER){
         if(device_is_root){
             uint32_t net = 0x0A090000; // 10.9.0.0
             uint32_t mask = 0xFFFF0000; // 255.255.0.0
@@ -100,13 +100,13 @@ void app_main(void) {
 
     }
 
-    if(current_node->node_device_orientation == CONFIG_ORIENTATION_EAST && device_is_root){
+    if(device_ptr->device_orientation == CONFIG_ORIENTATION_EAST && device_is_root){
         uint32_t net = 0x0A0A0000; // 10.10.0.0
         uint32_t mask = 0xFFFF0000; // 255.255.0.0
         node_set_as_ap(net, mask);
     }
 
-    if(device_orientation == CONFIG_ORIENTATION_WEST && !device_is_root){
+    if(device_ptr->device_orientation == CONFIG_ORIENTATION_WEST && !device_is_root){
         node_set_as_sta();
     }
 }
