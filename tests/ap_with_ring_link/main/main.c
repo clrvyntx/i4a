@@ -1,21 +1,21 @@
 #include <stdio.h>
 #include "esp_event.h"
-#include "esp_check.h"
 
-#include "config.h"
-#include "utils.h"
-#include "wifi.h"
-#include "ring_link.h"
-#include "device.h"
-#include "server.h"
+#include "node.h"
 
-#define IS_ROOT 0
+#define NUM_ORIENTATIONS 5
+
+const uint32_t subnets[NUM_ORIENTATIONS] = {
+    0x0A070000, // orientation 0: 10.7.0.0
+    0x0A080000, // orientation 1: 10.8.0.0
+    0x0A090000, // orientation 2: 10.9.0.0
+    0x0A0A0000, // orientation 3: 10.10.0.0
+    0x0A0B0000, // orientation 4: 10.11.0.0
+};
 
 static const char *TAG = "==> main";
 
-Device device;
-Device *device_ptr = &device;
-Device_Mode mode = AP;
+static DevicePtr device_ptr;
 
 struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t *dest) {
     ESP_LOGI(TAG, "Routing hook called for dest: %s", ip4addr_ntoa(dest));
@@ -25,66 +25,38 @@ struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t 
         return (struct netif *)esp_netif_get_netif_impl(get_ring_link_tx_netif());
     }
 
-    esp_netif_t *ap_netif = device_get_netif(device_ptr);
-    esp_netif_ip_info_t ip_info;
+    esp_netif_t *esp_netif = device_get_netif(device_ptr);
+    struct netif *netif = (struct netif *)esp_netif_get_netif_impl(esp_netif);
 
-    if (esp_netif_get_ip_info(ap_netif, &ip_info) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to get IP info from AP netif");
+    if (!netif) {
+        ESP_LOGE(TAG, "Failed to get netif from esp_netif");
         return (struct netif *)esp_netif_get_netif_impl(get_ring_link_tx_netif());
     }
 
-    // Cast to ip4_addr_t* for logging
-    ESP_LOGI(TAG, "Device AP IP: %s, Netmask: %s",
-             ip4addr_ntoa((const ip4_addr_t *)&ip_info.ip),
-             ip4addr_ntoa((const ip4_addr_t *)&ip_info.netmask));
+    const ip4_addr_t *my_ip = ip_2_ip4(&netif->ip_addr);
+    const ip4_addr_t *my_netmask = ip_2_ip4(&netif->netmask);
 
-    // Compare destination with our subnet
-    if (ip4_addr_netcmp(dest, (const ip4_addr_t *)&ip_info.ip, (const ip4_addr_t *)&ip_info.netmask)) {
-        ESP_LOGI(TAG, "Dest is in my subnet -> route via AP");
-        return (struct netif *)esp_netif_get_netif_impl(ap_netif);
+    ESP_LOGI(TAG, "Device IP: %s, Netmask: %s", ip4addr_ntoa(my_ip), ip4addr_ntoa(my_netmask));
+
+    if (ip4_addr_netcmp(dest, my_ip, my_netmask)) {
+        ESP_LOGI(TAG, "Dest is in same subnet → route via AP");
+        return netif;
     } else {
-        ESP_LOGI(TAG, "Dest is NOT in my subnet -> route via SPI");
+        ESP_LOGI(TAG, "Dest is NOT in same subnet → route via SPI");
         return (struct netif *)esp_netif_get_netif_impl(get_ring_link_tx_netif());
     }
 }
 
-void generate_uuid_from_mac(char *uuid_out, size_t len) {
-    uint8_t mac[6];
-    esp_read_mac(mac, ESP_MAC_WIFI_SOFTAP);
-    snprintf(uuid_out, len, "%02X%02X%02X", mac[3], mac[4], mac[5]);
-}
-
-void generate_subnet_from_id(uint8_t device_id, char *cidr_out, char *gateway_out, size_t len, uint8_t is_root) {
-    snprintf(cidr_out, len, "10.%d.0.1", device_id * 2 + is_root);
-    snprintf(gateway_out, len, "10.%d.0.1", device_id * 2 + is_root);
+uint32_t get_subnet_for_orientation(uint8_t orientation) {
+    if (orientation >= NUM_ORIENTATIONS) {
+        return 0x0A000000; // fallback subnet 10.0.0.0
+    }
+    return subnets[orientation];
 }
 
 void app_main(void) {
-    config_setup();
-    config_print();
-
-    char device_uuid[7];
-    generate_uuid_from_mac(device_uuid, sizeof(device_uuid));
-
-    uint8_t device_orientation = config_get_orientation();
-    uint8_t device_is_root = IS_ROOT;
-
-    char *wifi_network_prefix = "I4A";
-    char *wifi_network_password = "test123456";
-
-    uint8_t ap_channel_to_emit = (rand() % 11) + 1;
-    uint8_t ap_max_sta_connections = 4;
-
-    char network_cidr[16];
-    char network_gateway[16];
-    char *network_mask = "255.255.0.0";
-
-    generate_subnet_from_id(device_orientation, network_cidr, network_gateway, sizeof(network_cidr), device_is_root);
-
-    ESP_ERROR_CHECK(device_wifi_init());
-    ESP_ERROR_CHECK(ring_link_init());
-
-    device_init(device_ptr, device_uuid, device_orientation, wifi_network_prefix, wifi_network_password, ap_channel_to_emit, ap_max_sta_connections, device_is_root, mode);
-    device_set_network_ap(device_ptr, network_cidr, network_gateway, network_mask);
-    device_start_ap(device_ptr);
+    device_ptr = node_setup();
+    uint32_t net = get_subnet_for_orientation(device_ptr->device_orientation);
+    uint32_t mask = 0xFFFF0000;
+    node_set_as_ap(net, mask);
 }
