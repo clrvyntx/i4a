@@ -10,32 +10,8 @@ static DevicePtr device_ptr;
 
 struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t *dest) {
     ESP_LOGI(TAG, "Routing hook called for dest: %s", ip4addr_ntoa(dest));
-
-    if (!device_ptr) {
-        ESP_LOGW(TAG, "No device found, falling back to SPI");
-        return (struct netif *)esp_netif_get_netif_impl(get_ring_link_tx_netif());
-    }
-
-    esp_netif_t *esp_netif = device_get_netif(device_ptr);
-    struct netif *netif = (struct netif *)esp_netif_get_netif_impl(esp_netif);
-
-    if (!netif) {
-        ESP_LOGE(TAG, "Failed to get netif from esp_netif");
-        return (struct netif *)esp_netif_get_netif_impl(get_ring_link_tx_netif());
-    }
-
-    const ip4_addr_t *my_ip = ip_2_ip4(&netif->ip_addr);
-    const ip4_addr_t *my_netmask = ip_2_ip4(&netif->netmask);
-
-    ESP_LOGI(TAG, "Device IP: %s, Netmask: %s", ip4addr_ntoa(my_ip), ip4addr_ntoa(my_netmask));
-
-    if (ip4_addr_netcmp(dest, my_ip, my_netmask)) {
-        ESP_LOGI(TAG, "Dest is in same subnet → route via STA");
-        return netif;
-    } else {
-        ESP_LOGI(TAG, "Dest is NOT in same subnet → route via SPI");
-        return (struct netif *)esp_netif_get_netif_impl(get_ring_link_tx_netif());
-    }
+    ESP_LOGI(TAG, "Test, route via STA");
+    return (struct netif *)esp_netif_get_netif_impl(device_get_netif(device_ptr));
 }
 
 void app_main(void) {
