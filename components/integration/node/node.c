@@ -67,13 +67,17 @@ void node_set_as_ap(uint32_t network, uint32_t mask){
     }
 
     ip4_addr_t net_addr, gateway_addr, mask_addr;
-    net_addr.addr = htonl(network);
+    net_addr.addr = htonl(network + 1);
     gateway_addr.addr = htonl(node_gateway);
     mask_addr.addr = htonl(mask);
 
-    const char *network_cidr = ip4addr_ntoa(&net_addr);
-    const char *network_gateway = ip4addr_ntoa(&gateway_addr);
-    const char *network_mask = ip4addr_ntoa(&mask_addr);
+    char network_cidr[IP4ADDR_STRLEN_MAX];
+    char network_gateway[IP4ADDR_STRLEN_MAX];
+    char network_mask[IP4ADDR_STRLEN_MAX];
+
+    ip4addr_ntoa_r(&net_addr, network_cidr, sizeof(network_cidr));
+    ip4addr_ntoa_r(&gateway_addr, network_gateway, sizeof(network_gateway));
+    ip4addr_ntoa_r(&mask_addr, network_mask, sizeof(network_mask));
 
     device_init(node_device_ptr, node_uuid, node_device_ptr->device_orientation, wifi_network_prefix, wifi_network_password, ap_channel_to_emit, ap_max_sta_connections, 0, AP);
     device_set_network_ap(node_device_ptr, network_cidr, network_gateway, network_mask);
