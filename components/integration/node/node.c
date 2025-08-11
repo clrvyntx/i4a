@@ -25,6 +25,7 @@ node_t *node_setup(){
     ESP_ERROR_CHECK(device_wifi_init());
     ESP_ERROR_CHECK(ring_link_init());
 
+    current_node_ptr->node_device_ptr = &current_node_ptr->node_device;
     current_node_ptr->node_device_orientation = config_get_orientation();
     generate_uuid_from_mac(current_node_ptr->node_uuid, sizeof(current_node_ptr->node_uuid));
     current_node_ptr->node_center_is_root = config_mode_is(CONFIG_MODE_ROOT);
@@ -84,4 +85,5 @@ void node_set_as_ap(uint32_t network, uint32_t mask){
     device_start_ap(current_node_ptr->node_device_ptr);
     network_is_setup = true;
 }
+
 
