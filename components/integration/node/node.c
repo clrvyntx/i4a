@@ -8,7 +8,6 @@
 
 static node_t current_node;
 static node_t *current_node_ptr = &current_node;
-static bool is_first_network_setup = false;
 
 static char *wifi_network_prefix = NODE_NAME_PREFIX;
 static char *wifi_network_password;
@@ -39,4 +38,5 @@ void node_setup(){
 		// non center device, stay waiting to receive the broadcast value
     }
 }
+
 
