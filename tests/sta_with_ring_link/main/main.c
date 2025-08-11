@@ -30,7 +30,7 @@ struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t 
     ESP_LOGI(TAG, "Device IP: %s, Netmask: %s", ip4addr_ntoa(my_ip), ip4addr_ntoa(my_netmask));
 
     if (ip4_addr_netcmp(dest, my_ip, my_netmask)) {
-        ESP_LOGI(TAG, "Dest is in same subnet → route via AP");
+        ESP_LOGI(TAG, "Dest is in same subnet → route via STA");
         return netif;
     } else {
         ESP_LOGI(TAG, "Dest is NOT in same subnet → route via SPI");
