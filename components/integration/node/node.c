@@ -9,7 +9,7 @@
 #include "node.h"
 
 static node_t current_node;
-static node_t *current_node_ptr;
+static node_t *current_node_ptr = &current_node;
 static bool network_is_setup = false;
 
 static void generate_uuid_from_mac(char *uuid_out, size_t len) {
@@ -84,3 +84,4 @@ void node_set_as_ap(uint32_t network, uint32_t mask){
     device_start_ap(current_node_ptr->node_device_ptr);
     network_is_setup = true;
 }
+
