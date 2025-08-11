@@ -9,6 +9,7 @@
 #include "node.h"
 
 static node_t current_node;
+static node_t *current_node_ptr;
 static bool network_is_setup = false;
 
 static void generate_uuid_from_mac(char *uuid_out, size_t len) {
@@ -24,8 +25,6 @@ node_t *node_setup(){
     ESP_ERROR_CHECK(device_wifi_init());
     ESP_ERROR_CHECK(ring_link_init());
 
-    node_t *current_node_ptr = &current_node;
-
     current_node_ptr->node_device_orientation = config_get_orientation();
     generate_uuid_from_mac(current_node_ptr->node_uuid, sizeof(current_node_ptr->node_uuid));
     current_node_ptr->node_center_is_root = config_mode_is(CONFIG_MODE_ROOT);
@@ -33,7 +32,7 @@ node_t *node_setup(){
     return current_node_ptr;
 }
 
-void node_set_as_sta(node_t *current_node_ptr){
+void node_set_as_sta(){
     if(network_is_setup){
         device_reset(current_node_ptr->node_device_ptr);
     }
@@ -47,7 +46,7 @@ void node_set_as_sta(node_t *current_node_ptr){
     network_is_setup = true;
 }
 
-void node_set_as_ap(node_t *current_node_ptr, uint32_t network, uint32_t mask){
+void node_set_as_ap(uint32_t network, uint32_t mask){
     if(network_is_setup){
         device_reset(current_node_ptr->node_device_ptr);
     }
