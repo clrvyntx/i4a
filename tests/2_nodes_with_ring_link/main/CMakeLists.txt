@@ -1,6 +1,6 @@
 idf_component_register(SRCS "main.c"
                        INCLUDE_DIRS "."
-                       REQUIRES device config ring_link wifi utils server)
+                       REQUIRES node)
 
 idf_component_get_property(lwip lwip COMPONENT_LIB)
 target_compile_options(${lwip} PRIVATE "-I${CMAKE_SOURCE_DIR}/../../components/internal/lwip_custom_hooks")
