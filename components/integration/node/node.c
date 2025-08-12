@@ -117,10 +117,10 @@ bool node_send_wireless_message(const uint8_t *msg, uint16_t len){
   return false;
 }
 
-esp_netif *node_get_wifi_netif(void) {
+esp_netif_t *node_get_wifi_netif(void) {
     return device_get_netif(node_ptr->node_device_ptr);
 }
 
-esp_netif *node_get_spi_netif(void) {
+esp_netif_t *node_get_spi_netif(void) {
     return get_ring_link_tx_netif();
 }
