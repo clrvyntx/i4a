@@ -29,7 +29,7 @@ static void generate_uuid_from_mac(char *uuid_out, size_t len) {
     snprintf(uuid_out, len, "%02X%02X%02X", mac[3], mac[4], mac[5]);
 }
 
-void node_setup(){
+void node_setup(void){
     config_setup();
     config_print();
 
@@ -43,7 +43,7 @@ void node_setup(){
 
 }
 
-void node_set_as_sta(){
+void node_set_as_sta(void){
     if(network_is_setup){
         device_reset(node_ptr->node_device_ptr);
     }
@@ -97,3 +97,30 @@ void node_set_as_ap(uint32_t network, uint32_t mask){
     network_is_setup = true;
 }
 
+node_device_orientation_t node_get_device_orientation(void){
+  return node_ptr->node_device_orientation;
+}
+
+bool node_is_device_center_root(void){
+  return node_ptr->node_device_is_center_root;
+}
+
+bool node_send_wireless_message(const uint8_t *msg, uint16_t len){
+  if(node_ptr->node_device_ptr->mode == AP){
+    return server_send_message(msg, len);
+  }
+
+  if(node_ptr->node_device_ptr->mode == STATION){
+    return client_send_message(msg, len);
+  }
+
+  return false;
+}
+
+struct netif *node_get_wifi_netif(void) {
+    return (struct netif *)esp_netif_get_netif_impl(device_get_netif(node_ptr->node_device_ptr));
+}
+
+struct netif *node_get_spi_netif(void) {
+    return (struct netif *)esp_netif_get_netif_impl(get_ring_link_tx_netif());
+}
