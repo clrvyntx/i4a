@@ -10,7 +10,7 @@ typedef struct node {
   bool node_device_is_center_root;
 } node_t;
 
-DevicePtr node_setup();
+node_t *node_setup();
 void node_set_as_ap(uint32_t network, uint32_t mask);
 void node_set_as_sta();
 
