@@ -1,29 +1,27 @@
 #include <stdio.h>
-#include "esp_event.h"
-
-#include "client.h"
+#include "esp_log.h"
+#include "lwip/esp_netif_net_stack.h"
+#include "esp_netif_net_stack.h"
 #include "node.h"
 
 static const char *TAG = "==> main";
 
-static DevicePtr device_ptr;
-
 struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t *dest) {
     ESP_LOGI(TAG, "Routing hook called for dest: %s", ip4addr_ntoa(dest));
     ESP_LOGI(TAG, "Test, route via STA");
-    return (struct netif *)esp_netif_get_netif_impl(device_get_netif(device_ptr));
+    return (struct netif *)esp_netif_get_netif_impl(node_get_wifi_netif());
 }
 
 void app_main(void) {
 
-    device_ptr = node_setup();
+    node_setup();
     node_set_as_sta();
 
     const uint8_t message[] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0xFF, 0xAA, 0xBB, 0xCC };
     uint16_t len = sizeof(message) / sizeof(message[0]);
     int msgs = 0;
     while (msgs < 5) {
-        bool success = client_send_message(message, len);
+        bool success = node_send_wireless_message(message, len);
 
         if (!success) {
             ESP_LOGE("CLIENT", "Error sending message, retrying in 10 seconds...");
@@ -44,7 +42,7 @@ void app_main(void) {
 
     msgs = 0;
     while (msgs < 5) {
-        bool success = client_send_message(message, len);
+        bool success = node_send_wireless_message(message, len);
 
         if (!success) {
             ESP_LOGE("CLIENT", "Error sending message, retrying in 10 seconds...");
