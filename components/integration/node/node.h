@@ -6,6 +6,7 @@
 
 typedef struct node {
   DevicePtr node_device_ptr;
+  char node_device_uuid[7];
   config_orientation_t node_device_orientation;
   bool node_device_is_center_root;
 } node_t;
