@@ -18,7 +18,7 @@ static void generate_uuid_from_mac(char *uuid_out, size_t len) {
     snprintf(uuid_out, len, "%02X%02X%02X", mac[3], mac[4], mac[5]);
 }
 
-node_t *node_setup(){
+void node_setup(){
     config_setup();
     config_print();
 
@@ -28,8 +28,7 @@ node_t *node_setup(){
     node_ptr->node_device_orientation = config_get_orientation();
     node_ptr->node_device_is_center_root = config_mode_is(CONFIG_MODE_ROOT);
     generate_uuid_from_mac(node_ptr->node_device_uuid, sizeof(node_ptr->node_device_uuid));
-
-    return node_ptr;
+    
 }
 
 void node_set_as_sta(){
@@ -85,3 +84,4 @@ void node_set_as_ap(uint32_t network, uint32_t mask){
     device_start_ap(node->node_device_ptr);
     network_is_setup = true;
 }
+
