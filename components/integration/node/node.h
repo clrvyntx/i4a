@@ -1,6 +1,7 @@
 #ifndef _NODE_H_
 #define _NODE_H_
 
+#include <stdbool.h>
 #include "device.h"
 #include "config.h"
 
