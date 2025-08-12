@@ -1,19 +1,22 @@
 #ifndef _NODE_H_
 #define _NODE_H_
 
+#include <stdint.h>
 #include <stdbool.h>
-#include "device.h"
-#include "config.h"
 
-typedef struct node {
-  DevicePtr node_device_ptr;
-  char node_device_uuid[7];
-  config_orientation_t node_device_orientation;
-  bool node_device_is_center_root;
-} node_t;
+typedef enum {
+    NODE_DEVICE_ORIENTATION_NORTH = 0,
+    NODE_DEVICE_ORIENTATION_SOUTH,
+    NODE_DEVICE_ORIENTATION_EAST,
+    NODE_DEVICE_ORIENTATION_WEST,
+    NODE_DEVICE_ORIENTATION_CENTER,
+} node_device_orientation_t;
 
-void node_setup();
+void node_setup(void);
 void node_set_as_ap(uint32_t network, uint32_t mask);
-void node_set_as_sta();
+void node_set_as_sta(void);
+node_device_orientation_t node_get_device_orientation(void);
+bool node_is_device_center_root(void);
+bool node_send_wireless_message(const uint8_t *msg, uint16_t len);
 
-#endif
+#endif // _NODE_H_
