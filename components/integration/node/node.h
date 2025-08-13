@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "esp_netif.h"
+#include "wireless/wireless.h"
+#include "siblings/siblings.h"
 
 // Node's device orientations, the values match the ones read in hardware
 typedef enum {
@@ -32,6 +34,10 @@ bool node_broadcast_to_siblings(const uint8_t *msg, uint16_t len); // Broadcast 
 // Node network interfaces
 esp_netif_t *node_get_wifi_netif(void); // Returns network interface for wireless link
 esp_netif_t *node_get_spi_netif(void); // Returns network interface for local communication
+
+// Routing algorithm instances
+wireless_t *node_get_wireless_instance(void);
+siblings_t *node_get_siblings_instance(void);
 
 // Callback wrappers for module interconnection (not meant to be used in main program)
 void node_on_peer_connected(void);

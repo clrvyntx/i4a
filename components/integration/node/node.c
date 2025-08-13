@@ -20,6 +20,12 @@ typedef struct node {
 static node_t node = { 0 };
 static Device node_device = { 0 };
 
+static wireless_t wireless = { 0 };
+static wireless_t *wl = &wireless;
+
+static siblings_t siblings = { 0 };
+static siblings_t *sb = &siblings;
+
 static node_t *node_ptr = &node;
 static bool network_is_setup = false;
 
@@ -140,17 +146,25 @@ void node_on_peer_connected(void) {
   peer_net = ntohl(ip_info.ip.addr & ip_info.netmask.addr);
   peer_mask = ntohl(ip_info.netmask.addr);
 
+  wl->callbacks.on_peer_connected(wl->context, peer_net, peer_mask);
 }
 
 void node_on_peer_lost(void) {
-  // Placeholder
+  wl->callbacks.on_peer_lost(wl->context, peer_net, peer_mask);
 }
 
 void node_on_peer_message(void *msg, uint16_t len) {
-  // Placeholder
+  wl->callbacks.on_peer_message(wl->context, msg, len);
 }
 
 void node_on_sibling_message(void *msg, uint16_t len) {
-  // Placeholder
+  sb->callback(sb->context, msg, len);
 }
 
+wireless_t *node_get_wireless_instance(void){
+  return wl;
+}
+
+siblings_t *node_get_siblings_instance(void){
+  return sb;
+}
