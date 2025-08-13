@@ -1,9 +1,9 @@
 #include "ring_link_internal.h"
-#include "node.h"
 
 static const char* TAG = "==> ring_link_internal";
 static QueueHandle_t ring_link_internal_queue = NULL;
 
+void node_on_sibling_message(void *msg, uint16_t len);
 
 static esp_err_t ring_link_internal_handler(ring_link_payload_t *p)
 {
@@ -67,6 +67,6 @@ esp_err_t ring_link_internal_init(QueueHandle_t **queue)
 
 esp_err_t ring_link_internal_process(ring_link_payload_t *p)
 {
-    node_on_sibling_message((const uint8_t *)p->buffer, p->len);
+    node_on_sibling_message(p->buffer, p->len);
     return ESP_OK;
 }
