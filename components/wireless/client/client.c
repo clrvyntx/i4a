@@ -8,6 +8,10 @@ static const char *LOGGING_TAG = "tcp_client";
 static int server_sock = -1;
 static bool sta_is_up = false;
 
+void node_on_peer_connected(void);
+void node_on_peer_lost(void);
+void node_on_peer_message(void *msg, uint16_t len);
+
 static bool get_gateway_ip(char *ip_str, size_t ip_str_len) {
     esp_netif_ip_info_t ip_info;
     esp_netif_t *netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
@@ -24,6 +28,7 @@ static bool get_gateway_ip(char *ip_str, size_t ip_str_len) {
 static void socket_read_loop(const int sock, const char *server_ip) {
     uint8_t rx_buffer[BUFFER_SIZE];
 
+    node_on_peer_connected();
     while (1) {
         int len = recv(sock, rx_buffer, sizeof(rx_buffer), 0);
         if (len < 0) {
@@ -33,10 +38,11 @@ static void socket_read_loop(const int sock, const char *server_ip) {
             ESP_LOGW(LOGGING_TAG, "Server %s closed the connection", server_ip);
             break;
         } else {
-            ESP_LOGI(LOGGING_TAG, "Received %d bytes from %s", len, server_ip);
-            // call on_peer_message(rx_buffer, len);
+            node_on_peer_message(rx_buffer, len);
         }
     }
+
+    node_on_peer_lost();
 }
 
 static void tcp_client_task(void *pvParameters) {
