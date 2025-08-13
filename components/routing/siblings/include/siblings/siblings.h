@@ -4,14 +4,12 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-/**
- * This is an abstraction of the siblings component from a Routing component
- * point of view. The actual implementation of this module is in Python code.
- */
-
-typedef void *siblings_t;
-
 typedef void (*siblings_callback_t)(void *context, const uint8_t *msg, uint16_t len);
+
+typedef struct siblings {
+    siblings_callback_t callback;
+    void *context;
+} siblings_t;
 
 /**
  * Registers a function to be called whenever a broadcast sibling message is received
