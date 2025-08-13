@@ -4,13 +4,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-/**
- * This is an abstraction of the wireless component from a Routing component
- * point of view. The actual implementation of this module is in Python code.
- */
-
-typedef void *wireless_t;
-
 typedef struct wireless_callbacks {
     /**
      * on_peer_connected callback
@@ -52,6 +45,11 @@ typedef struct wireless_callbacks {
      */
     void (*on_peer_lost)(void *ctx, uint32_t network, uint32_t mask);
 } wireless_callbacks_t;
+
+typedef struct wireless {
+    wireless_callbacks_t callbacks;
+    void *context;
+} wireless_t;
 
 /**
  * Registers a set of functions to be called whenever a wireless event occurs.
