@@ -23,6 +23,9 @@ static Device node_device = { 0 };
 static node_t *node_ptr = &node;
 static bool network_is_setup = false;
 
+static uint32_t peer_net = 0;
+static uint32_t peer_mask = 0;
+
 static void generate_uuid_from_mac(char *uuid_out, size_t len) {
     uint8_t mac[6];
     esp_read_mac(mac, ESP_MAC_WIFI_SOFTAP);
@@ -130,7 +133,13 @@ esp_netif_t *node_get_spi_netif(void) {
 }
 
 void node_on_peer_connected(void) {
-  // Placeholder
+  esp_netif_ip_info_t ip_info;
+  esp_netif_t *netif = node_get_wifi_netif();
+
+  esp_netif_get_ip_info(netif, &ip_info);
+  peer_net = ntohl(ip_info.ip.addr & ip_info.netmask.addr);
+  peer_mask = ntohl(ip_info.netmask.addr);
+
 }
 
 void node_on_peer_lost(void) {
