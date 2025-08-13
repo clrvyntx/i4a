@@ -34,9 +34,9 @@ esp_netif_t *node_get_wifi_netif(void); // Returns network interface for wireles
 esp_netif_t *node_get_spi_netif(void); // Returns network interface for local communication
 
 // Callback wrappers for module interconnection (not meant to be used in main program)
-void node_on_peer_connected(uint32_t network, uint32_t mask);
-void node_on_peer_lost(uint32_t network, uint32_t mask);
-void node_on_peer_message(const uint8_t *msg, uint16_t len);
-void node_on_sibling_message(const uint8_t *msg, uint16_t len);
+void node_on_peer_connected(void);
+void node_on_peer_lost(void);
+void node_on_peer_message(void *msg, uint16_t len);
+void node_on_sibling_message(void *msg, uint16_t len);
 
 #endif // _NODE_H_
