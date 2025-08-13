@@ -105,6 +105,10 @@ bool node_is_device_center_root(void){
   return node_ptr->node_device_is_center_root;
 }
 
+bool node_broadcast_to_siblings(const uint8_t *msg, uint16_t len){
+  return broadcast_to_siblings(msg,len);
+}
+
 bool node_send_wireless_message(const uint8_t *msg, uint16_t len){
   if(node_ptr->node_device_ptr->mode == AP){
     return server_send_message(msg, len);
