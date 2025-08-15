@@ -4,6 +4,7 @@
 #include "esp_check.h"
 #include "client.h"
 #include "server.h"
+#include "callbacks.h"
 #include "node.h"
 
 #define NODE_NAME_PREFIX "I4A"
@@ -20,12 +21,6 @@ typedef struct node {
 static node_t node = { 0 };
 static Device node_device = { 0 };
 
-static wireless_t wireless = { 0 };
-static wireless_t *wl = &wireless;
-
-static siblings_t siblings = { 0 };
-static siblings_t *sb = &siblings;
-
 static node_t *node_ptr = &node;
 static bool network_is_setup = false;
 
@@ -39,6 +34,9 @@ static void generate_uuid_from_mac(char *uuid_out, size_t len) {
 }
 
 void node_setup(void){
+    ESP_ERROR_CHECK(node_init_event_queues());
+    ESP_ERROR_CHECK(node_start_event_tasks());
+
     config_setup();
     config_print();
 
@@ -136,35 +134,4 @@ esp_netif_t *node_get_wifi_netif(void) {
 
 esp_netif_t *node_get_spi_netif(void) {
     return get_ring_link_tx_netif();
-}
-
-void node_on_peer_connected(void) {
-  esp_netif_ip_info_t ip_info;
-  esp_netif_t *netif = node_get_wifi_netif();
-
-  esp_netif_get_ip_info(netif, &ip_info);
-  peer_net = ntohl(ip_info.ip.addr & ip_info.netmask.addr);
-  peer_mask = ntohl(ip_info.netmask.addr);
-
-  wl->callbacks.on_peer_connected(wl->context, peer_net, peer_mask);
-}
-
-void node_on_peer_lost(void) {
-  wl->callbacks.on_peer_lost(wl->context, peer_net, peer_mask);
-}
-
-void node_on_peer_message(void *msg, uint16_t len) {
-  wl->callbacks.on_peer_message(wl->context, msg, len);
-}
-
-void node_on_sibling_message(void *msg, uint16_t len) {
-  sb->callback(sb->context, msg, len);
-}
-
-wireless_t *node_get_wireless_instance(void){
-  return wl;
-}
-
-siblings_t *node_get_siblings_instance(void){
-  return sb;
 }
