@@ -1,3 +1,4 @@
+#include "callbacks.h"
 #include "server.h"
 
 #define PORT 3999
@@ -11,10 +12,6 @@ static const char *LOGGING_TAG = "tcp_server";
 static int client_sock = -1;
 static int listen_sock = -1;
 static bool server_is_up = false;
-
-void node_on_peer_connected(void);
-void node_on_peer_lost(void);
-void node_on_peer_message(void *msg, uint16_t len);
 
 // Function to read data from the client socket
 static void socket_read_loop(const int sock, const char *client_ip) {
@@ -36,8 +33,8 @@ static void socket_read_loop(const int sock, const char *client_ip) {
     }
   }
 
-  client_sock = -1;
   node_on_peer_lost();
+  client_sock = -1;
 }
 
 // Function to handle the server task

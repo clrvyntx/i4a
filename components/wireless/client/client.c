@@ -1,3 +1,4 @@
+#include "callbacks.h"
 #include "client.h"
 
 #define SERVER_PORT 3999
@@ -7,10 +8,6 @@
 static const char *LOGGING_TAG = "tcp_client";
 static int server_sock = -1;
 static bool sta_is_up = false;
-
-void node_on_peer_connected(void);
-void node_on_peer_lost(void);
-void node_on_peer_message(void *msg, uint16_t len);
 
 static bool get_gateway_ip(char *ip_str, size_t ip_str_len) {
     esp_netif_ip_info_t ip_info;
@@ -28,7 +25,6 @@ static bool get_gateway_ip(char *ip_str, size_t ip_str_len) {
 static void socket_read_loop(const int sock, const char *server_ip) {
     uint8_t rx_buffer[BUFFER_SIZE];
 
-    node_on_peer_connected();
     while (1) {
         int len = recv(sock, rx_buffer, sizeof(rx_buffer), 0);
         if (len < 0) {
@@ -42,7 +38,6 @@ static void socket_read_loop(const int sock, const char *server_ip) {
         }
     }
 
-    node_on_peer_lost();
 }
 
 static void tcp_client_task(void *pvParameters) {
@@ -82,12 +77,12 @@ static void tcp_client_task(void *pvParameters) {
 
         ESP_LOGI(LOGGING_TAG, "Connected to %s", gateway_ip);
         server_sock = sock;
-        // on_peer_connected();
+        node_on_peer_connected();
 
         socket_read_loop(server_sock, gateway_ip);
 
         ESP_LOGW(LOGGING_TAG, "Connection to %s lost. Reconnecting...", gateway_ip);
-        // on_peer_lost();
+        node_on_peer_lost();
 
         server_sock = -1;
         shutdown(sock, 0);
