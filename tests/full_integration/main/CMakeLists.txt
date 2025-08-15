@@ -1,6 +1,6 @@
 idf_component_register(SRCS "main.c"
                        INCLUDE_DIRS "."
-                       REQUIRES node ring_share routing routing_config shared_state siblings sync wireless)
+                       REQUIRES node callbacks ring_share routing routing_config shared_state siblings sync wireless)
 
 idf_component_get_property(lwip lwip COMPONENT_LIB)
 target_compile_options(${lwip} PRIVATE "-I${CMAKE_SOURCE_DIR}/../../components/internal/lwip_custom_hooks")

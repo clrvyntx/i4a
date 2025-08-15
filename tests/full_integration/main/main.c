@@ -8,6 +8,7 @@
 #include "sync/sync.h"
 #include "routing_config/routing_config.h"
 #include "routing/routing.h"
+#include "callbacks.h"
 #include "node.h"
 
 #define ROOT_NETWORK 0x0A000000  // 10.0.0.0
