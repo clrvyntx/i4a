@@ -6,7 +6,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-#define TAG "OS"
+#define LOG_MESSAGE_BUFFER_SIZE 512
 
 bool mutex_create(mutex_t *m)
 {
@@ -38,12 +38,14 @@ void os_panic(const char *fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
-    ESP_LOGE(TAG, "PANIC: ");
-    vprintf(fmt, args);
-    printf("\n");
+
+    char buffer[LOG_MESSAGE_BUFFER_SIZE];
+    vsnprintf(buffer, sizeof(buffer), fmt, args);
+
+    ESP_LOGE("PANIC", "%s", buffer);
     va_end(args);
 
-    ESP_LOGE(TAG, "System will restart due to panic.");
+    ESP_LOGE("PANIC", "System will restart due to panic.");
     esp_restart();
 }
 
@@ -52,27 +54,23 @@ void os_log(os_log_level_t level, const char *tag, const char *fmt, ...)
     va_list args;
     va_start(args, fmt);
 
-    esp_log_level_t esp_level;
+    char buffer[LOG_MESSAGE_BUFFER_SIZE];
+    vsnprintf(buffer, sizeof(buffer), fmt, args);
+
     switch (level) {
         case OS_LOG_LEVEL_INFO:
-            esp_level = ESP_LOG_INFO;
+            ESP_LOGI(tag, "%s", buffer);
             break;
         case OS_LOG_LEVEL_WARNING:
-            esp_level = ESP_LOG_WARN;
+            ESP_LOGW(tag, "%s", buffer);
             break;
         case OS_LOG_LEVEL_ERROR:
-            esp_level = ESP_LOG_ERROR;
-            break;
         case OS_LOG_LEVEL_CRITICAL:
-            esp_level = ESP_LOG_ERROR;
+            ESP_LOGE(tag, "%s", buffer);
             break;
         default:
-            esp_level = ESP_LOG_INFO;
-    }
-
-    if (esp_log_level_get(tag) >= esp_level) {
-        vprintf(fmt, args);
-        printf("\n");
+            ESP_LOGI(tag, "%s", buffer);
+            break;
     }
 
     va_end(args);
