@@ -23,6 +23,7 @@ static bool get_gateway_ip(char *ip_str, size_t ip_str_len) {
 }
 
 static void socket_read_loop(const int sock, const char *server_ip) {
+    node_on_peer_connected();
     uint8_t rx_buffer[BUFFER_SIZE];
 
     while (1) {
@@ -37,7 +38,7 @@ static void socket_read_loop(const int sock, const char *server_ip) {
             node_on_peer_message(rx_buffer, len);
         }
     }
-
+    node_on_peer_lost();
 }
 
 static void tcp_client_task(void *pvParameters) {
@@ -77,12 +78,10 @@ static void tcp_client_task(void *pvParameters) {
 
         ESP_LOGI(LOGGING_TAG, "Connected to %s", gateway_ip);
         server_sock = sock;
-        node_on_peer_connected();
 
         socket_read_loop(server_sock, gateway_ip);
 
         ESP_LOGW(LOGGING_TAG, "Connection to %s lost. Reconnecting...", gateway_ip);
-        node_on_peer_lost();
 
         server_sock = -1;
         shutdown(sock, 0);
