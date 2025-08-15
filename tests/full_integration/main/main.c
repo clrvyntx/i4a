@@ -37,7 +37,6 @@ struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t 
 
 void app_main(void) {
     node_setup();
-    vTaskDelay(pdMS_TO_TICKS(5000));
 
     siblings_t *sb = node_get_siblings_instance();
     wireless_t *wl = node_get_wireless_instance();
@@ -59,7 +58,8 @@ void app_main(void) {
         node_set_as_sta();
         rt_init_forwarder(&rt);
     }
-    
+
+    vTaskDelay(pdMS_TO_TICKS(1000));
     rt_on_start(&rt);
     rt_on_tick(&rt, 0);
     while (true) {
