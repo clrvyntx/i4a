@@ -45,7 +45,6 @@ void os_panic(const char *fmt, ...)
     ESP_LOGE("PANIC", "%s", buffer);
     va_end(args);
 
-    ESP_LOGE("PANIC", "System will restart due to panic.");
     esp_restart();
 }
 
