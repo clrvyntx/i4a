@@ -59,7 +59,6 @@ void app_main(void) {
         rt_init_forwarder(&rt);
     }
     
-    vTaskDelay(pdMS_TO_TICKS(5000));
     rt_on_start(&rt);
     rt_on_tick(&rt, 0);
     while (true) {
