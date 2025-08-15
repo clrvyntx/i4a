@@ -119,7 +119,7 @@ void ap_restart(AccessPointPtr ap) {
 void ap_destroy_netif(AccessPointPtr ap) {
   if (ap->netif) {
     ESP_LOGW(LOGGING_TAG, "Destroying AP netif...");
-    ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &ap_event_handler));
+    esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &ap_event_handler);
     esp_netif_destroy_default_wifi(ap->netif);
     ap->netif = NULL;  // Prevent reuse or double free
   } else {
