@@ -1,4 +1,3 @@
-#include "callbacks.h"
 #include "client.h"
 
 #define SERVER_PORT 3999
@@ -8,6 +7,10 @@
 static const char *LOGGING_TAG = "tcp_client";
 static int server_sock = -1;
 static bool sta_is_up = false;
+
+void node_on_peer_connected(void);
+void node_on_peer_lost(void);
+void node_on_peer_message(void *msg, uint16_t len);
 
 static bool get_gateway_ip(char *ip_str, size_t ip_str_len) {
     esp_netif_ip_info_t ip_info;
