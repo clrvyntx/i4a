@@ -49,7 +49,6 @@ void app_main(void) {
     rt_create(&rt, &rs, wl, &_sync, &ss, orientation);
 
     if(orientation == NODE_DEVICE_ORIENTATION_CENTER){
-        node_set_as_ap();
         if(is_center_root){
             rt_init_root(&rt, ROOT_NETWORK, ROOT_MASK);
         } else {
