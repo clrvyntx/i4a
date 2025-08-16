@@ -4,7 +4,6 @@
 #include "freertos/queue.h"
 #include "freertos/task.h"
 #include "esp_log.h"
-#include "node.h"
 #include "callbacks.h"
 
 #define MAX_MESSAGE_SIZE 256
@@ -32,9 +31,6 @@ static wireless_t *wl = &wireless;
 
 static siblings_t siblings = { 0 };
 static siblings_t *sb = &siblings;
-
-static uint32_t peer_net = 0;
-static uint32_t peer_mask = 0;
 
 static void peer_connected_task(void *arg) {
     peer_event_t event;
@@ -122,26 +118,19 @@ esp_err_t node_start_event_tasks(void) {
     return ESP_OK;
 }
 
-void node_on_peer_connected(void) {
-    esp_netif_ip_info_t ip_info;
-    esp_netif_t *netif = node_get_wifi_netif();
-    esp_netif_get_ip_info(netif, &ip_info);
-
-    peer_net = ntohl(ip_info.ip.addr & ip_info.netmask.addr);
-    peer_mask = ntohl(ip_info.netmask.addr);
-
+void node_on_peer_connected(uint32_t net, uint32_t mask) {
     peer_event_t event = {
-        .net = peer_net,
-        .mask = peer_mask,
+        .net = net,
+        .mask = mask,
     };
 
     xQueueSend(peer_connected_queue, &event, portMAX_DELAY);
 }
 
-void node_on_peer_lost(void) {
+void node_on_peer_lost(uint32_t net, uint32_t mask) {
     peer_event_t event = {
-        .net = peer_net,
-        .mask = peer_mask,
+        .net = net,
+        .mask = mask,
     };
 
     xQueueSend(peer_lost_queue, &event, portMAX_DELAY);

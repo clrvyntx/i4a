@@ -5,6 +5,10 @@
 #include <stdbool.h>
 #include "esp_netif.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // Node's device orientations, the values match the ones read in hardware
 typedef enum {
     NODE_DEVICE_ORIENTATION_NORTH = 0,
@@ -32,5 +36,9 @@ bool node_broadcast_to_siblings(const uint8_t *msg, uint16_t len); // Broadcast 
 // Node network interfaces
 esp_netif_t *node_get_wifi_netif(void); // Returns network interface for wireless link
 esp_netif_t *node_get_spi_netif(void); // Returns network interface for local communication
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // _NODE_H_

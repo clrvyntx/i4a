@@ -24,9 +24,6 @@ static Device node_device = { 0 };
 static node_t *node_ptr = &node;
 static bool network_is_setup = false;
 
-static uint32_t peer_net = 0;
-static uint32_t peer_mask = 0;
-
 static void generate_uuid_from_mac(char *uuid_out, size_t len) {
     uint8_t mac[6];
     esp_read_mac(mac, ESP_MAC_WIFI_SOFTAP);
