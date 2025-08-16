@@ -3,6 +3,7 @@
 #include "lwip/sockets.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "callbacks.h"
 #include "server.h"
 
 #define PORT 3999
@@ -19,10 +20,6 @@ static bool server_is_up = false;
 
 static uint32_t peer_net = 0;
 static uint32_t peer_mask = 0;
-
-void node_on_peer_connected(uint32_t net, uint32_t mask);
-void node_on_peer_lost(uint32_t net, uint32_t mask);
-void node_on_peer_message(void *msg, uint16_t len);
 
 static bool get_network_address_and_mask(void) {
   esp_netif_ip_info_t ip_info;
