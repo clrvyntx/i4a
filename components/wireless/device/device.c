@@ -123,7 +123,8 @@ void device_set_mode(DevicePtr device_ptr, Device_Mode mode) {
 void device_destroy_netif(DevicePtr device_ptr){
   if (device_ptr->mode == AP) {
     ap_destroy_netif(device_ptr->access_point_ptr);
-  } else if (device_ptr->mode == STATION) {
+  }
+  if (device_ptr->mode == STATION) {
     station_destroy_netif(device_ptr->station_ptr);
   }
 }
@@ -207,12 +208,3 @@ void device_restart_station(DevicePtr device_ptr) {
 void device_stop_station(DevicePtr device_ptr) {
   station_stop(device_ptr->station_ptr);
 };
-
-esp_netif_t *device_get_netif(DevicePtr device_ptr) {
-  if (device_ptr->mode == AP) {
-    return device_ptr->access_point_ptr->netif;
-  } else if (device_ptr->mode == STATION) {
-    return device_ptr->station_ptr->netif;
-  }
-  return NULL;
-}
