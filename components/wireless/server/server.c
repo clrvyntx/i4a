@@ -190,7 +190,6 @@ bool server_send_message(const uint8_t *msg, uint16_t len) {
 
   int sent = send(client_sock, msg, len, 0);
   if (sent == len) {
-    ESP_LOGI(LOGGING_TAG, "Sent %d bytes to client", sent);
     return true;
   } else {
     ESP_LOGE(LOGGING_TAG, "Failed to send message: errno %d", errno);
