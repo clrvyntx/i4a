@@ -84,7 +84,7 @@ void node_set_as_ap(){
 }
 
 void node_set_ap_network(uint32_t network, uint32_t mask){
-  if(node_ptr->node_device_ptr->mode != AP){
+  if(!network_is_setup || node_ptr->node_device_ptr->mode != AP){
     node_set_as_ap();
   }
 
@@ -144,3 +144,4 @@ esp_netif_t *node_get_wifi_netif(void) {
 esp_netif_t *node_get_spi_netif(void) {
     return get_ring_link_tx_netif();
 }
+
