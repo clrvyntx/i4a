@@ -1,22 +1,10 @@
-#include <lwip/netdb.h>
-
-#include "esp_event.h"
-#include "esp_log.h"
-#include "esp_wifi.h"
-#include "esp_mac.h"
-#include "esp_netif.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/event_groups.h"
-#include "lwip/err.h"
-#include "lwip/sockets.h"
-#include "lwip/sys.h"
-#include "nvs_flash.h"
-
-#include "station.h"
 #include <string.h>
-#include <arpa/inet.h>
-#include "utils.c"
-#include "../client/client.h"
+#include "esp_log.h"
+#include "esp_event.h"
+#include "esp_wifi.h"
+#include "lwip/ip_addr.h"
+#include "client.h"
+#include "station.h"
 
 #define SCAN_LIST_SIZE 10
 #define MAX_RETRIES 10
@@ -25,6 +13,25 @@ static const char* LOGGING_TAG = "station";
 
 static int s_retry_num = 0;
 static bool is_fully_connected = false;
+
+static bool is_network_allowed(char* device_uuid, char* network_prefix, char* network_name) {
+  // Must contain the prefix
+  if (strstr(network_name, network_prefix) == NULL) {
+    return false;
+  }
+
+  // Must NOT contain the device UUID
+  if (strstr(network_name, device_uuid) != NULL) {
+    return false;
+  }
+
+  // Must NOT be a center node (check if "_C_" is part of the network name)
+  if (strstr(network_name, "_C_") != NULL) {
+    return false;
+  }
+
+  return true;
+}
 
 void station_init(StationPtr stationPtr, const char* wifi_ssid_like, uint16_t orientation, char* device_uuid, const char* password) {
 

@@ -1,15 +1,9 @@
-#include "esp_event.h"
-#include "esp_log.h"
-#include "esp_event.h"
-#include "esp_netif.h"
-#include "esp_system.h"
+#include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
-#include "freertos/task.h"
+#include "esp_wifi.h"
 #include "nvs_flash.h"
-#include <string.h>
-#include <unistd.h>
-
+#include "esp_log.h"
 #include "device.h"
 
 static const char *LOGGING_TAG = "device";

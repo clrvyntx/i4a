@@ -1,3 +1,8 @@
+#include "esp_netif.h"
+#include "esp_log.h"
+#include "lwip/sockets.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "client.h"
 
 #define SERVER_PORT 3999
@@ -8,8 +13,11 @@ static const char *LOGGING_TAG = "tcp_client";
 static int server_sock = -1;
 static bool sta_is_up = false;
 
-void node_on_peer_connected(void);
-void node_on_peer_lost(void);
+static uint32_t peer_net = 0;
+static uint32_t peer_mask = 0;
+
+void node_on_peer_connected(uint32_t net, uint32_t mask);
+void node_on_peer_lost(uint32_t net, uint32_t mask);
 void node_on_peer_message(void *msg, uint16_t len);
 
 static bool get_gateway_ip(char *ip_str, size_t ip_str_len) {
@@ -25,8 +33,23 @@ static bool get_gateway_ip(char *ip_str, size_t ip_str_len) {
     return true;
 }
 
+static bool get_network_address_and_mask(void) {
+    esp_netif_ip_info_t ip_info;
+    esp_netif_t *netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
+
+    if (!netif || esp_netif_get_ip_info(netif, &ip_info) != ESP_OK) {
+        ESP_LOGE(LOGGING_TAG, "Failed to get network info");
+        return false;
+    }
+
+    peer_net = ntohl(ip_info.ip.addr & ip_info.netmask.addr);
+    peer_mask = ntohl(ip_info.netmask.addr);
+
+    return true;
+}
+
 static void socket_read_loop(const int sock, const char *server_ip) {
-    node_on_peer_connected();
+    node_on_peer_connected(peer_net, peer_mask);
     uint8_t rx_buffer[BUFFER_SIZE];
 
     while (1) {
@@ -41,7 +64,7 @@ static void socket_read_loop(const int sock, const char *server_ip) {
             node_on_peer_message(rx_buffer, len);
         }
     }
-    node_on_peer_lost();
+    node_on_peer_lost(peer_net, peer_mask);
 }
 
 static void tcp_client_task(void *pvParameters) {
@@ -51,6 +74,12 @@ static void tcp_client_task(void *pvParameters) {
     char gateway_ip[INET_ADDRSTRLEN];
 
     while (sta_is_up) {
+
+        if (!get_network_address_and_mask()) {
+            ESP_LOGE(LOGGING_TAG, "Failed to get network IP and mask, retrying...");
+            vTaskDelay(RETRY_DELAY_MS / portTICK_PERIOD_MS);
+            continue;
+        }
 
         if (!get_gateway_ip(gateway_ip, sizeof(gateway_ip))) {
             ESP_LOGE(LOGGING_TAG, "Failed to get gateway IP, retrying...");

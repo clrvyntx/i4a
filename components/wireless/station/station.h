@@ -1,5 +1,13 @@
-#include "esp_wifi.h"
-#include "esp_mac.h"
+#ifndef _STA_H_
+#define _STA_H_
+
+#include <stdbool.h>
+#include <stdint.h>
+#include "esp_netif.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct wifi_ap_record_t_owned {
   wifi_ap_record_t ap_info;
@@ -82,3 +90,8 @@ void connect_to_wifi(wifi_config_t wifi_config);
  */
 void wait_connection_established();
 
+#ifdef __cplusplus
+}
+#endif
+
+#endif // _STA_H_

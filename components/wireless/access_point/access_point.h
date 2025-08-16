@@ -1,4 +1,12 @@
+#ifndef _AP_H_
+#define _AP_H_
+
+#include "esp_netif.h"
 #include "esp_wifi.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*
 * State enum to manage the state of the Access Point
@@ -41,3 +49,9 @@ void ap_restart(AccessPointPtr ap);
 void ap_destroy_netif(AccessPointPtr ap);
 void ap_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
 void ap_set_network(AccessPointPtr ap, const char *network_cidr, const char *network_gateway, const char *network_mask);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif // _AP_H_

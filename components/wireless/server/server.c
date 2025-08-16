@@ -1,3 +1,8 @@
+#include "esp_netif.h"
+#include "esp_log.h"
+#include "lwip/sockets.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "server.h"
 
 #define PORT 3999
@@ -12,14 +17,32 @@ static int client_sock = -1;
 static int listen_sock = -1;
 static bool server_is_up = false;
 
-void node_on_peer_connected(void);
-void node_on_peer_lost(void);
+static uint32_t peer_net = 0;
+static uint32_t peer_mask = 0;
+
+void node_on_peer_connected(uint32_t net, uint32_t mask);
+void node_on_peer_lost(uint32_t net, uint32_t mask);
 void node_on_peer_message(void *msg, uint16_t len);
+
+static bool get_network_address_and_mask(void) {
+  esp_netif_ip_info_t ip_info;
+  esp_netif_t *netif = esp_netif_get_handle_from_ifkey("WIFI_AP_DEF");
+
+  if (!netif || esp_netif_get_ip_info(netif, &ip_info) != ESP_OK) {
+    ESP_LOGE(LOGGING_TAG, "Failed to get network info");
+    return false;
+  }
+
+  peer_net = ntohl(ip_info.ip.addr & ip_info.netmask.addr);
+  peer_mask = ntohl(ip_info.netmask.addr);
+
+  return true;
+}
 
 // Function to read data from the client socket
 static void socket_read_loop(const int sock, const char *client_ip) {
 
-  node_on_peer_connected();
+  node_on_peer_connected(peer_net, peer_mask);
   uint8_t rx_buffer[BUFFER_SIZE];
   client_sock = sock;
 
@@ -36,7 +59,7 @@ static void socket_read_loop(const int sock, const char *client_ip) {
     }
   }
 
-  node_on_peer_lost();
+  node_on_peer_lost(peer_net, peer_mask);
   client_sock = -1;
 }
 
@@ -50,6 +73,12 @@ static void tcp_server_task(void *pvParameters) {
   dest_addr.sin_addr.s_addr = htonl(INADDR_ANY);
   dest_addr.sin_family = AF_INET;
   dest_addr.sin_port = htons(PORT);
+
+  if (!get_network_address_and_mask()) {
+    ESP_LOGE(LOGGING_TAG, "Failed to get network IP and mask");
+    vTaskDelete(NULL);
+    return;
+  }
 
   // Create the listening socket
   listen_sock = socket(addr_family, SOCK_STREAM, ip_protocol);

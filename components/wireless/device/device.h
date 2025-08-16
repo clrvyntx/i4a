@@ -1,18 +1,14 @@
-#include "esp_event.h"
-#include "esp_log.h"
-#include "esp_event.h"
-#include "esp_wifi.h"
-#include "esp_netif.h"
-#include "esp_system.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/event_groups.h"
-#include "freertos/task.h"
-#include "nvs_flash.h"
-#include <string.h>
-#include <unistd.h>
+#ifndef _DEVICE_H_
+#define _DEVICE_H_
 
-#include "../access_point/access_point.h"
-#include "../station/station.h"
+#include <stdint.h>
+#include "esp_netif.h"
+#include "access_point.h"
+#include "station.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*
 * State enum to manage the state of the Access Point
@@ -81,3 +77,9 @@ esp_netif_t *device_get_netif(DevicePtr device_ptr);
 // Quiza podemos agregar un flag para saber a quien va el mensaje
 // Aca tendriamos el handle message y llamamos al station station_find_ap
 // lo mejor seria que ellos chequeen si es para nosotros 
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif //_DEVICE_H_
