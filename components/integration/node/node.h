@@ -22,7 +22,8 @@ typedef enum {
 void node_setup(void); // Always call this before doing anything with this module
 
 // Device mode setting
-void node_set_as_ap(uint32_t network, uint32_t mask); // Sets device as AP with desired subnet/mask
+void node_set_as_ap(void); // Sets device as AP, waiting to be assigned subnet/mask
+void node_set_ap_network(uint32_t network, uint32_t mask); // Sets subnet/mask and starts AP
 void node_set_as_sta(void); // Sets device as Station, scanning for nearby connections
 
 // Node parameters
