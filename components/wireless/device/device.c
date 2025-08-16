@@ -209,15 +209,10 @@ void device_stop_station(DevicePtr device_ptr) {
 };
 
 esp_netif_t *device_get_netif(DevicePtr device_ptr) {
-  if (!device_ptr) {
-    return NULL;
-  }
-
   if (device_ptr->mode == AP) {
     return device_ptr->access_point_ptr->netif;
   } else if (device_ptr->mode == STATION) {
     return device_ptr->station_ptr->netif;
   }
-
   return NULL;
 }
