@@ -35,8 +35,7 @@ void app_main(void) {
 
     uint32_t net = 0x0A090000; // 10.9.0.0
     uint32_t mask = 0xFFFF0000; // 255.255.0.0
-    node_set_as_ap();
-    node_set_ap_network(net,mask);
+    node_set_as_ap(net,mask);
 
     vTaskDelay(pdMS_TO_TICKS(10000));
 
@@ -58,7 +57,6 @@ void app_main(void) {
 
     net = 0x0A080000; // 10.8.0.0
     mask = 0xFFFF0000; // 255.255.0.0
-    node_set_as_ap();
-    node_set_ap_network(net,mask);
+    node_set_as_ap(net,mask);
 
 }
