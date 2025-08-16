@@ -11,5 +11,5 @@ bool wl_send_peer_message(wireless_t *wl, const void *msg, uint16_t len){
 }
 
 void wl_enable_ap_mode(wireless_t *wl, uint32_t network, uint32_t mask){
-    return node_set_ap_network(network, mask);
+    return node_set_as_ap(network, mask);
 }
