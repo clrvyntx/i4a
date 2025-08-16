@@ -8,6 +8,7 @@
 
 #define SCAN_LIST_SIZE 10
 #define MAX_RETRIES 10
+#define RSSI_THRESHOLD -128 // Minimum RSSI (in dBm) required to consider an AP as available
 
 static const char* LOGGING_TAG = "station";
 
@@ -64,7 +65,7 @@ void station_find_ap(StationPtr stationPtr) {
   uint16_t networks_to_scan = (ap_count > number) ? number : ap_count;
 
   wifi_ap_record_t *best_ap = NULL;
-  int best_rssi = -128; // Minimum possible RSSI (very weak signal)
+  int best_rssi = RSSI_THRESHOLD;
 
   for (int i = 0; i < networks_to_scan; i++) {
     if (is_network_allowed(stationPtr->device_uuid, stationPtr->ssid_like, (char*)ap_info[i].ssid)) {
