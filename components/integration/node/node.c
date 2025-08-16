@@ -19,7 +19,9 @@ typedef struct node {
 } node_t;
 
 static node_t node = { 0 };
-static Device node_device = { 0 };
+static Device node_device = {
+  .mode = NAN,
+};
 
 static node_t *node_ptr = &node;
 static bool network_is_setup = false;
@@ -48,52 +50,38 @@ void node_setup(void){
 }
 
 void node_set_as_sta(void){
-    if(network_is_setup){
-        device_reset(node_ptr->node_device_ptr);
-    }
+  if(node_ptr->node_device_ptr->mode != NAN){
+    device_reset(node_ptr->node_device_ptr);
+  }
 
-    char *wifi_network_prefix = NODE_NAME_PREFIX;
-    char *wifi_network_password = NODE_LINK_PASSWORD;
+  char *wifi_network_prefix = NODE_NAME_PREFIX;
+  char *wifi_network_password = NODE_LINK_PASSWORD;
 
-    device_init(node_ptr->node_device_ptr, node_ptr->node_device_uuid, node_ptr->node_device_orientation, wifi_network_prefix, wifi_network_password, 6, 4, 0, STATION);
-    device_start_station(node_ptr->node_device_ptr);
-    device_connect_station(node_ptr->node_device_ptr);
-    network_is_setup = true;
+  device_init(node_ptr->node_device_ptr, node_ptr->node_device_uuid, node_ptr->node_device_orientation, wifi_network_prefix, wifi_network_password, 6, 4, 0, STATION);
+  device_start_station(node_ptr->node_device_ptr);
+  device_connect_station(node_ptr->node_device_ptr);
+  network_is_setup = true;
 }
 
-void node_set_as_ap(){
-    if(network_is_setup){
-      device_reset(node_ptr->node_device_ptr);
-    }
-
-    uint8_t ap_channel_to_emit = (rand() % 11) + 1;
-    uint8_t ap_max_sta_connections;
-    char *wifi_network_prefix = NODE_NAME_PREFIX;
-    char *wifi_network_password;
-
-    if (node_ptr->node_device_orientation == CONFIG_ORIENTATION_CENTER) {
-      wifi_network_password = "";
-      ap_max_sta_connections = MAX_DEVICES_PER_HOUSE;
-    } else {
-        wifi_network_password = NODE_LINK_PASSWORD;
-        ap_max_sta_connections = 1;
-    }
-
-    device_init(node_ptr->node_device_ptr, node_ptr->node_device_uuid, node_ptr->node_device_orientation, wifi_network_prefix, wifi_network_password, ap_channel_to_emit, ap_max_sta_connections, 0, AP);
-    network_is_setup = true;
-}
-
-void node_set_ap_network(uint32_t network, uint32_t mask){
-  if(!network_is_setup || node_ptr->node_device_ptr->mode != AP){
-    node_set_as_ap();
+void node_set_as_ap(uint32_t network, uint32_t mask){
+  if(node_ptr->node_device_ptr->mode != NAN){
+    device_reset(node_ptr->node_device_ptr);
   }
 
   uint32_t node_gateway;
+  uint8_t ap_channel_to_emit = (rand() % 11) + 1;
+  uint8_t ap_max_sta_connections;
+  char *wifi_network_prefix = NODE_NAME_PREFIX;
+  char *wifi_network_password;
 
   if (node_ptr->node_device_orientation == CONFIG_ORIENTATION_CENTER) {
     node_gateway = network + 1;
+    wifi_network_password = "";
+    ap_max_sta_connections = MAX_DEVICES_PER_HOUSE;
   } else {
     node_gateway = network + 2;
+    wifi_network_password = NODE_LINK_PASSWORD;
+    ap_max_sta_connections = 1;
   }
 
   ip4_addr_t net_addr, gateway_addr, mask_addr;
@@ -109,6 +97,7 @@ void node_set_ap_network(uint32_t network, uint32_t mask){
   ip4addr_ntoa_r(&gateway_addr, network_gateway, sizeof(network_gateway));
   ip4addr_ntoa_r(&mask_addr, network_mask, sizeof(network_mask));
 
+  device_init(node_ptr->node_device_ptr, node_ptr->node_device_uuid, node_ptr->node_device_orientation, wifi_network_prefix, wifi_network_password, ap_channel_to_emit, ap_max_sta_connections, 0, AP);
   device_set_network_ap(node_ptr->node_device_ptr, network_cidr, network_gateway, network_mask);
   device_start_ap(node_ptr->node_device_ptr);
 }
@@ -138,7 +127,13 @@ bool node_send_wireless_message(const uint8_t *msg, uint16_t len){
 }
 
 esp_netif_t *node_get_wifi_netif(void) {
-    return device_get_netif(node_ptr->node_device_ptr);
+  if (node_ptr->node_device_ptr->mode == AP) {
+    return node_ptr->node_device_ptr->access_point_ptr->netif;
+  }
+  if (node_ptr->node_device_ptr->mode == STATION) {
+    return node_ptr->node_device_ptr->station_ptr->netif;
+  }
+  return NULL;
 }
 
 esp_netif_t *node_get_spi_netif(void) {
