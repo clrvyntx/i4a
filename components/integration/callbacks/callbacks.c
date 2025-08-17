@@ -50,8 +50,6 @@ static void read_uuid(void *ctx, const uint8_t *data, uint16_t len) {
 
     memcpy(uuid, data, len);
     uuid[len] = '\0';  // Null-terminate the string
-
-    ESP_LOGI(TAG, "Received UUID from sibling: %s", uuid);
 }
 
 static siblings_t siblings = {
