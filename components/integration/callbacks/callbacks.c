@@ -10,6 +10,7 @@
 #define QUEUE_LENGTH 10
 
 static const char *TAG = "callbacks";
+static char uuid[7] = {0};
 
 typedef struct message {
     uint8_t data[MAX_MESSAGE_SIZE];
@@ -41,8 +42,20 @@ static wireless_t wireless = {
     .context = NULL,
 };
 
+static void read_uuid(void *ctx, const uint8_t *data, uint16_t len) {
+    if (len >= sizeof(uuid)) {
+        ESP_LOGW(TAG, "Received UUID too long, ignoring");
+        return;
+    }
+
+    memcpy(uuid, data, len);
+    uuid[len] = '\0';  // Null-terminate the string
+
+    ESP_LOGI(TAG, "Received UUID from sibling: %s", uuid);
+}
+
 static siblings_t siblings = {
-    .callback = do_nothing_message,
+    .callback = read_uuid,
     .context = NULL,
 };
 
@@ -175,4 +188,8 @@ wireless_t *node_get_wireless_instance(void){
 
 siblings_t *node_get_siblings_instance(void){
     return sb;
+}
+
+const char *node_get_uuid(void) {
+    return (const char *)uuid;
 }

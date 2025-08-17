@@ -17,6 +17,9 @@ esp_err_t node_start_event_tasks(void);
 wireless_t *node_get_wireless_instance(void);
 siblings_t *node_get_siblings_instance(void);
 
+// Node UUID
+const char *node_get_uuid(void);
+
 // Callback wrappers for module interconnection
 void node_on_peer_connected(uint32_t net, uint32_t mask);
 void node_on_peer_lost(uint32_t net, uint32_t mask);

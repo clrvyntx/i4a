@@ -33,19 +33,32 @@ static void generate_uuid_from_mac(char *uuid_out, size_t len) {
 }
 
 void node_setup(void){
-    ESP_ERROR_CHECK(node_init_event_queues());
-    ESP_ERROR_CHECK(node_start_event_tasks());
+  ESP_ERROR_CHECK(node_init_event_queues());
+  ESP_ERROR_CHECK(node_start_event_tasks());
 
-    config_setup();
-    config_print();
+  config_setup();
+  config_print();
 
-    ESP_ERROR_CHECK(device_wifi_init());
-    ESP_ERROR_CHECK(ring_link_init());
+  ESP_ERROR_CHECK(device_wifi_init());
+  ESP_ERROR_CHECK(ring_link_init());
 
-    node_ptr->node_device_ptr = &node_device;
-    node_ptr->node_device_orientation = config_get_orientation();
-    node_ptr->node_device_is_center_root = config_mode_is(CONFIG_MODE_ROOT);
+  node_ptr->node_device_ptr = &node_device;
+  node_ptr->node_device_orientation = config_get_orientation();
+  node_ptr->node_device_is_center_root = config_mode_is(CONFIG_MODE_ROOT);
+
+  if(node_ptr->node_device_orientation == CONFIG_ORIENTATION_CENTER){
     generate_uuid_from_mac(node_ptr->node_device_uuid, sizeof(node_ptr->node_device_uuid));
+    while(!node_broadcast_to_siblings((uint8_t *)node_ptr->node_device_uuid, strlen(node_ptr->node_device_uuid))){
+      vTaskDelay(pdMS_TO_TICKS(100));
+    }
+    ESP_LOGI("Node", "Center device UUID generated and broadcasted: %s", node_ptr->node_device_uuid);
+  } else {
+    while(strlen(node_get_uuid()) == 0){
+      vTaskDelay(pdMS_TO_TICKS(100));
+    }
+    strcpy(node_ptr->node_device_uuid, node_get_uuid());
+    ESP_LOGI("Node", "Peripheral node received UUID: %s", node_ptr->node_device_uuid);
+  }
 
 }
 
