@@ -11,6 +11,8 @@
 #define NODE_LINK_PASSWORD "zWfAc2wXq5"
 #define MAX_DEVICES_PER_HOUSE 4
 
+static const char *TAG = "node";
+
 typedef struct node {
   DevicePtr node_device_ptr;
   char node_device_uuid[7];
@@ -51,13 +53,13 @@ void node_setup(void){
     while(!node_broadcast_to_siblings((uint8_t *)node_ptr->node_device_uuid, strlen(node_ptr->node_device_uuid))){
       vTaskDelay(pdMS_TO_TICKS(100));
     }
-    ESP_LOGI("Node", "Center device UUID generated and broadcasted: %s", node_ptr->node_device_uuid);
+    ESP_LOGI(TAG, "Center device UUID generated and broadcasted: %s", node_ptr->node_device_uuid);
   } else {
     while(strlen(node_get_uuid()) == 0){
       vTaskDelay(pdMS_TO_TICKS(100));
     }
     strcpy(node_ptr->node_device_uuid, node_get_uuid());
-    ESP_LOGI("Node", "Peripheral node received UUID: %s", node_ptr->node_device_uuid);
+    ESP_LOGI(TAG, "Peripheral device received UUID: %s", node_ptr->node_device_uuid);
   }
 
 }
@@ -152,4 +154,5 @@ esp_netif_t *node_get_wifi_netif(void) {
 esp_netif_t *node_get_spi_netif(void) {
     return get_ring_link_tx_netif();
 }
+
 
