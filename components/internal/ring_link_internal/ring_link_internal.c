@@ -53,7 +53,7 @@ esp_err_t ring_link_internal_init(QueueHandle_t **queue)
         "ring_link_internal_process",
         RING_LINK_INTERNAL_MEM_TASK,
         NULL,
-        (tskIDLE_PRIORITY + 2),
+        5,
         NULL,
         1
     );

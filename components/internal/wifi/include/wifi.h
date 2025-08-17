@@ -13,7 +13,6 @@
 #include "esp_netif_net_stack.h"
 
 #include "config.h"
-#include "utils.h"
 
 
 #define WIFI_AP_SSID CONFIG_WIFI_SSID

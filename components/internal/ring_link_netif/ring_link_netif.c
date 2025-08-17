@@ -50,7 +50,7 @@ esp_err_t ring_link_netif_init(QueueHandle_t **queue)
         "ring_link_netif_process",
         RING_LINK_NETIF_MEM_TASK,
         NULL,
-        (tskIDLE_PRIORITY + 4),
+        5,
         NULL,
         1
     );

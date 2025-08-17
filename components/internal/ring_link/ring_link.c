@@ -3,7 +3,7 @@
 
 #include "ring_link.h"
 
-static const char *TAG = "==> ring_link";
+static const char *TAG = "ring_link";
 
 static QueueHandle_t *lowlevel_queue;
 static QueueHandle_t *internal_queue;
@@ -97,7 +97,7 @@ esp_err_t ring_link_init(void)
         "ring_link_process",
         RING_LINK_NETIF_MEM_TASK,
         NULL,
-        (tskIDLE_PRIORITY + 4),
+        5,
         NULL,
         1
     );
