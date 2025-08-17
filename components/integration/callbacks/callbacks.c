@@ -10,7 +10,6 @@
 #define QUEUE_LENGTH 10
 
 static const char *TAG = "callbacks";
-static char uuid[7] = {0};
 
 typedef struct message {
     uint8_t data[MAX_MESSAGE_SIZE];
@@ -27,39 +26,8 @@ static QueueHandle_t peer_lost_queue = NULL;
 static QueueHandle_t peer_message_queue = NULL;
 static QueueHandle_t sibling_message_queue = NULL;
 
-static void do_nothing_peer(void *ctx, uint32_t net, uint32_t mask) {
-}
-
-static void do_nothing_message(void *ctx, const uint8_t *data, uint16_t len) {
-}
-
-static void read_uuid(void *ctx, const uint8_t *data, uint16_t len) {
-    if (strlen(uuid) != 0) {
-        return;
-    }
-
-    if (len >= sizeof(uuid)) {
-        ESP_LOGW(TAG, "Received UUID too long, ignoring");
-        return;
-    }
-
-    memcpy(uuid, data, len);
-    uuid[len] = '\0';
-}
-
-static wireless_t wireless = {
-    .callbacks = {
-        .on_peer_connected = do_nothing_peer,
-        .on_peer_lost      = do_nothing_peer,
-        .on_peer_message   = do_nothing_message,
-    },
-    .context = NULL,
-};
-
-static siblings_t siblings = {
-    .callback = read_uuid,
-    .context = NULL,
-};
+static wireless_t wireless = {0};
+static siblings_t siblings = {0};
 
 static wireless_t *wl = &wireless;
 static siblings_t *sb = &siblings;
@@ -184,6 +152,16 @@ void node_on_sibling_message(void *msg, uint16_t len) {
     xQueueSend(sibling_message_queue, &m, portMAX_DELAY);
 }
 
+void node_register_wireless_callbacks(wireless_callbacks_t callbacks, void *context){
+    wl->callbacks = callbacks;
+    wl->context = context;
+}
+
+void node_register_siblings_callbacks( siblings_callback_t callback, void *context){
+    sb->callback = callback;
+    sb->context = context;
+}
+
 wireless_t *node_get_wireless_instance(void){
     return wl;
 }
@@ -192,6 +170,4 @@ siblings_t *node_get_siblings_instance(void){
     return sb;
 }
 
-const char *node_get_uuid(void) {
-    return (const char *)uuid;
-}
+
