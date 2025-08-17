@@ -10,4 +10,13 @@
 #define RING_LINK_LOWLEVEL_IMPL_FREE_RX_BUFFER  spi_free_rx_buffer
 #endif
 
+#ifdef CONFIG_RING_LINK_LOWLEVEL_IMPL_PHYSIM
+#include "physim.h"
+
+#define RING_LINK_LOWLEVEL_BUFFER_SIZE      PHYSIM_BUFFER_SIZE
+#define RING_LINK_LOWLEVEL_IMPL_INIT        physim_init
+#define RING_LINK_LOWLEVEL_IMPL_TRANSMIT    physim_transmit
+#define RING_LINK_LOWLEVEL_IMPL_RECEIVE     physim_receive
+#endif
+
 #endif
