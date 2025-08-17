@@ -1,6 +1,6 @@
 #include "config.h"
 
-static const char* TAG = "==> config";
+static const char* TAG = "config";
 
 static config_t s_config = {
     .id          = CONFIG_ID_NONE,
@@ -22,13 +22,6 @@ static void enable_config_pins(void)
     ESP_ERROR_CHECK(gpio_config(&io_conf));
 }
 
-static void reset_config_pins(void)
-{
-    gpio_reset_pin(CONFIG_PIN_0);
-    gpio_reset_pin(CONFIG_PIN_1);
-    gpio_reset_pin(CONFIG_PIN_2);
-}
-
 // Set the corresponding bits in config_bits based on GPIO pin values
 static uint8_t read_config_bits(void)
 {
@@ -43,7 +36,6 @@ static uint8_t read_config_bits(void)
          gpio_get_level(CONFIG_PIN_0),
          gpio_get_level(CONFIG_PIN_1),
          gpio_get_level(CONFIG_PIN_2));
-    reset_config_pins();
 
     return config_bits;
 }
