@@ -78,6 +78,7 @@ void node_setup(void){
   node_ptr->node_device_is_center_root = config_mode_is(CONFIG_MODE_ROOT);
 
   if(node_ptr->node_device_orientation == CONFIG_ORIENTATION_CENTER){
+    vTaskDelay(pdMS_TO_TICKS(1000));
     generate_uuid_from_mac(node_ptr->node_device_uuid, sizeof(node_ptr->node_device_uuid));
     while(!node_broadcast_to_siblings((uint8_t *)node_ptr->node_device_uuid, strlen(node_ptr->node_device_uuid))){
       vTaskDelay(pdMS_TO_TICKS(100));
@@ -184,5 +185,6 @@ esp_netif_t *node_get_wifi_netif(void) {
 esp_netif_t *node_get_spi_netif(void) {
     return get_ring_link_tx_netif();
 }
+
 
 
