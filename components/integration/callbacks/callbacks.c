@@ -50,7 +50,6 @@ static void read_uuid(void *ctx, const uint8_t *data, uint16_t len) {
 
     memcpy(uuid, data, len);
     uuid[len] = '\0';
-    siblings.callback = do_nothing_message;
 }
 
 static siblings_t siblings = {
