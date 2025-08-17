@@ -55,6 +55,7 @@ void app_main(void) {
             rt_init_home(&rt);
         }
     } else {
+        node_set_as_sta();
         rt_init_forwarder(&rt);
     }
 
