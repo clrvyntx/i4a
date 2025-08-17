@@ -54,15 +54,15 @@ static void do_nothing_peer(void *ctx, uint32_t net, uint32_t mask) {
 static void do_nothing_message(void *ctx, const uint8_t *data, uint16_t len) {
 }
 
+static wireless_callbacks_t default_callbacks = {
+  .on_peer_connected = do_nothing_peer,
+  .on_peer_lost = do_nothing_peer,
+  .on_peer_message = do_nothing_message
+};
+
 void node_setup(void){
   ESP_ERROR_CHECK(node_init_event_queues());
   ESP_ERROR_CHECK(node_start_event_tasks());
-
-  wireless_callbacks_t default_callbacks = {
-    .on_peer_connected = do_nothing_peer,
-    .on_peer_lost = do_nothing_peer,
-    .on_peer_message = do_nothing_message
-  };
 
   node_register_wireless_callbacks(default_callbacks, NULL);
   node_register_siblings_callbacks(read_uuid, NULL);
