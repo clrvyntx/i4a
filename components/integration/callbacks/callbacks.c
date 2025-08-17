@@ -33,16 +33,11 @@ static void do_nothing_peer(void *ctx, uint32_t net, uint32_t mask) {
 static void do_nothing_message(void *ctx, const uint8_t *data, uint16_t len) {
 }
 
-static wireless_t wireless = {
-    .callbacks = {
-        .on_peer_connected = do_nothing_peer,
-        .on_peer_lost      = do_nothing_peer,
-        .on_peer_message   = do_nothing_message,
-    },
-    .context = NULL,
-};
-
 static void read_uuid(void *ctx, const uint8_t *data, uint16_t len) {
+    if (strlen(uuid) != 0) {
+        return;
+    }
+
     if (len >= sizeof(uuid)) {
         ESP_LOGW(TAG, "Received UUID too long, ignoring");
         return;
@@ -51,6 +46,15 @@ static void read_uuid(void *ctx, const uint8_t *data, uint16_t len) {
     memcpy(uuid, data, len);
     uuid[len] = '\0';
 }
+
+static wireless_t wireless = {
+    .callbacks = {
+        .on_peer_connected = do_nothing_peer,
+        .on_peer_lost      = do_nothing_peer,
+        .on_peer_message   = do_nothing_message,
+    },
+    .context = NULL,
+};
 
 static siblings_t siblings = {
     .callback = read_uuid,
