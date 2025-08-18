@@ -1,8 +1,10 @@
 menu "Internet for all: SPI Configuration"
     choice SPI_FREQ
         prompt "SPI Freq"
-        default SPI_FREQ_8M
+        default SPI_FREQ_1M
 
+    config SPI_FREQ_1M
+        bool "SPI_FREQ_1M"
     config SPI_FREQ_8M
         bool "SPI_FREQ_8M"
     config SPI_FREQ_9M
