@@ -51,17 +51,21 @@ void app_main(void) {
     if(orientation == NODE_DEVICE_ORIENTATION_CENTER){
         if(is_center_root){
             rt_init_root(&rt, ROOT_NETWORK, ROOT_MASK);
+            vTaskDelay(pdMS_TO_TICKS(10000));
         } else {
             rt_init_home(&rt);
         }
     } else {
-        node_set_as_sta();
         rt_init_forwarder(&rt);
     }
 
-    vTaskDelay(pdMS_TO_TICKS(1000));
     rt_on_start(&rt);
     rt_on_tick(&rt, 0);
+
+    if(orientation == NODE_DEVICE_ORIENTATION_CENTER){
+        node_set_as_sta();
+    }
+    
     while (true) {
         vTaskDelay(pdMS_TO_TICKS(1000));
         rt_on_tick(&rt, 1000);
