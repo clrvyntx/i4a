@@ -90,25 +90,25 @@ esp_err_t node_init_event_queues(void) {
 esp_err_t node_start_event_tasks(void) {
     BaseType_t res;
 
-    res = xTaskCreate(peer_connected_task, "peer_conn_task", 4096, NULL, 5, NULL);
+    res = xTaskCreatePinnedToCore(peer_connected_task, "peer_conn_task", 4096, NULL, (tskIDLE_PRIORITY + 2), NULL, 1);
     if (res != pdPASS) {
         ESP_LOGE(TAG, "Failed to create peer_connected_task");
         return ESP_FAIL;
     }
 
-    res = xTaskCreate(peer_lost_task, "peer_lost_task", 4096, NULL, 5, NULL);
+    res = xTaskCreatePinnedToCore(peer_lost_task, "peer_lost_task", 4096, NULL, (tskIDLE_PRIORITY + 2), NULL, 1);
     if (res != pdPASS) {
         ESP_LOGE(TAG, "Failed to create peer_lost_task");
         return ESP_FAIL;
     }
 
-    res = xTaskCreate(peer_message_task, "peer_msg_task", 4096, NULL, 5, NULL);
+    res = xTaskCreatePinnedToCore(peer_message_task, "peer_msg_task", 4096, NULL, (tskIDLE_PRIORITY + 2), NULL, 1);
     if (res != pdPASS) {
         ESP_LOGE(TAG, "Failed to create peer_message_task");
         return ESP_FAIL;
     }
 
-    res = xTaskCreate(sibling_message_task, "sib_msg_task", 4096, NULL, 5, NULL);
+    res = xTaskCreatePinnedToCore(sibling_message_task, "sib_msg_task", 4096, NULL, (tskIDLE_PRIORITY + 2), NULL, 1);
     if (res != pdPASS) {
         ESP_LOGE(TAG, "Failed to create sibling_message_task");
         return ESP_FAIL;
