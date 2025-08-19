@@ -60,9 +60,9 @@ void device_init(DevicePtr device_ptr, const char *device_uuid, uint8_t device_o
     device_init_ap(device_ptr, ap_channel_to_emit, wifi_network_prefix, device_uuid, wifi_network_password, ap_max_sta_connections, device_orientation);
   } else if (mode == STATION) {
     if(device_is_root){
-      device_init_station(device_ptr, wifi_network_prefix, device_orientation, device_uuid, wifi_network_password, PEER);
-    } else {
       device_init_station(device_ptr, wifi_network_prefix, device_orientation, device_uuid, wifi_network_password, ROOT);
+    } else {
+      device_init_station(device_ptr, wifi_network_prefix, device_orientation, device_uuid, wifi_network_password, PEER);
     }
 
   }
