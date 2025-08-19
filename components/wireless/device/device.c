@@ -59,7 +59,12 @@ void device_init(DevicePtr device_ptr, const char *device_uuid, uint8_t device_o
   if (mode == AP) {
     device_init_ap(device_ptr, ap_channel_to_emit, wifi_network_prefix, device_uuid, wifi_network_password, ap_max_sta_connections, device_orientation);
   } else if (mode == STATION) {
-    device_init_station(device_ptr, wifi_network_prefix, device_orientation, device_uuid, wifi_network_password);
+    if(device_is_root){
+      device_init_station(device_ptr, wifi_network_prefix, device_orientation, device_uuid, wifi_network_password, PEER);
+    } else {
+      device_init_station(device_ptr, wifi_network_prefix, device_orientation, device_uuid, wifi_network_password, ROOT);
+    }
+
   }
 
 }
@@ -77,8 +82,8 @@ void device_init_ap(DevicePtr device_ptr, uint8_t channel, const char *wifi_netw
   ap_init(device_ptr->access_point_ptr, channel, wifi_ssid, password, max_sta_connections);
 };
 
-void device_init_station(DevicePtr device_ptr, const char* wifi_ssid_like, uint16_t orientation, char* device_uuid, const char* password) {
-  station_init(device_ptr->station_ptr, wifi_ssid_like, orientation, device_uuid, password);
+void device_init_station(DevicePtr device_ptr, const char* wifi_ssid_like, uint16_t orientation, char* device_uuid, const char* password, station_type_t station_type) {
+  station_init(device_ptr->station_ptr, wifi_ssid_like, orientation, device_uuid, password, station_type);
 };
 
 void device_set_network_ap(DevicePtr device_ptr, const char *network_cidr, const char *network_gateway, const char *network_mask) {

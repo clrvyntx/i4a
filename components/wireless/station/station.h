@@ -21,6 +21,11 @@ typedef enum {
   s_inactive
 } Station_State;
 
+typedef enum station_type {
+  PEER = 0,
+  ROOT = 1
+} station_type_t;
+
 struct Station {
   // Members
   char device_uuid[32];
@@ -32,6 +37,7 @@ struct Station {
   bool active;
   bool ap_found;
   Station_State state;
+  station_type_t station_type;
   wifi_config_t wifi_config;
   wifi_ap_record_t wifi_ap_found;
   esp_netif_t *netif;
@@ -40,7 +46,7 @@ struct Station {
 typedef struct Station Station;
 typedef struct Station* StationPtr;
 
-void station_init(StationPtr stationPtr, const char* wifi_ssid_like, uint16_t orientation, char* device_uuid, const char* password);
+void station_init(StationPtr stationPtr, const char* wifi_ssid_like, uint16_t orientation, char* device_uuid, const char* password, station_type_t station_type);
 void station_start(StationPtr stationPtr);
 void station_connect(StationPtr stationPtr);
 void station_disconnect(StationPtr stationPtr);
@@ -66,17 +72,6 @@ struct wifi_ap_record_t_owned discover_wifi_ap(const char* wifi_ssid_like, uint1
  * @brief Initialize the WiFi stack in station mode
  */
 void init_station_mode();
-
-
-/*
-* @brief Event handler for WiFi events for station mode
-* @param arg The argument passed during handler registration
-* @param event_base The event base
-* @param event_id The event id
-* @param event_data The event data
-*/
-static void event_handler(void* arg, esp_event_base_t event_base,
-                          int32_t event_id, void* event_data);
 
 /*
  * @brief Connect to the AP with the given SSID and password
