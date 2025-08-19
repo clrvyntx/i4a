@@ -7,8 +7,6 @@
 static const char *TAG = "==> main";
 
 struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t *dest) {
-    ESP_LOGI(TAG, "Routing hook called for dest: %s", ip4addr_ntoa(dest));
-    ESP_LOGI(TAG, "Test, route via STA");
     return (struct netif *)esp_netif_get_netif_impl(node_get_wifi_netif());
 }
 
