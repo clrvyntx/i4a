@@ -26,7 +26,6 @@ static Device node_device = {
 };
 
 static node_t *node_ptr = &node;
-static bool network_is_setup = false;
 
 static void generate_uuid_from_mac(char *uuid_out, size_t len) {
     uint8_t mac[6];
@@ -95,7 +94,7 @@ void node_setup(void){
 
 }
 
-void node_set_as_sta(void){
+void node_set_as_peer_sta(void){
   if(node_ptr->node_device_ptr->mode != NAN){
     device_reset(node_ptr->node_device_ptr);
   }
@@ -106,7 +105,16 @@ void node_set_as_sta(void){
   device_init(node_ptr->node_device_ptr, node_ptr->node_device_uuid, node_ptr->node_device_orientation, wifi_network_prefix, wifi_network_password, 6, 4, 0, STATION);
   device_start_station(node_ptr->node_device_ptr);
   device_connect_station(node_ptr->node_device_ptr);
-  network_is_setup = true;
+}
+
+void node_set_as_root_sta(const char *wifi_network_prefix, const char *wifi_network_password){
+  if(node_ptr->node_device_ptr->mode != NAN){
+    device_reset(node_ptr->node_device_ptr);
+  }
+
+  device_init(node_ptr->node_device_ptr, node_ptr->node_device_uuid, node_ptr->node_device_orientation, wifi_network_prefix, wifi_network_password, 6, 4, 1, STATION);
+  device_start_station(node_ptr->node_device_ptr);
+  device_connect_station(node_ptr->node_device_ptr);
 }
 
 void node_set_as_ap(uint32_t network, uint32_t mask){
