@@ -10,15 +10,22 @@
 #define NODE_NAME_PREFIX "I4A"
 #define NODE_LINK_PASSWORD "zWfAc2wXq5"
 #define MAX_DEVICES_PER_HOUSE 4
+#define UUID_LENGTH 7
+#define CENTER_STARTUP_DELAY_SECONDS 10
 
 static const char *TAG = "node";
 
 typedef struct node {
   DevicePtr node_device_ptr;
-  char node_device_uuid[7];
+  char node_device_uuid[UUID_LENGTH];
   config_orientation_t node_device_orientation;
   bool node_device_is_center_root;
 } node_t;
+
+typedef struct {
+  char uuid[UUID_LENGTH];
+  uint8_t is_center_root;
+} center_broadcast_msg_t;
 
 static node_t node = { 0 };
 static Device node_device = {
@@ -38,14 +45,19 @@ static void read_uuid(void *ctx, const uint8_t *data, uint16_t len) {
     return;
   }
 
-  if (len >= sizeof(node_ptr->node_device_uuid)) {
-    ESP_LOGW(TAG, "Received UUID too long, ignoring");
+  if (len != sizeof(center_broadcast_msg_t)) {
+    ESP_LOGW(TAG, "Received unexpected message length: %d", len);
     return;
   }
 
-  memcpy(node_ptr->node_device_uuid, data, len);
-  node_ptr->node_device_uuid[len] = '\0';
+  const center_broadcast_msg_t *msg = (const center_broadcast_msg_t *)data;
+
+  memcpy(node_ptr->node_device_uuid, msg->uuid, sizeof(msg->uuid));
+  node_ptr->node_device_uuid[sizeof(msg->uuid) - 1] = '\0';
+
+  node_ptr->node_device_is_center_root = (bool)msg->is_center_root;
 }
+
 
 static void do_nothing_peer(void *ctx, uint32_t net, uint32_t mask) {
 }
@@ -74,20 +86,26 @@ void node_setup(void){
 
   node_ptr->node_device_ptr = &node_device;
   node_ptr->node_device_orientation = config_get_orientation();
-  node_ptr->node_device_is_center_root = config_mode_is(CONFIG_MODE_ROOT);
 
   if(node_ptr->node_device_orientation == CONFIG_ORIENTATION_CENTER){
+    node_ptr->node_device_is_center_root = config_mode_is(CONFIG_MODE_ROOT);
     generate_uuid_from_mac(node_ptr->node_device_uuid, sizeof(node_ptr->node_device_uuid));
-    vTaskDelay(pdMS_TO_TICKS(20000));
-    while(!node_broadcast_to_siblings((uint8_t *)node_ptr->node_device_uuid, strlen(node_ptr->node_device_uuid))){
+
+    center_broadcast_msg_t msg;
+    memcpy(msg.uuid, node_ptr->node_device_uuid, sizeof(msg.uuid));
+    msg.is_center_root = (uint8_t)node_ptr->node_device_is_center_root;
+
+    vTaskDelay(pdMS_TO_TICKS(CENTER_STARTUP_DELAY_SECONDS * 1000));
+
+    while (!node_broadcast_to_siblings((uint8_t *)&msg, sizeof(msg))) {
       vTaskDelay(pdMS_TO_TICKS(100));
     }
-    ESP_LOGI(TAG, "Center device UUID generated and broadcasted: %s", node_ptr->node_device_uuid);
+    ESP_LOGI(TAG, "Center device UUID broadcasted: %s, Center root: %d", msg.uuid, msg.is_center_root);
   } else {
     while(strlen(node_ptr->node_device_uuid) == 0){
       vTaskDelay(pdMS_TO_TICKS(100));
     }
-    ESP_LOGI(TAG, "Peripheral device received UUID: %s", node_ptr->node_device_uuid);
+    ESP_LOGI(TAG, "Peripheral received UUID: %s, Center root: %d", node_ptr->node_device_uuid, node_ptr->node_device_is_center_root);
   }
 
   node_register_siblings_callbacks(do_nothing_message, NULL);
@@ -193,10 +211,3 @@ esp_netif_t *node_get_wifi_netif(void) {
 esp_netif_t *node_get_spi_netif(void) {
     return get_ring_link_tx_netif();
 }
-
-
-
-
-
-
-
