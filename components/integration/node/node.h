@@ -23,8 +23,7 @@ void node_setup(void); // Always call this before doing anything with this modul
 
 // Device mode setting
 void node_set_as_ap(uint32_t network, uint32_t mask); // Sets device as AP with desired subnet/mask
-void node_set_as_peer_sta(void); // Sets device as Peer Station, scanning for nearby connections
-void node_set_as_root_sta(const char *wifi_network_prefix, const char *wifi_network_password); // Sets device as Root Station, scanning for nearby connections
+void node_set_as_sta(void); // Sets device as Peer Station, scanning for nearby connections
 
 // Node parameters
 node_device_orientation_t node_get_device_orientation(void); // Orientation of node's specific device

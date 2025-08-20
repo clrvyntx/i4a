@@ -9,6 +9,8 @@
 
 #define NODE_NAME_PREFIX "I4A"
 #define NODE_LINK_PASSWORD "zWfAc2wXq5"
+#define NAT_NAME "nat_network_ssid"
+#define NAT_PASSWORD "nat_network_password"
 #define MAX_DEVICES_PER_HOUSE 4
 #define UUID_LENGTH 7
 #define CENTER_STARTUP_DELAY_SECONDS 10
@@ -112,25 +114,23 @@ void node_setup(void){
 
 }
 
-void node_set_as_peer_sta(void){
+void node_set_as_sta(){
   if(node_ptr->node_device_ptr->mode != NAN){
     device_reset(node_ptr->node_device_ptr);
   }
 
-  char *wifi_network_prefix = NODE_NAME_PREFIX;
-  char *wifi_network_password = NODE_LINK_PASSWORD;
+  char *wifi_network_prefix;
+  char *wifi_network_password;
 
-  device_init(node_ptr->node_device_ptr, node_ptr->node_device_uuid, node_ptr->node_device_orientation, wifi_network_prefix, wifi_network_password, 6, 4, 0, STATION);
-  device_start_station(node_ptr->node_device_ptr);
-  device_connect_station(node_ptr->node_device_ptr);
-}
-
-void node_set_as_root_sta(const char *wifi_network_prefix, const char *wifi_network_password){
-  if(node_ptr->node_device_ptr->mode != NAN){
-    device_reset(node_ptr->node_device_ptr);
+  if(node_ptr->node_device_is_center_root){
+	  wifi_network_prefix = NAT_NAME;
+	  wifi_network_password = NAT_PASSWORD;
+  } else {
+	  wifi_network_prefix = NODE_NAME_PREFIX;
+	  wifi_network_password = NODE_LINK_PASSWORD;
   }
 
-  device_init(node_ptr->node_device_ptr, node_ptr->node_device_uuid, node_ptr->node_device_orientation, wifi_network_prefix, wifi_network_password, 6, 4, 1, STATION);
+  device_init(node_ptr->node_device_ptr, node_ptr->node_device_uuid, node_ptr->node_device_orientation, wifi_network_prefix, wifi_network_password, 6, 4, node_ptr->node_device_is_center_root, STATION);
   device_start_station(node_ptr->node_device_ptr);
   device_connect_station(node_ptr->node_device_ptr);
 }
