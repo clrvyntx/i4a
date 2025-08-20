@@ -81,16 +81,6 @@ void init_station_mode();
 void connect_to_wifi(wifi_config_t wifi_config);
 
 /*
-* @brief Event handler for WiFi events for station mode
-* @param arg The argument passed during handler registration
-* @param event_base The event base
-* @param event_id The event id
-* @param event_data The event data
-*/
-
-static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
-
-/*
  * @brief Wait until the connection is established
  */
 void wait_connection_established();
