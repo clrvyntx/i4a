@@ -120,7 +120,7 @@ void node_set_as_peer_sta(void){
   char *wifi_network_prefix = NODE_NAME_PREFIX;
   char *wifi_network_password = NODE_LINK_PASSWORD;
 
-  device_init(node_ptr->node_device_ptr, node_ptr->node_device_uuid, node_ptr->node_device_orientation, wifi_network_prefix, wifi_network_password, 6, 4, (uint8_t)node_ptr->node_device_is_center_root, STATION);
+  device_init(node_ptr->node_device_ptr, node_ptr->node_device_uuid, node_ptr->node_device_orientation, wifi_network_prefix, wifi_network_password, 6, 4, 0, STATION);
   device_start_station(node_ptr->node_device_ptr);
   device_connect_station(node_ptr->node_device_ptr);
 }
@@ -130,7 +130,7 @@ void node_set_as_root_sta(const char *wifi_network_prefix, const char *wifi_netw
     device_reset(node_ptr->node_device_ptr);
   }
 
-  device_init(node_ptr->node_device_ptr, node_ptr->node_device_uuid, node_ptr->node_device_orientation, wifi_network_prefix, wifi_network_password, 6, 4, (uint8_t)node_ptr->node_device_is_center_root, STATION);
+  device_init(node_ptr->node_device_ptr, node_ptr->node_device_uuid, node_ptr->node_device_orientation, wifi_network_prefix, wifi_network_password, 6, 4, 1, STATION);
   device_start_station(node_ptr->node_device_ptr);
   device_connect_station(node_ptr->node_device_ptr);
 }
@@ -211,3 +211,4 @@ esp_netif_t *node_get_wifi_netif(void) {
 esp_netif_t *node_get_spi_netif(void) {
     return get_ring_link_tx_netif();
 }
+
