@@ -18,7 +18,7 @@ static uint32_t c_subnet = 0x0A010100; // 10.1.1.0
 static uint32_t c_mask = 0xFFFFFF00; // 255.255.255.0
 
 struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t *dest) {
-    uint32_t dst_ip = ip4_addr_get_u32(dest);
+    uint32_t dst_ip = lwip_ntohl(ip4_addr_get_u32(dest));
     uint8_t orientation = node_get_device_orientation();
     uint8_t is_root = node_is_device_center_root();
 
