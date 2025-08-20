@@ -3,9 +3,6 @@
 #include "esp_netif_net_stack.h"
 #include "node.h"
 
-#define NETWORK_NAME "test"
-#define NETWORK_PASSWORD "123456"
-
 static const char *TAG = "==> main";
 
 static uint32_t r_subnet = 0x0A000000; // 10.0.0.0
@@ -70,11 +67,10 @@ void app_main(void) {
 
     if(orientation == NODE_DEVICE_ORIENTATION_CENTER){
         if(device_is_root){
-            node_set_as_root_sta(NETWORK_NAME, NETWORK_PASSWORD);
+            node_set_as_sta();
         } else {
             node_set_as_ap(c_subnet, c_mask);
         }
-
     }
 
     if(orientation == NODE_DEVICE_ORIENTATION_EAST && device_is_root){
@@ -82,6 +78,6 @@ void app_main(void) {
     }
 
     if(orientation == NODE_DEVICE_ORIENTATION_WEST && !device_is_root){
-        node_set_as_peer_sta();
+        node_set_as_sta();
     }
 }
