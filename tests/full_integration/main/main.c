@@ -66,7 +66,7 @@ void app_main(void) {
     rt_on_start(&rt);
     rt_on_tick(&rt, 0);
 
-    if(orientation == NODE_DEVICE_ORIENTATION_CENTER){
+    if(orientation != NODE_DEVICE_ORIENTATION_CENTER){
         node_set_as_sta();
     }
     
