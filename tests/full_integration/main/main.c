@@ -60,15 +60,12 @@ void app_main(void) {
             rt_init_home(&rt);
         }
     } else {
+        node_set_as_sta();
         rt_init_forwarder(&rt);
     }
 
     rt_on_start(&rt);
     rt_on_tick(&rt, 0);
-
-    if(orientation != NODE_DEVICE_ORIENTATION_CENTER){
-        node_set_as_sta();
-    }
     
     while (true) {
         vTaskDelay(pdMS_TO_TICKS(1000));
