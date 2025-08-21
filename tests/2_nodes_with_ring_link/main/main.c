@@ -19,11 +19,23 @@ static uint32_t o_mask = 0xFF000000; // 255.0.0.0
 
 // Make sure to comment or remove all the logs when doing a real speed test, they're slow and crash the watchdog timers
 struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t *dest) {
+    uint32_t src_ip = lwip_ntohl(ip4_addr_get_u32(src));
     uint32_t dst_ip = lwip_ntohl(ip4_addr_get_u32(dest));
     uint8_t orientation = node_get_device_orientation();
     uint8_t is_root = node_is_device_center_root();
 
-    ESP_LOGI(TAG, "Routing hook called: src_ip=%s, dst_ip=%s, orientation=%d, is_root=%d", ip4addr_ntoa(src), ip4addr_ntoa(dest), orientation, is_root);
+    char src_ip_str[16], dst_ip_str[16];
+    strncpy(src_ip_str, ip4addr_ntoa(src), sizeof(src_ip_str));
+    src_ip_str[sizeof(src_ip_str) - 1] = '\0';
+
+    strncpy(dst_ip_str, ip4addr_ntoa(dest), sizeof(dst_ip_str));
+    dst_ip_str[sizeof(dst_ip_str) - 1] = '\0';
+
+    ESP_LOGI(TAG, "Routing hook called: src_ip_str=%s (%" PRIu32 "), dst_ip_str=%s (%" PRIu32 "), orientation=%d, is_root=%d",
+             src_ip_str, src_ip, dst_ip_str, dst_ip, node_get_device_orientation(), node_is_device_center_root());
+
+    // ... rest of routing logic ...
+
 
     // === Case 1: Center ===
     if (orientation == NODE_DEVICE_ORIENTATION_CENTER) {
@@ -47,7 +59,7 @@ struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t 
     }
 
     // === Case 2: East and Root ===
-    if (orientation == NODE_DEVICE_ORIENTATION_EAST && is_root) {
+    if (orientation == NODE_DEVICE_ORIENTATION_NORTH && is_root) {
         if (dst_ip == (l_subnet + 1) || dst_ip == (l_subnet + 2)) {
             ESP_LOGI(TAG, "East Root: point-to-point -> Use Wi-Fi");
             return (struct netif *)esp_netif_get_netif_impl(node_get_wifi_netif());
@@ -97,7 +109,7 @@ void app_main(void) {
         }
     }
 
-    if(orientation == NODE_DEVICE_ORIENTATION_EAST && device_is_root){
+    if(orientation == NODE_DEVICE_ORIENTATION_NORTH && device_is_root){
         node_set_as_ap(l_subnet, l_mask);
     }
 
