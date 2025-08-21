@@ -39,6 +39,9 @@ struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t 
 
     // === Case 2: East and Root ===
     if (orientation == NODE_DEVICE_ORIENTATION_EAST && is_root) {
+        if (dst_ip == (e_subnet + 1) || dst_ip == (e_subnet + 2)) {
+            return (struct netif *)esp_netif_get_netif_impl(node_get_wifi_netif()); // Point-to-point link, use Wi-Fi
+        }
         if ((dst_ip & e_mask) != e_subnet) {
             return (struct netif *)esp_netif_get_netif_impl(node_get_spi_netif()); // Destination is NOT in 10.1.0.0/16, use SPI
         } else {
@@ -48,6 +51,9 @@ struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t 
 
     // === Case 3: West and Not Root ===
     if (orientation == NODE_DEVICE_ORIENTATION_WEST && !is_root) {
+        if (dst_ip == (e_subnet + 1) || dst_ip == (e_subnet + 2)) {
+            return (struct netif *)esp_netif_get_netif_impl(node_get_wifi_netif()); // Point-to-point link, use Wi-Fi
+        }
         if ((dst_ip & e_mask) == e_subnet) {
             return (struct netif *)esp_netif_get_netif_impl(node_get_spi_netif()); // Destination is in 10.1.0.0/16, use SPI
         } else {
