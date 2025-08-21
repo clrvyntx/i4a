@@ -198,6 +198,20 @@ bool node_send_wireless_message(const uint8_t *msg, uint16_t len){
   return false;
 }
 
+bool node_is_point_to_point_message(uint32_t dst){
+  if(node_ptr->node_device_ptr->mode == AP){
+    uint32_t subnet = node_ptr->node_device_ptr->access_point_ptr->subnet;
+    return (dst == (subnet + 1) || dst == (subnet + 2));
+  }
+
+  if(node_ptr->node_device_ptr->mode == STATION){
+    uint32_t subnet = node_ptr->node_device_ptr->station_ptr->subnet;
+    return (dst == (subnet + 1) || dst == (subnet + 2));
+  }
+
+  return false;
+}
+
 esp_netif_t *node_get_wifi_netif(void) {
   if (node_ptr->node_device_ptr->mode == AP) {
     return node_ptr->node_device_ptr->access_point_ptr->netif;
