@@ -97,7 +97,7 @@ static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_
   if (event_base == WIFI_EVENT) {
     switch (event_id) {
       case WIFI_EVENT_STA_DISCONNECTED:
-        if(is_fully_connected){
+        if(stationPtr->subnet != 0x00000000){
           client_close();
         }
         if (s_retry_num < MAX_RETRIES) {
@@ -119,10 +119,10 @@ static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_
   if (event_base == IP_EVENT) {
     switch (event_id) {
       case IP_EVENT_STA_GOT_IP:
-        if(is_fully_connected){
+        if(stationPtr->subnet != 0x00000000){
           client_open();
           s_retry_num = 0;
-        } else{
+        } else {
           ip_event_got_ip_t *event = (ip_event_got_ip_t*) event_data;
           esp_netif_ip_info_t s_learned_ip_info = event->ip_info;
           esp_netif_ip_info_t static_ip;
