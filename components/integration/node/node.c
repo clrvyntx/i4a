@@ -152,11 +152,10 @@ void node_set_as_ap(uint32_t network, uint32_t mask){
     wifi_network_password = "";
     ap_max_sta_connections = MAX_DEVICES_PER_HOUSE;
   } else {
-	network = ((network | (~mask)) - 3) & SUBNET_MASK;
-	mask = SUBNET_MASK; 
     node_gateway = network + 2;
     wifi_network_password = NODE_LINK_PASSWORD;
     ap_max_sta_connections = 1;
+	mask = SUBNET_MASK;
   }
 
   ip4_addr_t net_addr, gateway_addr, mask_addr;
@@ -226,6 +225,7 @@ esp_netif_t *node_get_wifi_netif(void) {
 esp_netif_t *node_get_spi_netif(void) {
     return get_ring_link_tx_netif();
 }
+
 
 
 
