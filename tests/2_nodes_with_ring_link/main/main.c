@@ -6,13 +6,13 @@
 static const char *TAG = "==> main";
 
 static uint32_t r_subnet = 0x0A000000; // 10.0.0.0
-static uint32_t r_mask   = 0xFF000000; // 255.0.0.0
+static uint32_t r_mask   = 0xFF000000; // 255.0.0.0 (/8)
 
-static uint32_t l_subnet = 0x0A010000; // 10.1.0.0
-static uint32_t l_mask = 0xFFFF0000; // 255.255.0.0
+static uint32_t l_subnet = 0x0A200000; // 10.32.0.0
+static uint32_t l_mask   = 0xFFE00000; // 255.224.0.0 (/11)
 
-static uint32_t c_subnet = 0x0A010100; // 10.1.1.0
-static uint32_t c_mask = 0xFFFFFF00; // 255.255.255.0
+static uint32_t c_subnet = 0x0A600000; // 10.96.0.0
+static uint32_t c_mask   = 0xFFFC0000; // 255.252.0.0 (/14)
 
 static uint32_t o_subnet = 0x0B000000; // 11.0.0.0
 static uint32_t o_mask = 0xFF000000; // 255.0.0.0
@@ -34,9 +34,6 @@ struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t 
     ESP_LOGI(TAG, "Routing hook called: src_ip_str=%s (%" PRIu32 "), dst_ip_str=%s (%" PRIu32 "), orientation=%d, is_root=%d",
              src_ip_str, src_ip, dst_ip_str, dst_ip, node_get_device_orientation(), node_is_device_center_root());
 
-    // ... rest of routing logic ...
-
-
     // === Case 1: Center ===
     if (orientation == NODE_DEVICE_ORIENTATION_CENTER) {
         if (is_root) {
@@ -49,41 +46,41 @@ struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t 
             }
         } else {
             if ((dst_ip & c_mask) != c_subnet) {
-                ESP_LOGI(TAG, "Center Leaf: dst outside 10.1.1.0/24 -> Use SPI");
+                ESP_LOGI(TAG, "Center Leaf: dst outside 10.96.0.0/14 -> Use SPI");
                 return (struct netif *)esp_netif_get_netif_impl(node_get_spi_netif());
             } else {
-                ESP_LOGI(TAG, "Center Leaf: dst in 10.1.1.0/24 -> Use Wi-Fi");
+                ESP_LOGI(TAG, "Center Leaf: dst in 10.96.0.0/14 -> Use Wi-Fi");
                 return (struct netif *)esp_netif_get_netif_impl(node_get_wifi_netif());
             }
         }
     }
 
-    // === Case 2: East and Root ===
+    // === Case 2: North and Root ===
     if (orientation == NODE_DEVICE_ORIENTATION_NORTH && is_root) {
-        if (dst_ip == (l_subnet + 1) || dst_ip == (l_subnet + 2)) {
-            ESP_LOGI(TAG, "East Root: point-to-point -> Use Wi-Fi");
+        if (node_is_point_to_point_message(dst_ip)) {
+            ESP_LOGI(TAG, "North Root: point-to-point -> Use Wi-Fi");
             return (struct netif *)esp_netif_get_netif_impl(node_get_wifi_netif());
         }
-        if ((dst_ip & l_mask) != l_subnet) {
-            ESP_LOGI(TAG, "East Root: dst outside 10.1.0.0/16 -> Use SPI");
+        if ((dst_ip & c_mask) != c_subnet) {
+            ESP_LOGI(TAG, "North Root: dst outside 10.96.0.0/14 -> Use SPI");
             return (struct netif *)esp_netif_get_netif_impl(node_get_spi_netif());
         } else {
-            ESP_LOGI(TAG, "East Root: dst in 10.1.0.0/16 -> Use Wi-Fi");
+            ESP_LOGI(TAG, "North Root: dst in 10.96.0.0/14 -> Use Wi-Fi");
             return (struct netif *)esp_netif_get_netif_impl(node_get_wifi_netif());
         }
     }
 
     // === Case 3: West and Not Root ===
     if (orientation == NODE_DEVICE_ORIENTATION_WEST && !is_root) {
-        if (dst_ip == (l_subnet + 1) || dst_ip == (l_subnet + 2)) {
+        if (node_is_point_to_point_message(dst_ip)) {
             ESP_LOGI(TAG, "West Leaf: point-to-point -> Use Wi-Fi");
             return (struct netif *)esp_netif_get_netif_impl(node_get_wifi_netif());
         }
-        if ((dst_ip & l_mask) == l_subnet) {
-            ESP_LOGI(TAG, "West Leaf: dst in 10.1.0.0/16 -> Use SPI");
+        if ((dst_ip & c_mask) == c_subnet) {
+            ESP_LOGI(TAG, "West Leaf: dst in 10.96.0.0/14 -> Use SPI");
             return (struct netif *)esp_netif_get_netif_impl(node_get_spi_netif());
         } else {
-            ESP_LOGI(TAG, "West Leaf: dst outside 10.1.0.0/16 -> Use Wi-Fi");
+            ESP_LOGI(TAG, "West Leaf: dst outside 10.96.0.0/14 -> Use Wi-Fi");
             return (struct netif *)esp_netif_get_netif_impl(node_get_wifi_netif());
         }
     }
