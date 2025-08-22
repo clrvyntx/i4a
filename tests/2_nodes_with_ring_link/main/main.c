@@ -110,7 +110,7 @@ void app_main(void) {
     }
 
     if(orientation == NODE_DEVICE_ORIENTATION_NORTH && device_is_root){
-        node_set_as_ap(l_subnet, l_mask);
+        node_set_as_ap(l_subnet, 0xFFFFFFFC);
     }
 
     if(orientation == NODE_DEVICE_ORIENTATION_WEST && !device_is_root){
