@@ -13,7 +13,6 @@
 static const char* LOGGING_TAG = "station";
 
 static int s_retry_num = 0;
-static bool is_fully_connected = false;
 
 static bool is_network_allowed(char* device_uuid, char* network_prefix, char* network_name) {
   // Must contain the prefix
@@ -107,7 +106,6 @@ static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_
         } else {
           ESP_LOGE(LOGGING_TAG, "Failed to connect, disconnecting");
           s_retry_num = 0;
-          is_fully_connected = false;
           stationPtr->ap_found = false;
           stationPtr->state = s_inactive;
           stationPtr->subnet = 0x00000000;
@@ -136,7 +134,6 @@ static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_
 
           esp_netif_dhcpc_stop(stationPtr->netif);
           ESP_ERROR_CHECK(esp_netif_set_ip_info(stationPtr->netif, &static_ip));
-          is_fully_connected = true;
         }
 
         break;
