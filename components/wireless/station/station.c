@@ -91,15 +91,17 @@ void station_find_ap(StationPtr stationPtr) {
 
 }
 
-static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data) {
+static void static_setup_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data) {
   StationPtr stationPtr = (StationPtr)arg;
 
   if (event_base == WIFI_EVENT) {
     switch (event_id) {
+      case WIFI_EVENT_STA_CONNECTED:
+        client_open();
+        s_retry_num = 0;
+        break;
       case WIFI_EVENT_STA_DISCONNECTED:
-        if(is_fully_connected){
-          client_close();
-        }
+        client_close();
         if (s_retry_num < MAX_RETRIES) {
           esp_wifi_connect();
           s_retry_num++;
@@ -116,33 +118,24 @@ static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_
     }
   }
 
+}
+
+static void dhcp_setup_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data) {
+  StationPtr stationPtr = (StationPtr)arg;
+
   if (event_base == IP_EVENT) {
     switch (event_id) {
       case IP_EVENT_STA_GOT_IP:
-        if(is_fully_connected){
-          client_open();
-          s_retry_num = 0;
-        } else{
-          ip_event_got_ip_t *event = (ip_event_got_ip_t*) event_data;
-          esp_netif_ip_info_t s_learned_ip_info = event->ip_info;
-          esp_netif_ip_info_t static_ip;
+        ip_event_got_ip_t *event = (ip_event_got_ip_t*) event_data;
+        esp_netif_ip_info_t s_learned_ip_info = event->ip_info;
+        esp_netif_ip_info_t static_ip;
 
-          uint32_t subnet_base_host = ntohl(s_learned_ip_info.ip.addr & s_learned_ip_info.netmask.addr);
-          stationPtr->subnet = subnet_base_host;
-
-          static_ip.gw.addr = htonl(subnet_base_host + 1);
-          static_ip.ip.addr = htonl(subnet_base_host + 2);
-          static_ip.netmask = s_learned_ip_info.netmask;
-
-          esp_netif_dhcpc_stop(stationPtr->netif);
-          ESP_ERROR_CHECK(esp_netif_set_ip_info(stationPtr->netif, &static_ip));
-          is_fully_connected = true;
-        }
-
+        stationPtr->subnet = ntohl(s_learned_ip_info.ip.addr & s_learned_ip_info.netmask.addr);
+        ESP_ERROR_CHECK(esp_wifi_disconnect());
+        station_connect(stationPtr);
         break;
     }
   }
-
 }
 
 void station_start(StationPtr stationPtr) {
@@ -152,15 +145,30 @@ void station_start(StationPtr stationPtr) {
 }
 
 void station_connect(StationPtr stationPtr) {
-  s_retry_num = 0;
   stationPtr->state = s_active;
+  esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &static_setup_event_handler);
+  esp_event_handler_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP, &dhcp_setup_event_handler);
+
   ESP_LOGI(LOGGING_TAG, "Connecting to %s...", stationPtr->wifi_config.sta.ssid);
-  ESP_ERROR_CHECK(esp_netif_dhcpc_start(stationPtr->netif));
-  ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &stationPtr->wifi_config));
-  ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, stationPtr));
-  if(stationPtr->station_type == PEER){
-    ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, stationPtr));
+
+  if(stationPtr->subnet == 0x00000000){
+    ESP_ERROR_CHECK(esp_netif_dhcpc_start(stationPtr->netif));
+    if(stationPtr->station_type == PEER){
+      ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &dhcp_setup_event_handler, stationPtr));
+    }
+  } else {
+    s_retry_num = 0;
+    ESP_ERROR_CHECK(esp_netif_dhcpc_stop(stationPtr->netif));
+    esp_netif_ip_info_t static_ip;
+    static_ip.gw.addr = htonl(stationPtr->subnet + 1);
+    static_ip.ip.addr = htonl(stationPtr->subnet + 2);
+    static_ip.netmask.addr = htonl(0xFFFFFFFC); // /30
+
+    ESP_ERROR_CHECK(esp_netif_set_ip_info(stationPtr->netif, &static_ip));
+    ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &static_setup_event_handler, stationPtr));
   }
+
+  ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &stationPtr->wifi_config));
   ESP_ERROR_CHECK(esp_wifi_connect());
 }
 
@@ -182,8 +190,8 @@ void station_restart(StationPtr stationPtr) {
 void station_destroy_netif(StationPtr stationPtr) {
   if (stationPtr->netif) {
     ESP_LOGW(LOGGING_TAG, "Destroying STA netif...");
-    esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler);
-    esp_event_handler_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler);
+    esp_event_handler_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP, &dhcp_setup_event_handler);
+    esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &static_setup_event_handler);
     esp_netif_destroy_default_wifi(stationPtr->netif);
     stationPtr->netif = NULL;  // Prevent reuse or double free
   } else {
