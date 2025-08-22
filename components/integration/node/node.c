@@ -14,6 +14,7 @@
 #define MAX_DEVICES_PER_HOUSE 4
 #define UUID_LENGTH 7
 #define CENTER_STARTUP_DELAY_SECONDS 10
+#define SUBNET_MASK 0xFFFFFFFC
 
 static const char *TAG = "node";
 
@@ -202,13 +203,11 @@ bool node_send_wireless_message(const uint8_t *msg, uint16_t len){
 
 bool node_is_point_to_point_message(uint32_t dst){
   if(node_ptr->node_device_ptr->mode == AP){
-    uint32_t subnet = node_ptr->node_device_ptr->access_point_ptr->subnet;
-    return (dst == (subnet + 1) || dst == (subnet + 2));
+    return ((node_ptr->node_device_ptr->access_point_ptr->subnet & SUBNET_MASK) == subnet);
   }
 
   if(node_ptr->node_device_ptr->mode == STATION){
-    uint32_t subnet = node_ptr->node_device_ptr->station_ptr->subnet;
-    return (dst == (subnet + 1) || dst == (subnet + 2));
+    return ((node_ptr->node_device_ptr->station_ptr->subnet & SUBNET_MASK) == subnet);
   }
 
   return false;
@@ -227,6 +226,7 @@ esp_netif_t *node_get_wifi_netif(void) {
 esp_netif_t *node_get_spi_netif(void) {
     return get_ring_link_tx_netif();
 }
+
 
 
 
