@@ -203,11 +203,11 @@ bool node_send_wireless_message(const uint8_t *msg, uint16_t len){
 
 bool node_is_point_to_point_message(uint32_t dst){
   if(node_ptr->node_device_ptr->mode == AP){
-    return ((node_ptr->node_device_ptr->access_point_ptr->subnet & SUBNET_MASK) == subnet);
+    return ((dst & SUBNET_MASK) == node_ptr->node_device_ptr->access_point_ptr->subnet);
   }
 
   if(node_ptr->node_device_ptr->mode == STATION){
-    return ((node_ptr->node_device_ptr->station_ptr->subnet & SUBNET_MASK) == subnet);
+    return ((dst & SUBNET_MASK) == node_ptr->node_device_ptr->station_ptr->subnet);
   }
 
   return false;
@@ -226,6 +226,7 @@ esp_netif_t *node_get_wifi_netif(void) {
 esp_netif_t *node_get_spi_netif(void) {
     return get_ring_link_tx_netif();
 }
+
 
 
 
