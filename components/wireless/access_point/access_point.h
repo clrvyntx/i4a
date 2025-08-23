@@ -30,6 +30,7 @@ struct AccessPoint {
   char network_cidr[16];
   esp_netif_t *netif;
   uint32_t subnet;
+  uint32_t mask;
 };
 
 typedef struct AccessPoint AccessPoint;

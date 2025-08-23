@@ -44,6 +44,7 @@ void station_init(StationPtr stationPtr, const char* wifi_ssid_like, uint16_t or
   stationPtr->ap_found = false;
   stationPtr->station_type = station_type;
   stationPtr->subnet = 0x00000000;
+  stationPtr->mask = 0x00000000;
 
   esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta();
   assert(sta_netif);
@@ -109,6 +110,7 @@ static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_
           stationPtr->ap_found = false;
           stationPtr->state = s_inactive;
           stationPtr->subnet = 0x00000000;
+          stationPtr->mask = 0x00000000;
         }
         break;
     }
@@ -127,6 +129,7 @@ static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_
 
           uint32_t subnet_base_host = ntohl(s_learned_ip_info.ip.addr & s_learned_ip_info.netmask.addr);
           stationPtr->subnet = subnet_base_host;
+          stationPtr->mask = ntohl(s_learned_ip_info.netmask.addr);
 
           static_ip.gw.addr = htonl(subnet_base_host + 1);
           static_ip.ip.addr = htonl(subnet_base_host + 2);

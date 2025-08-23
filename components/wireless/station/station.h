@@ -42,6 +42,7 @@ struct Station {
   wifi_ap_record_t wifi_ap_found;
   esp_netif_t *netif;
   uint32_t subnet;
+  uint32_t mask;
 };
 
 typedef struct Station Station;
