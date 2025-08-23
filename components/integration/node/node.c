@@ -18,9 +18,6 @@
 #define UUID_LENGTH 7
 #define CENTER_STARTUP_DELAY_SECONDS 10
 
-#define BRIDGE_NETWORK  0xC0A80300  // 192.168.3.0
-#define BRIDGE_MASK 0xFFFFFFFC  // /30
-
 static const char *TAG = "node";
 
 typedef struct node {
@@ -157,8 +154,6 @@ void node_set_as_ap(uint32_t network, uint32_t mask){
     wifi_network_password = "";
     ap_max_sta_connections = MAX_DEVICES_PER_HOUSE;
   } else {
-    network = BRIDGE_NETWORK;
-    mask = BRIDGE_MASK;
     node_gateway = network + 2;
     wifi_network_password = NODE_LINK_PASSWORD;
     ap_max_sta_connections = 1;
@@ -231,5 +226,6 @@ esp_netif_t *node_get_wifi_netif(void) {
 esp_netif_t *node_get_spi_netif(void) {
     return get_ring_link_tx_netif();
 }
+
 
 
