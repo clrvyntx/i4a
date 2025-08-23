@@ -207,15 +207,7 @@ bool node_send_wireless_message(const uint8_t *msg, uint16_t len){
 }
 
 bool node_is_point_to_point_message(uint32_t dst){
-  if(node_ptr->node_device_ptr->mode == AP){
-    return ((dst & node_ptr->node_device_ptr->access_point_ptr->mask) == node_ptr->node_device_ptr->access_point_ptr->subnet);
-  }
-
-  if(node_ptr->node_device_ptr->mode == STATION){
-    return ((dst & node_ptr->node_device_ptr->station_ptr->mask) == node_ptr->node_device_ptr->station_ptr->subnet);
-  }
-
-  return false;
+  return ((dst & BRIDGE_MASK) == BRIDGE_NETWORK);
 }
 
 esp_netif_t *node_get_wifi_netif(void) {
