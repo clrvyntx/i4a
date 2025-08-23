@@ -23,8 +23,6 @@ void ap_init(AccessPointPtr ap, uint8_t wifi_channel, const char *wifi_ssid, con
   // strcpy((char *)ap->network_cidr, network_cidr);
   esp_netif_t *netif = esp_netif_create_default_wifi_ap();
   ap->netif = netif;
-  ap->subnet = 0x00000000;
-  ap->mask = 0x00000000;
   ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
   ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &ap->wifi_config));
   // Register the event handler
@@ -78,10 +76,6 @@ void ap_set_network(AccessPointPtr ap, const char *network_cidr, const char *net
   ip.ip.addr = ipaddr_addr(network_cidr);
   ip.netmask.addr = ipaddr_addr(network_mask);
   ip.gw.addr = ipaddr_addr(network_gateway);
-  uint32_t ip_addr_host = ntohl(ip.ip.addr);
-  uint32_t netmask_host = ntohl(ip.netmask.addr);
-  ap->subnet = ip_addr_host & netmask_host;
-  ap->mask = netmask_host;
   esp_err_t result = esp_netif_set_ip_info(ap->netif, &ip);
   ESP_LOGI(LOGGING_TAG, "Setting ip info");
   ESP_ERROR_CHECK(result);
