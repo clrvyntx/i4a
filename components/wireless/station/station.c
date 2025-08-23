@@ -131,9 +131,9 @@ static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_
           static_ip.ip.addr = htonl(subnet_base_host + 2);
           static_ip.netmask = s_learned_ip_info.netmask;
 
+          stationPtr->is_fully_connected = true;
           esp_netif_dhcpc_stop(stationPtr->netif);
           ESP_ERROR_CHECK(esp_netif_set_ip_info(stationPtr->netif, &static_ip));
-          stationPtr->is_fully_connected = true;
         }
 
         break;
