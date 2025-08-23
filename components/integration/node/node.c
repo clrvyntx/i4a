@@ -7,14 +7,19 @@
 #include "callbacks.h"
 #include "node.h"
 
+#define MAX_DEVICES_PER_HOUSE 4
+
 #define NODE_NAME_PREFIX "I4A"
 #define NODE_LINK_PASSWORD "zWfAc2wXq5"
+
 #define NAT_NETWORK_NAME "nat_network_ssid"
 #define NAT_NETWORK_PASSWORD "nat_network_password"
-#define MAX_DEVICES_PER_HOUSE 4
+
 #define UUID_LENGTH 7
 #define CENTER_STARTUP_DELAY_SECONDS 10
-#define SUBNET_MASK 0xFFFFFFFC
+
+#define BRIDGE_NETWORK  0xC0A80300  // 192.168.3.0
+#define BRIDGE_MASK 0xFFFFFFFC  // /30
 
 static const char *TAG = "node";
 
@@ -152,10 +157,11 @@ void node_set_as_ap(uint32_t network, uint32_t mask){
     wifi_network_password = "";
     ap_max_sta_connections = MAX_DEVICES_PER_HOUSE;
   } else {
+    network = BRIDGE_NETWORK;
+    mask = BRIDGE_MASK;
     node_gateway = network + 2;
     wifi_network_password = NODE_LINK_PASSWORD;
     ap_max_sta_connections = 1;
-	mask = SUBNET_MASK;
   }
 
   ip4_addr_t net_addr, gateway_addr, mask_addr;
@@ -202,11 +208,11 @@ bool node_send_wireless_message(const uint8_t *msg, uint16_t len){
 
 bool node_is_point_to_point_message(uint32_t dst){
   if(node_ptr->node_device_ptr->mode == AP){
-    return ((dst & SUBNET_MASK) == node_ptr->node_device_ptr->access_point_ptr->subnet);
+    return ((dst & node_ptr->node_device_ptr->access_point_ptr->mask) == node_ptr->node_device_ptr->access_point_ptr->subnet);
   }
 
   if(node_ptr->node_device_ptr->mode == STATION){
-    return ((dst & SUBNET_MASK) == node_ptr->node_device_ptr->station_ptr->subnet);
+    return ((dst & node_ptr->node_device_ptr->station_ptr->mask) == node_ptr->node_device_ptr->station_ptr->subnet);
   }
 
   return false;
