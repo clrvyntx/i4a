@@ -14,6 +14,11 @@
 #define ROOT_NETWORK 0x0A000000  // 10.0.0.0
 #define ROOT_MASK 0xFF000000 // 255.0.0.0
 
+static ring_share_t rs = { 0 };
+static sync_t _sync = { 0 };
+static shared_state_t ss = { 0 };
+static routing_t rt = { 0 };
+
 typedef struct netif *(*routing_hook_func_t)(const ip4_addr_t *src, const ip4_addr_t *dest);
 struct netif *routing_hook_root(const ip4_addr_t *src, const ip4_addr_t *dest);
 struct netif *routing_hook_forwarder(const ip4_addr_t *src, const ip4_addr_t *dest);
@@ -90,11 +95,6 @@ static routing_hook_func_t selected_routing_hook = NULL;
 struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t *dest) {
     return selected_routing_hook(src, dest);
 }
-
-static ring_share_t rs = { 0 };
-static sync_t _sync = { 0 };
-static shared_state_t ss = { 0 };
-static routing_t rt = { 0 };
 
 void app_main(void) {
     node_setup();
