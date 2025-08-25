@@ -14,15 +14,39 @@
 #define ROOT_NETWORK 0x0A000000  // 10.0.0.0
 #define ROOT_MASK 0xFF000000 // 255.0.0.0
 
-static ring_share_t rs = { 0 };
-static sync_t _sync = { 0 };
-static shared_state_t ss = { 0 };
-static routing_t rt = { 0 };
+typedef struct netif *(*routing_hook_func_t)(const ip4_addr_t *src, const ip4_addr_t *dest);
+struct netif *routing_hook_root(const ip4_addr_t *src, const ip4_addr_t *dest);
+struct netif *routing_hook_forwarder(const ip4_addr_t *src, const ip4_addr_t *dest);
+struct netif *routing_hook_home(const ip4_addr_t *src, const ip4_addr_t *dest);
 
-struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t *dest) {
+typedef enum routing_hook_type {
+    ROUTING_HOOK_ROOT,
+    ROUTING_HOOK_FORWARDER,
+    ROUTING_HOOK_HOME,
+    ROUTING_HOOK_COUNT
+} routing_hook_type_t;
+
+static routing_hook_func_t routing_hooks[ROUTING_HOOK_COUNT] = {
+    [ROUTING_HOOK_ROOT] = routing_hook_root,
+    [ROUTING_HOOK_FORWARDER] = routing_hook_forwarder,
+    [ROUTING_HOOK_HOME] = routing_hook_home
+};
+
+struct netif *routing_hook_root(const ip4_addr_t *src, const ip4_addr_t *dest) {
+    uint32_t dst_ip = lwip_ntohl(ip4_addr_get_u32(dest));
+
+    if((dst_ip & ROOT_MASK) == ROOT_NETWORK){
+        return (struct netif *)esp_netif_get_netif_impl(node_get_spi_netif());
+    } else {
+        return (struct netif *)esp_netif_get_netif_impl(node_get_wifi_netif());
+    }
+
+}
+
+struct netif *routing_hook_forwarder(const ip4_addr_t *src, const ip4_addr_t *dest) {
     uint32_t src_ip = lwip_ntohl(ip4_addr_get_u32(src));
     uint32_t dst_ip = lwip_ntohl(ip4_addr_get_u32(dest));
-    
+
     if(node_is_point_to_point_message(dst_ip)){
         return (struct netif *)esp_netif_get_netif_impl(node_get_wifi_netif());
     }
@@ -40,6 +64,38 @@ struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t 
     return NULL;
 }
 
+struct netif *routing_hook_home(const ip4_addr_t *src, const ip4_addr_t *dest) {
+    uint32_t src_ip = lwip_ntohl(ip4_addr_get_u32(src));
+    uint32_t dst_ip = lwip_ntohl(ip4_addr_get_u32(dest));
+
+    if(node_is_point_to_point_message(dst_ip)){
+        return (struct netif *)esp_netif_get_netif_impl(node_get_wifi_netif());
+    }
+
+    rt_routing_result_t routing_result = rt_do_route(&rt, src_ip, dst_ip);
+
+    if(routing_result == ROUTE_WIFI){
+        return (struct netif *)esp_netif_get_netif_impl(node_get_wifi_netif());
+    }
+
+    if(routing_result == ROUTE_SPI) {
+        return (struct netif *)esp_netif_get_netif_impl(node_get_spi_netif());
+    }
+
+    return NULL;
+}
+
+static routing_hook_func_t selected_routing_hook = NULL;
+
+struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t *dest) {
+    return selected_routing_hook(src, dest);
+}
+
+static ring_share_t rs = { 0 };
+static sync_t _sync = { 0 };
+static shared_state_t ss = { 0 };
+static routing_t rt = { 0 };
+
 void app_main(void) {
     node_setup();
 
@@ -55,12 +111,16 @@ void app_main(void) {
 
     if(orientation == NODE_DEVICE_ORIENTATION_CENTER){
         if(is_center_root){
+            selected_routing_hook = routing_hooks[ROUTING_HOOK_ROOT];
             rt_init_root(&rt, ROOT_NETWORK, ROOT_MASK);
+            node_set_as_sta();
             vTaskDelay(pdMS_TO_TICKS(10000));
         } else {
+            selected_routing_hook = routing_hooks[ROUTING_HOOK_HOME];
             rt_init_home(&rt);
         }
     } else {
+        selected_routing_hook = routing_hooks[ROUTING_HOOK_FORWARDER];
         rt_init_forwarder(&rt);
     }
 
