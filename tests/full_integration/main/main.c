@@ -70,24 +70,14 @@ struct netif *routing_hook_forwarder(const ip4_addr_t *src, const ip4_addr_t *de
 }
 
 struct netif *routing_hook_home(const ip4_addr_t *src, const ip4_addr_t *dest) {
-    uint32_t src_ip = lwip_ntohl(ip4_addr_get_u32(src));
     uint32_t dst_ip = lwip_ntohl(ip4_addr_get_u32(dest));
 
-    if(node_is_point_to_point_message(dst_ip)){
-        return (struct netif *)esp_netif_get_netif_impl(node_get_wifi_netif());
-    }
-
-    rt_routing_result_t routing_result = rt_do_route(&rt, src_ip, dst_ip);
-
-    if(routing_result == ROUTE_WIFI){
-        return (struct netif *)esp_netif_get_netif_impl(node_get_wifi_netif());
-    }
-
-    if(routing_result == ROUTE_SPI) {
+    if(node_is_message_to_home(dst_ip)){
+        return (struct netif *)esp_netif_get_netif_impl(node_get_wifi_netif()); 
+    } else {
         return (struct netif *)esp_netif_get_netif_impl(node_get_spi_netif());
     }
 
-    return NULL;
 }
 
 static routing_hook_func_t selected_routing_hook = NULL;
