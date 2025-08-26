@@ -23,7 +23,8 @@ void ap_init(AccessPointPtr ap, uint8_t wifi_channel, const char *wifi_ssid, con
   } else {
     ap->wifi_config.ap.authmode = WIFI_AUTH_WPA2_PSK;
   }
-  ap->wifi_config.ap.pmf_cfg.required = true;
+  ap->wifi_config.ap.pmf_cfg.required = false;
+  ap->wifi_config.ap.pmf_cfg.capable = true;
   // strcpy((char *)ap->network_cidr, network_cidr);
   esp_netif_t *netif = esp_netif_create_default_wifi_ap();
   ap->netif = netif;
