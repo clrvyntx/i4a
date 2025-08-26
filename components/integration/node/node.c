@@ -12,8 +12,8 @@
 #define NODE_NAME_PREFIX "I4A"
 #define NODE_LINK_PASSWORD "zWfAc2wXq5"
 
-#define NAT_NETWORK_NAME "nat_network_ssid"
-#define NAT_NETWORK_PASSWORD "nat_network_password"
+#define NAT_NETWORK_NAME "Internet4All_Root"
+#define NAT_NETWORK_PASSWORD "I4A123456"
 
 #define UUID_LENGTH 7
 #define CENTER_STARTUP_DELAY_SECONDS 10
@@ -232,3 +232,4 @@ esp_netif_t *node_get_wifi_netif(void) {
 esp_netif_t *node_get_spi_netif(void) {
     return get_ring_link_tx_netif();
 }
+
