@@ -12,9 +12,6 @@
 #define NODE_NAME_PREFIX "I4A"
 #define NODE_LINK_PASSWORD "zWfAc2wXq5"
 
-#define NAT_NETWORK_NAME "Internet4All_Root"
-#define NAT_NETWORK_PASSWORD "I4A123456"
-
 #define UUID_LENGTH 7
 #define CENTER_STARTUP_DELAY_SECONDS 10
 
@@ -128,16 +125,8 @@ void node_set_as_sta(){
     device_reset(node_ptr->node_device_ptr);
   }
 
-  char *wifi_network_prefix;
-  char *wifi_network_password;
-
-  if(node_ptr->node_device_is_center_root){
-	  wifi_network_prefix = NAT_NETWORK_NAME;
-	  wifi_network_password = NAT_NETWORK_PASSWORD;
-  } else {
-	  wifi_network_prefix = NODE_NAME_PREFIX;
-	  wifi_network_password = NODE_LINK_PASSWORD;
-  }
+  char *wifi_network_prefix = NODE_NAME_PREFIX;
+  char *wifi_network_password = NODE_LINK_PASSWORD;
 
   device_init(node_ptr->node_device_ptr, node_ptr->node_device_uuid, node_ptr->node_device_orientation, wifi_network_prefix, wifi_network_password, 6, 4, (uint8_t)node_ptr->node_device_is_center_root, STATION);
   device_start_station(node_ptr->node_device_ptr);
@@ -155,7 +144,7 @@ void node_set_as_ap(uint32_t network, uint32_t mask){
   char *wifi_network_prefix = NODE_NAME_PREFIX;
   char *wifi_network_password;
 
-  if (node_ptr->node_device_orientation == CONFIG_ORIENTATION_CENTER) {
+  if (node_ptr->node_device_orientation == CONFIG_ORIENTATION_CENTER && !node_ptr->node_device_is_center_root) {
     node_gateway = network + 1;
     wifi_network_password = "";
     ap_max_sta_connections = MAX_DEVICES_PER_HOUSE;
@@ -182,7 +171,7 @@ void node_set_as_ap(uint32_t network, uint32_t mask){
   ip4addr_ntoa_r(&gateway_addr, network_gateway, sizeof(network_gateway));
   ip4addr_ntoa_r(&mask_addr, network_mask, sizeof(network_mask));
 
-  device_init(node_ptr->node_device_ptr, node_ptr->node_device_uuid, node_ptr->node_device_orientation, wifi_network_prefix, wifi_network_password, ap_channel_to_emit, ap_max_sta_connections, 0, AP);
+  device_init(node_ptr->node_device_ptr, node_ptr->node_device_uuid, node_ptr->node_device_orientation, wifi_network_prefix, wifi_network_password, ap_channel_to_emit, ap_max_sta_connections, (uint8_t)node_ptr->node_device_is_center_root, AP);
   device_set_network_ap(node_ptr->node_device_ptr, network_cidr, network_gateway, network_mask);
   device_start_ap(node_ptr->node_device_ptr);
 }
