@@ -102,8 +102,8 @@ void app_main(void) {
     if(orientation == NODE_DEVICE_ORIENTATION_CENTER){
         if(is_center_root){
             selected_routing_hook = routing_hooks[ROUTING_HOOK_ROOT];
+            node_set_as_ap(ROOT_NETWORK, ROOT_MASK);
             rt_init_root(&rt, ROOT_NETWORK, ROOT_MASK);
-            node_set_as_sta();
             vTaskDelay(pdMS_TO_TICKS(10000));
         } else {
             selected_routing_hook = routing_hooks[ROUTING_HOOK_HOME];
