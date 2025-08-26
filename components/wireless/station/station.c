@@ -33,7 +33,7 @@ static bool is_network_allowed(char* device_uuid, char* network_prefix, char* ne
   return true;
 }
 
-void station_init(StationPtr stationPtr, const char* wifi_ssid_like, uint16_t orientation, char* device_uuid, const char* password, station_type_t station_type) {
+void station_init(StationPtr stationPtr, const char* wifi_ssid_like, uint16_t orientation, char* device_uuid, const char* password) {
 
   strcpy(stationPtr->ssid_like, wifi_ssid_like);
   strcpy(stationPtr->device_uuid, device_uuid);
@@ -42,7 +42,6 @@ void station_init(StationPtr stationPtr, const char* wifi_ssid_like, uint16_t or
   stationPtr->initialized = true;
   stationPtr->state = s_inactive;
   stationPtr->ap_found = false;
-  stationPtr->station_type = station_type;
   stationPtr->is_fully_connected = false;
 
   esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta();
@@ -155,9 +154,7 @@ void station_connect(StationPtr stationPtr) {
   ESP_ERROR_CHECK(esp_netif_dhcpc_start(stationPtr->netif));
   ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &stationPtr->wifi_config));
   ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, stationPtr));
-  if(stationPtr->station_type == PEER){
-    ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, stationPtr));
-  }
+  ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, stationPtr));
   ESP_ERROR_CHECK(esp_wifi_connect());
 }
 
