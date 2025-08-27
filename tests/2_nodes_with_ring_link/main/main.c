@@ -99,8 +99,7 @@ void app_main(void) {
 
     if(orientation == NODE_DEVICE_ORIENTATION_CENTER){
         if(device_is_root){
-            node_set_as_ap(o_subnet, o_mask); // Uncomment this to test with an AP that simulates an outside connection
-            //node_set_as_sta(); // Uncomment this to test with real outside connection
+            node_set_as_ap(o_subnet, o_mask);
         } else {
             node_set_as_ap(c_subnet, c_mask);
         }
