@@ -7,8 +7,8 @@
 #include "server.h"
 
 #define PORT 3999
-#define KEEPALIVE_IDLE 5
-#define KEEPALIVE_INTERVAL 5
+#define KEEPALIVE_IDLE 60
+#define KEEPALIVE_INTERVAL 30
 #define KEEPALIVE_COUNT 3
 #define BUFFER_SIZE 512
 
