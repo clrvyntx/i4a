@@ -57,7 +57,7 @@ void device_init(DevicePtr device_ptr, const char *device_uuid, uint8_t device_o
   device_ptr->station_ptr = &device_ptr->station;
 
   if (mode == AP) {
-    device_init_ap(device_ptr, ap_channel_to_emit, wifi_network_prefix, device_uuid, wifi_network_password, ap_max_sta_connections, device_orientation);
+    device_init_ap(device_ptr, ap_channel_to_emit, wifi_network_prefix, device_uuid, wifi_network_password, ap_max_sta_connections, device_orientation, device_is_root);
   }
 
   if (mode == STATION) {
@@ -66,13 +66,15 @@ void device_init(DevicePtr device_ptr, const char *device_uuid, uint8_t device_o
 
 }
 
-void device_init_ap(DevicePtr device_ptr, uint8_t channel, const char *wifi_network_prefix ,const char *device_uuid, const char *password, uint8_t max_sta_connections, uint16_t orientation) {
+void device_init_ap(DevicePtr device_ptr, uint8_t channel, const char *wifi_network_prefix ,const char *device_uuid, const char *password, uint8_t max_sta_connections, uint16_t orientation, uint8_t is_root) {
   // Generate the wifi ssid
   char wifi_ssid[32];
   memset(wifi_ssid, 0, sizeof(wifi_ssid));
   strcpy(wifi_ssid, wifi_network_prefix);
-  strcat(wifi_ssid, dev_orientation[orientation]);
-  strcat(wifi_ssid, device_uuid);
+  if(!is_root || orientation != 4){
+    strcat(wifi_ssid, dev_orientation[orientation]);
+    strcat(wifi_ssid, device_uuid);
+  }
 
   ESP_LOGI(LOGGING_TAG, "Initializing AP with SSID: %s", wifi_ssid);
   
