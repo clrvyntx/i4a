@@ -12,6 +12,9 @@
 #define NODE_NAME_PREFIX "I4A"
 #define NODE_LINK_PASSWORD "zWfAc2wXq5"
 
+#define NAT_NETWORK_NAME "Internet4All_Root"
+#define NAT_NETWORK_PASSWORD "I4A123456"
+
 #define UUID_LENGTH 7
 #define CENTER_STARTUP_DELAY_SECONDS 10
 
@@ -43,9 +46,9 @@ static Device node_device = {
 static node_t *node_ptr = &node;
 
 static void generate_uuid_from_mac(char *uuid_out, size_t len) {
-    uint8_t mac[6];
-    esp_read_mac(mac, ESP_MAC_WIFI_SOFTAP);
-    snprintf(uuid_out, len, "%02X%02X%02X", mac[3], mac[4], mac[5]);
+  uint8_t mac[6];
+  esp_read_mac(mac, ESP_MAC_WIFI_SOFTAP);
+  snprintf(uuid_out, len, "%02X%02X%02X", mac[3], mac[4], mac[5]);
 }
 
 static void read_uuid(void *ctx, const uint8_t *data, uint16_t len) {
@@ -141,19 +144,30 @@ void node_set_as_ap(uint32_t network, uint32_t mask){
   uint32_t node_gateway;
   uint8_t ap_channel_to_emit = (rand() % 11) + 1;
   uint8_t ap_max_sta_connections;
-  char *wifi_network_prefix = NODE_NAME_PREFIX;
+  char *wifi_network_prefix;
   char *wifi_network_password;
 
-  if (node_ptr->node_device_orientation == CONFIG_ORIENTATION_CENTER && !node_ptr->node_device_is_center_root) {
-    node_gateway = network + 1;
-    wifi_network_password = "";
-    ap_max_sta_connections = MAX_DEVICES_PER_HOUSE;
-    home_subnet = network;
-    home_mask = mask;
+  if (node_ptr->node_device_orientation == CONFIG_ORIENTATION_CENTER) {
+    if(node_ptr->node_device_is_center_root){
+      network = BRIDGE_NETWORK;
+      mask = BRIDGE_MASK;
+      node_gateway = network + 2;
+      wifi_network_prefix = NAT_NETWORK_NAME;
+      wifi_network_password = NAT_NETWORK_PASSWORD;
+      ap_max_sta_connections = 1;
+    } else {
+      node_gateway = network + 1;
+      wifi_network_prefix = NODE_NAME_PREFIX;
+      wifi_network_password = "";
+      ap_max_sta_connections = MAX_DEVICES_PER_HOUSE;
+      home_subnet = network;
+      home_mask = mask;
+    }
   } else {
     network = BRIDGE_NETWORK;
     mask = BRIDGE_MASK;
     node_gateway = network + 2;
+    wifi_network_prefix = NODE_NAME_PREFIX;
     wifi_network_password = NODE_LINK_PASSWORD;
     ap_max_sta_connections = 1;
   }
@@ -205,7 +219,7 @@ bool node_is_point_to_point_message(uint32_t dst){
 }
 
 bool node_is_message_to_home(uint32_t dst){
-    return ((dst & home_mask) == home_subnet);
+  return ((dst & home_mask) == home_subnet);
 }
 
 esp_netif_t *node_get_wifi_netif(void) {
@@ -219,6 +233,5 @@ esp_netif_t *node_get_wifi_netif(void) {
 }
 
 esp_netif_t *node_get_spi_netif(void) {
-    return get_ring_link_tx_netif();
+  return get_ring_link_tx_netif();
 }
-
