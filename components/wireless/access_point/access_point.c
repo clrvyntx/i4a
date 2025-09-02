@@ -10,7 +10,6 @@
 #include "access_point.h"
 
 #define DEFAULT_DNS "8.8.8.8"
-#define AP_MTU 1400
 
 static const char *LOGGING_TAG = "AP";
 
@@ -31,8 +30,6 @@ void ap_init(AccessPointPtr ap, uint8_t wifi_channel, const char *wifi_ssid, con
   // strcpy((char *)ap->network_cidr, network_cidr);
   esp_netif_t *netif = esp_netif_create_default_wifi_ap();
   ap->netif = netif;
-  struct netif *lwip_netif = esp_netif_get_netif_impl(ap->netif);
-  lwip_netif->mtu = AP_MTU;
   ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
   ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &ap->wifi_config));
   // Register the event handler
