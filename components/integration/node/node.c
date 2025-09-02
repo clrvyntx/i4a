@@ -29,7 +29,7 @@ static uint32_t home_mask = 0xFFFFFFFF;
 typedef struct node {
   DevicePtr node_device_ptr;
   char node_device_uuid[UUID_LENGTH];
-  config_orientation_t node_device_orientation;
+  node_device_orientation_t node_device_orientation;
   bool node_device_is_center_root;
 } node_t;
 
@@ -44,6 +44,15 @@ static Device node_device = {
 };
 
 static node_t *node_ptr = &node;
+
+static node_device_orientation_t node_get_config_orientation(void){
+  config_id_t config_bits = config_get_id();
+    if ((config_bits >> 2) == 0) {
+      return config_bits;
+  } else {
+      return NODE_DEVICE_ORIENTATION_CENTER;
+  }
+}
 
 static void generate_uuid_from_mac(char *uuid_out, size_t len) {
   uint8_t mac[6];
@@ -96,9 +105,9 @@ void node_setup(void){
   ESP_ERROR_CHECK(ring_link_init());
 
   node_ptr->node_device_ptr = &node_device;
-  node_ptr->node_device_orientation = config_get_orientation();
+  node_ptr->node_device_orientation = node_get_config_orientation();
 
-  if(node_ptr->node_device_orientation == CONFIG_ORIENTATION_CENTER){
+  if(node_ptr->node_device_orientation == NODE_DEVICE_ORIENTATION_CENTER){
     node_ptr->node_device_is_center_root = config_mode_is(CONFIG_MODE_ROOT);
     generate_uuid_from_mac(node_ptr->node_device_uuid, sizeof(node_ptr->node_device_uuid));
 
@@ -147,7 +156,7 @@ void node_set_as_ap(uint32_t network, uint32_t mask){
   char *wifi_network_prefix;
   char *wifi_network_password;
 
-  if (node_ptr->node_device_orientation == CONFIG_ORIENTATION_CENTER) {
+  if (node_ptr->node_device_orientation == NODE_DEVICE_ORIENTATION_CENTER) {
     if(node_ptr->node_device_is_center_root){
       network = BRIDGE_NETWORK;
       mask = BRIDGE_MASK;
@@ -235,3 +244,4 @@ esp_netif_t *node_get_wifi_netif(void) {
 esp_netif_t *node_get_spi_netif(void) {
   return get_ring_link_tx_netif();
 }
+
