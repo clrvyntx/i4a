@@ -12,6 +12,15 @@ if [ ! -f "$SCRIPT_SOURCE" ]; then
     exit 1
 fi
 
+# Check if iptables is installed
+if ! command -v iptables >/dev/null 2>&1; then
+    echo "[+] iptables not found. Installing..."
+    sudo apt update
+    sudo apt install -y iptables
+else
+    echo "[+] iptables is already installed."
+fi
+
 echo "[+] Copying NAT script to dispatcher.d..."
 sudo cp "$SCRIPT_SOURCE" "$SCRIPT_DEST"
 
