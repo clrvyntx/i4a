@@ -12,7 +12,7 @@ struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t 
     uint32_t dst_ip = lwip_ntohl(ip4_addr_get_u32(dest));
     uint8_t orientation = node_get_device_orientation();
 
-    if (orientation == NODE_DEVICE_ORIENTATION_CENTER) {
+    if (orientation == NODE_DEVICE_ORIENTATION_NORTH) {
 		if ((dst_ip & r_mask) != r_subnet) {
 			return (struct netif *)esp_netif_get_netif_impl(node_get_spi_netif());
 		} else {
@@ -20,7 +20,7 @@ struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t 
 		}
     }
 
-    if (orientation == NODE_DEVICE_ORIENTATION_NORTH) {
+    if (orientation == NODE_DEVICE_ORIENTATION_CENTER) {
         if ((dst_ip & r_mask) == r_subnet) {
             return (struct netif *)esp_netif_get_netif_impl(node_get_spi_netif());
         } else {
@@ -41,7 +41,7 @@ void app_main(void) {
     }
 
     if(orientation == NODE_DEVICE_ORIENTATION_NORTH){
-        node_set_as_sta();
+		node_set_as_ap(r_subnet, r_mask);
     }
 
 }
