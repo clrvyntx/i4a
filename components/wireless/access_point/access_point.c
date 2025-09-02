@@ -2,6 +2,8 @@
 #include "esp_log.h"
 #include "esp_event.h"
 #include "lwip/ip_addr.h"
+#include "lwip/esp_netif_net_stack.h"
+#include "esp_netif_net_stack.h"
 #include "server.h"
 #include "dhcpserver/dhcpserver.h"
 #include "dhcpserver/dhcpserver_options.h"
