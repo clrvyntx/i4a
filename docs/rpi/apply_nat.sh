@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # File to deploy
-SCRIPT_SOURCE="./nat_script.sh"
+SCRIPT_SOURCE="./script"
 
 # Destination in dispatcher.d
 SCRIPT_DEST="/etc/NetworkManager/dispatcher.d/99-run-network-setup.sh"
