@@ -10,7 +10,7 @@ static const char* TAG = "==> SPI";
 
 #define NUM_BUFFERS  8
 
-static ring_link_payload_t buffer_pool[NUM_BUFFERS];        // Buffers preasignados
+DMA_ATTR static ring_link_payload_t buffer_pool[NUM_BUFFERS] __attribute__((aligned(4)));  // Buffers preasignados
 static QueueHandle_t free_buf_queue = NULL;       // Buffers libres
 static QueueHandle_t spi_rx_queue = NULL;         // Mensajes recibidos
 
@@ -123,7 +123,7 @@ esp_err_t spi_init(QueueHandle_t **rx_queue) {
         xQueueSend(free_buf_queue, &ptr, 0);
     }
     // inicializo tarea de polling
-    xTaskCreatePinnedToCore(spi_polling_task, "spi_polling_task", 4096, NULL, 10, NULL, 1);
+    xTaskCreatePinnedToCore(spi_polling_task, "spi_polling_task", 8192, NULL, 10, NULL, 1);
 
     return ESP_OK;
 }
