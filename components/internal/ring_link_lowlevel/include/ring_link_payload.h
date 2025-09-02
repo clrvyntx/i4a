@@ -12,7 +12,7 @@ extern "C" {
 #endif
 
 
-#define PADDING_SIZE(x) (4 - ((x) % 4))
+#define PADDING_SIZE(x) (((x) % 4) == 0 ? 0 : (4 - ((x) % 4)))
 #define RING_LINK_PAYLOAD_BUFFER_SIZE (RING_LINK_LOWLEVEL_BUFFER_SIZE + PADDING_SIZE(RING_LINK_LOWLEVEL_BUFFER_SIZE))
 #define RING_LINK_PAYLOAD_TTL 4
 
@@ -38,15 +38,14 @@ typedef enum __attribute__((__packed__)) {
 
 typedef uint8_t ring_link_payload_id_t;
 
-typedef struct
-{
+typedef struct __attribute__((aligned(4))) {
     ring_link_payload_id_t id;
     ring_link_payload_buffer_type_t buffer_type;
     uint16_t len;
     uint8_t ttl;
     config_id_t src_id;
     config_id_t dst_id;
-    char buffer[RING_LINK_PAYLOAD_BUFFER_SIZE];
+    char buffer[RING_LINK_PAYLOAD_BUFFER_SIZE] __attribute__((aligned(4)));
 } ring_link_payload_t;
 
 bool ring_link_payload_is_for_device(ring_link_payload_t *p);
