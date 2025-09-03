@@ -10,7 +10,7 @@ static const char* TAG = "==> SPI";
 
 #define NUM_BUFFERS  8
 
-static ring_link_payload_t buffer_pool[NUM_BUFFERS];        // Buffers preasignados
+DMA_ATTR static ring_link_payload_t buffer_pool[NUM_BUFFERS] __attribute__((aligned(4)));  // Buffers preasignados
 static QueueHandle_t free_buf_queue = NULL;       // Buffers libres
 static QueueHandle_t spi_rx_queue = NULL;         // Mensajes recibidos
 
