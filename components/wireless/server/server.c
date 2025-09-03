@@ -39,10 +39,10 @@ static bool get_network_address_and_mask(void) {
 // Function to read data from the client socket
 static void socket_read_loop(const int sock, const char *client_ip) {
 
-  node_on_peer_connected(peer_net, peer_mask);
   uint8_t rx_buffer[BUFFER_SIZE];
   client_sock = sock;
-
+  node_on_peer_connected(peer_net, peer_mask);
+  
   while (1) {
     int len = recv(sock, rx_buffer, sizeof(rx_buffer), 0);
     if (len < 0) {
