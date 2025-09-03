@@ -28,6 +28,6 @@ menu "Internet for all: SPI Configuration"
     config SPI_BUFFER_SIZE
         int "SPI Buffer size"
         range 200 1600
-        default 1500
+        default 1600
 
 endmenu
