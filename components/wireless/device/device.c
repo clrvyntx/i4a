@@ -71,14 +71,16 @@ void device_init_ap(DevicePtr device_ptr, uint8_t channel, const char *wifi_netw
   char wifi_ssid[32];
   memset(wifi_ssid, 0, sizeof(wifi_ssid));
   strcpy(wifi_ssid, wifi_network_prefix);
-  if(!is_root || orientation != 4){
+
+  bool is_center = (orientation == 4);
+  if(!is_root || !is_center){
     strcat(wifi_ssid, dev_orientation[orientation]);
     strcat(wifi_ssid, device_uuid);
   }
 
   ESP_LOGI(LOGGING_TAG, "Initializing AP with SSID: %s", wifi_ssid);
   
-  ap_init(device_ptr->access_point_ptr, channel, wifi_ssid, password, max_sta_connections);
+  ap_init(device_ptr->access_point_ptr, channel, wifi_ssid, password, max_sta_connections, is_center);
 };
 
 void device_init_station(DevicePtr device_ptr, const char* wifi_ssid_like, uint16_t orientation, char* device_uuid, const char* password) {

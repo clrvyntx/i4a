@@ -13,7 +13,7 @@
 
 static const char *LOGGING_TAG = "AP";
 
-void ap_init(AccessPointPtr ap, uint8_t wifi_channel, const char *wifi_ssid, const char *wifi_password, uint8_t wifi_max_sta_conn) {
+void ap_init(AccessPointPtr ap, uint8_t wifi_channel, const char *wifi_ssid, const char *wifi_password, uint8_t wifi_max_sta_conn, bool is_center) {
   // Populate the Access Point wifi_config_t 
   strcpy((char *)ap->wifi_config.ap.ssid, wifi_ssid);
   ap->wifi_config.ap.ssid_len = strlen(wifi_ssid);
@@ -33,8 +33,9 @@ void ap_init(AccessPointPtr ap, uint8_t wifi_channel, const char *wifi_ssid, con
   ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
   ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &ap->wifi_config));
   // Register the event handler
-  ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &ap_event_handler, NULL));
+  ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &ap_event_handler, ap));
   ap->initialized = true;
+  ap->is_center = is_center;
 }
 
 bool ap_is_initialized(AccessPointPtr ap) {
@@ -55,6 +56,7 @@ void ap_print_info(AccessPointPtr ap) {
 }
 
 void ap_set_channel(AccessPointPtr ap, uint8_t channel) {
+  ap->channel = channel;
   ap->wifi_config.ap.channel = channel;
   ESP_LOGI(LOGGING_TAG, "Channel set on: %u", ap->channel);
 };
@@ -131,17 +133,22 @@ void ap_destroy_netif(AccessPointPtr ap) {
 }
 
 void ap_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
+  AccessPointPtr ap = (AccessPointPtr)arg;
   if (event_base == WIFI_EVENT) {
     switch (event_id) {
 
       case WIFI_EVENT_AP_START:
         ESP_LOGI(LOGGING_TAG, "Access Point started");
-        server_create();
+        if(!ap->is_center){
+          server_create();
+        }
         break;
 
       case WIFI_EVENT_AP_STOP:
         ESP_LOGI(LOGGING_TAG, "Access Point stopped");
-        server_close();
+        if(!ap->is_center){
+          server_close();
+        }
         break;
 
     }
