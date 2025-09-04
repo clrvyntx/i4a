@@ -104,7 +104,7 @@ void app_main(void) {
             selected_routing_hook = routing_hooks[ROUTING_HOOK_ROOT];
             node_set_as_ap(ROOT_NETWORK, ROOT_MASK);
             rt_init_root(&rt, ROOT_NETWORK, ROOT_MASK);
-            vTaskDelay(pdMS_TO_TICKS(10000));
+            vTaskDelay(pdMS_TO_TICKS(20000));
         } else {
             selected_routing_hook = routing_hooks[ROUTING_HOOK_HOME];
             rt_init_home(&rt);
