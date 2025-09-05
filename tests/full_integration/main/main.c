@@ -103,8 +103,8 @@ void app_main(void) {
         if(is_center_root){
             selected_routing_hook = routing_hooks[ROUTING_HOOK_ROOT];
             node_set_as_ap(ROOT_NETWORK, ROOT_MASK);
+            vTaskDelay(pdMS_TO_TICKS(10000));
             rt_init_root(&rt, ROOT_NETWORK, ROOT_MASK);
-            vTaskDelay(pdMS_TO_TICKS(20000));
         } else {
             selected_routing_hook = routing_hooks[ROUTING_HOOK_HOME];
             rt_init_home(&rt);
@@ -117,7 +117,7 @@ void app_main(void) {
     rt_on_start(&rt);
     rt_on_tick(&rt, 0);
 
-    if(orientation != NODE_DEVICE_ORIENTATION_CENTER && !is_center_root){
+    if(orientation == NODE_DEVICE_ORIENTATION_NORTH && !is_center_root){ // For testing, have a single one, in reality all non centers should be stations
         node_set_as_sta();
     }
     
