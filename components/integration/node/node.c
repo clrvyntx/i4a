@@ -16,7 +16,7 @@
 #define NAT_NETWORK_PASSWORD "I4A123456"
 
 #define UUID_LENGTH 7
-#define CENTER_STARTUP_DELAY_SECONDS 20
+#define CENTER_STARTUP_DELAY_SECONDS 10
 
 #define BRIDGE_NETWORK  0xC0A80300  // 192.168.3.0
 #define BRIDGE_MASK 0xFFFFFFFC  // /30
@@ -244,5 +244,6 @@ esp_netif_t *node_get_wifi_netif(void) {
 esp_netif_t *node_get_spi_netif(void) {
   return get_ring_link_tx_netif();
 }
+
 
 
