@@ -80,7 +80,11 @@ struct netif *routing_hook_home(const ip4_addr_t *src, const ip4_addr_t *dest) {
 
 }
 
-static routing_hook_func_t selected_routing_hook = NULL;
+struct netif *routing_hook_default(const ip4_addr_t *src, const ip4_addr_t *dest) {
+    return (struct netif *)esp_netif_get_netif_impl(node_get_spi_netif());
+}
+
+static routing_hook_func_t selected_routing_hook = routing_hook_default;
 
 struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t *dest) {
     return selected_routing_hook(src, dest);
