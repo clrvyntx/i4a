@@ -169,6 +169,7 @@ void device_start_station(DevicePtr device_ptr) {
 
 static void device_connect_station_task(void* arg) {
   DevicePtr device_ptr = (DevicePtr)arg;  // Get the device pointer from the task argument
+  vTaskDelay(pdMS_TO_TICKS(5000));  // Initial 5 sec delay to let routing algorithm set up properly
 
   while (is_on_connect_loop) {
 
