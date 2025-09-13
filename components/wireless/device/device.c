@@ -6,6 +6,8 @@
 #include "esp_log.h"
 #include "device.h"
 
+#define STATION_STARTUP_DELAY_SECONDS 10
+
 static const char *LOGGING_TAG = "device";
 static const char *dev_orientation[5] = {"_N_", "_S_", "_E_", "_W_", "_C_"};
 static bool is_on_connect_loop = false;
@@ -169,7 +171,7 @@ void device_start_station(DevicePtr device_ptr) {
 
 static void device_connect_station_task(void* arg) {
   DevicePtr device_ptr = (DevicePtr)arg;  // Get the device pointer from the task argument
-  vTaskDelay(pdMS_TO_TICKS(5000));  // Initial 5 sec delay to let routing algorithm set up properly
+  vTaskDelay(pdMS_TO_TICKS(STATION_STARTUP_DELAY_SECONDS * 1000));
 
   while (is_on_connect_loop) {
 
