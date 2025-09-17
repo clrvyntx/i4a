@@ -8,6 +8,7 @@
 
 #define MAX_MESSAGE_SIZE 256
 #define QUEUE_LENGTH 10
+#define PEER_DELAY_SECONDS 5
 
 static const char *TAG = "callbacks";
 
@@ -36,6 +37,7 @@ static void peer_connected_task(void *arg) {
     peer_event_t event;
     while (1) {
         if (xQueueReceive(peer_connected_queue, &event, portMAX_DELAY)) {
+            vTaskDelay(pdMS_TO_TICKS(PEER_DELAY_SECONDS * 1000));
             wl->callbacks.on_peer_connected(wl->context, event.net, event.mask);
         }
     }
@@ -45,6 +47,7 @@ static void peer_lost_task(void *arg) {
     peer_event_t event;
     while (1) {
         if (xQueueReceive(peer_lost_queue, &event, portMAX_DELAY)) {
+            vTaskDelay(pdMS_TO_TICKS(PEER_DELAY_SECONDS * 1000));
             wl->callbacks.on_peer_lost(wl->context, event.net, event.mask);
         }
     }
