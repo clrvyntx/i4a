@@ -1,4 +1,5 @@
 #include <string.h>
+#include <inttypes.h>
 #include <arpa/inet.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
@@ -37,7 +38,7 @@ static void peer_connected_task(void *arg) {
     peer_event_t event;
     while (1) {
         if (xQueueReceive(peer_connected_queue, &event, portMAX_DELAY)) {
-            ESP_LOGI(TAG, "Peer connected: net=0x%08X, mask=0x%08X", event.net, event.mask);
+            ESP_LOGI(TAG, "Peer connected: net=0x%08" PRIx32 ", mask=0x%08" PRIx32, event.net, event.mask);
             wl->callbacks.on_peer_connected(wl->context, event.net, event.mask);
         }
     }
@@ -47,7 +48,7 @@ static void peer_lost_task(void *arg) {
     peer_event_t event;
     while (1) {
         if (xQueueReceive(peer_lost_queue, &event, portMAX_DELAY)) {
-            ESP_LOGI(TAG, "Peer lost: net=0x%08X, mask=0x%08X", event.net, event.mask);
+            ESP_LOGI(TAG, "Peer lost: net=0x%08" PRIx32 ", mask=0x%08" PRIx32, event.net, event.mask);
             wl->callbacks.on_peer_lost(wl->context, event.net, event.mask);
         }
     }
