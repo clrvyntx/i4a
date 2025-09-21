@@ -116,13 +116,13 @@ void app_main(void) {
         selected_routing_hook = routing_hooks[ROUTING_HOOK_FORWARDER];
         rt_init_forwarder(&rt);
     }
+    
+    rt_on_start(&rt);
+    rt_on_tick(&rt, 1);
 
     if(orientation == NODE_DEVICE_ORIENTATION_NORTH && !is_center_root){ // For testing, have a single one, in reality all non centers should be stations
         node_set_as_sta();
     }
-    
-    rt_on_start(&rt);
-    rt_on_tick(&rt, 1);
     
     while (true) {
         vTaskDelay(pdMS_TO_TICKS(1000));
