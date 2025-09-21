@@ -1,4 +1,5 @@
 #include "esp_log.h"
+#include <inttypes.h>
 #include "lwip/esp_netif_net_stack.h"
 #include "esp_netif_net_stack.h"
 #include "wireless/wireless.h"
@@ -41,9 +42,8 @@ static routing_hook_func_t routing_hooks[ROUTING_HOOK_COUNT] = {
 
 struct netif *routing_hook_root(const ip4_addr_t *src, const ip4_addr_t *dest) {
     uint32_t dst_ip = lwip_ntohl(ip4_addr_get_u32(dest));
-
-    ESP_LOGI(TAG, "ROOT hook: dest_ip=%" PRIu32 " (%d.%d.%d.%d)", dst_ip,
-             IP4_ADDR1(dest), IP4_ADDR2(dest), IP4_ADDR3(dest), IP4_ADDR4(dest));
+    
+    ESP_LOGI(TAG, "ROOT hook: dest_ip=0x%08" PRIx32, dst_ip);
 
     if((dst_ip & ROOT_MASK) == ROOT_NETWORK){
         ESP_LOGI(TAG, "Routing via SPI (dst_ip matches root network)");
@@ -58,7 +58,7 @@ struct netif *routing_hook_forwarder(const ip4_addr_t *src, const ip4_addr_t *de
     uint32_t src_ip = lwip_ntohl(ip4_addr_get_u32(src));
     uint32_t dst_ip = lwip_ntohl(ip4_addr_get_u32(dest));
 
-    ESP_LOGI(TAG, "FORWARDER hook: src_ip=%" PRIu32 ", dest_ip=%" PRIu32, src_ip, dst_ip);
+    ESP_LOGI(TAG, "FORWARDER hook: src_ip=0x%08" PRIx32 ", dest_ip=0x%08" PRIx32, src_ip, dst_ip);
 
     if(node_is_point_to_point_message(dst_ip)){
         ESP_LOGI(TAG, "Routing P2P message via WiFi");
@@ -85,7 +85,7 @@ struct netif *routing_hook_forwarder(const ip4_addr_t *src, const ip4_addr_t *de
 struct netif *routing_hook_home(const ip4_addr_t *src, const ip4_addr_t *dest) {
     uint32_t dst_ip = lwip_ntohl(ip4_addr_get_u32(dest));
 
-    ESP_LOGI(TAG, "HOME hook: dest_ip=%" PRIu32, dst_ip);
+    ESP_LOGI(TAG, "HOME hook: dest_ip=0x%08" PRIx32, dst_ip);
 
     if(node_is_message_to_home(dst_ip)){
         ESP_LOGI(TAG, "Routing message to home via WiFi");
