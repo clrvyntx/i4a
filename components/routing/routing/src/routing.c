@@ -12,9 +12,6 @@
 #include "sync/sync.h"
 #include "wireless/wireless.h"
 
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-
 #define NODE_STARTUP_DELAY_SECONDS 10
 
 static void on_sibling_message(void *ctx, const uint8_t *raw_event, uint16_t len) {
@@ -225,7 +222,7 @@ void rt_on_start(routing_t *self) {
     );
 
     // Wait for all devices of the node to setup
-    vTaskDelay(pdMS_TO_TICKS(NODE_STARTUP_DELAY_SECONDS * 1000));
+    os_delay_ms(NODE_STARTUP_DELAY_SECONDS * 1000);
 
     // Request the first critical section
     sync_request_critical_section(self->deps.sync, RS_ROUTING);
