@@ -22,10 +22,10 @@ static sync_t _sync = { 0 };
 static shared_state_t ss = { 0 };
 static routing_t rt = { 0 };
 
-typedef struct netif *(*routing_hook_func_t)(const ip4_addr_t *src, const ip4_addr_t *dest);
-struct netif *routing_hook_root(const ip4_addr_t *src, const ip4_addr_t *dest);
-struct netif *routing_hook_forwarder(const ip4_addr_t *src, const ip4_addr_t *dest);
-struct netif *routing_hook_home(const ip4_addr_t *src, const ip4_addr_t *dest);
+typedef struct netif *(*routing_hook_func_t)(uint32_t src_ip, uint32_t dst_ip);
+struct netif *routing_hook_root(uint32_t src_ip, uint32_t dst_ip);
+struct netif *routing_hook_forwarder(uint32_t src_ip, uint32_t dst_ip);
+struct netif *routing_hook_home(uint32_t src_ip, uint32_t dst_ip);
 
 typedef enum routing_hook_type {
     ROUTING_HOOK_ROOT,
@@ -40,9 +40,7 @@ static routing_hook_func_t routing_hooks[ROUTING_HOOK_COUNT] = {
     [ROUTING_HOOK_HOME] = routing_hook_home
 };
 
-struct netif *routing_hook_root(const ip4_addr_t *src, const ip4_addr_t *dest) {
-    uint32_t dst_ip = lwip_ntohl(ip4_addr_get_u32(dest));
-    
+struct netif *routing_hook_root(uint32_t src_ip, uint32_t dst_ip) {
     ESP_LOGI(TAG, "ROOT hook: dest_ip=0x%08" PRIx32, dst_ip);
 
     if((dst_ip & ROOT_MASK) == ROOT_NETWORK){
@@ -54,9 +52,7 @@ struct netif *routing_hook_root(const ip4_addr_t *src, const ip4_addr_t *dest) {
     }
 }
 
-struct netif *routing_hook_forwarder(const ip4_addr_t *src, const ip4_addr_t *dest) {
-    uint32_t src_ip = lwip_ntohl(ip4_addr_get_u32(src));
-    uint32_t dst_ip = lwip_ntohl(ip4_addr_get_u32(dest));
+struct netif *routing_hook_forwarder(uint32_t src_ip, uint32_t dst_ip) {
 
     ESP_LOGI(TAG, "FORWARDER hook: src_ip=0x%08" PRIx32 ", dest_ip=0x%08" PRIx32, src_ip, dst_ip);
 
@@ -82,9 +78,7 @@ struct netif *routing_hook_forwarder(const ip4_addr_t *src, const ip4_addr_t *de
     }
 }
 
-struct netif *routing_hook_home(const ip4_addr_t *src, const ip4_addr_t *dest) {
-    uint32_t dst_ip = lwip_ntohl(ip4_addr_get_u32(dest));
-
+struct netif *routing_hook_home(uint32_t src_ip, uint32_t dst_ip) {
     ESP_LOGI(TAG, "HOME hook: dest_ip=0x%08" PRIx32, dst_ip);
 
     if(node_is_message_to_home(dst_ip)){
@@ -96,14 +90,16 @@ struct netif *routing_hook_home(const ip4_addr_t *src, const ip4_addr_t *dest) {
     }
 }
 
-struct netif *routing_hook_default(const ip4_addr_t *src, const ip4_addr_t *dest) {
+struct netif *routing_hook_default(uint32_t src_ip, uint32_t dst_ip) {
     return (struct netif *)esp_netif_get_netif_impl(node_get_spi_netif());
 }
 
 static routing_hook_func_t selected_routing_hook = routing_hook_default;
 
 struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t *dest) {
-    return selected_routing_hook(src, dest);
+    uint32_t src_ip = lwip_ntohl(ip4_addr_get_u32(src));
+    uint32_t dst_ip = lwip_ntohl(ip4_addr_get_u32(dest));
+    return selected_routing_hook(src_ip, dst_ip);
 }
 
 void app_main(void) {
