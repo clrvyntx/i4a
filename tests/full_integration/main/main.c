@@ -14,6 +14,8 @@
 #define ROOT_NETWORK 0x0A000000  // 10.0.0.0
 #define ROOT_MASK 0xFF000000 // 255.0.0.0
 
+static const char *TAG = "routing_hook";
+
 static ring_share_t rs = { 0 };
 static sync_t _sync = { 0 };
 static shared_state_t ss = { 0 };
@@ -40,44 +42,58 @@ static routing_hook_func_t routing_hooks[ROUTING_HOOK_COUNT] = {
 struct netif *routing_hook_root(const ip4_addr_t *src, const ip4_addr_t *dest) {
     uint32_t dst_ip = lwip_ntohl(ip4_addr_get_u32(dest));
 
+    ESP_LOGI(TAG, "ROOT hook: dest_ip=%" PRIu32 " (%d.%d.%d.%d)", dst_ip,
+             IP4_ADDR1(dest), IP4_ADDR2(dest), IP4_ADDR3(dest), IP4_ADDR4(dest));
+
     if((dst_ip & ROOT_MASK) == ROOT_NETWORK){
+        ESP_LOGI(TAG, "Routing via SPI (dst_ip matches root network)");
         return (struct netif *)esp_netif_get_netif_impl(node_get_spi_netif());
     } else {
+        ESP_LOGI(TAG, "Routing via WiFi (dst_ip is outside root network)");
         return (struct netif *)esp_netif_get_netif_impl(node_get_wifi_netif());
     }
-
 }
 
 struct netif *routing_hook_forwarder(const ip4_addr_t *src, const ip4_addr_t *dest) {
     uint32_t src_ip = lwip_ntohl(ip4_addr_get_u32(src));
     uint32_t dst_ip = lwip_ntohl(ip4_addr_get_u32(dest));
 
+    ESP_LOGI(TAG, "FORWARDER hook: src_ip=%" PRIu32 ", dest_ip=%" PRIu32, src_ip, dst_ip);
+
     if(node_is_point_to_point_message(dst_ip)){
+        ESP_LOGI(TAG, "Routing P2P message via WiFi");
         return (struct netif *)esp_netif_get_netif_impl(node_get_wifi_netif());
     }
 
     rt_routing_result_t routing_result = rt_do_route(&rt, src_ip, dst_ip);
 
-    if(routing_result == ROUTE_WIFI){
-        return (struct netif *)esp_netif_get_netif_impl(node_get_wifi_netif());
-    }
+    switch (routing_result) {
+        case ROUTE_WIFI:
+            ESP_LOGI(TAG, "Routing result: WIFI");
+            return (struct netif *)esp_netif_get_netif_impl(node_get_wifi_netif());
 
-    if(routing_result == ROUTE_SPI) {
-        return (struct netif *)esp_netif_get_netif_impl(node_get_spi_netif());
-    }
+        case ROUTE_SPI:
+            ESP_LOGI(TAG, "Routing result: SPI");
+            return (struct netif *)esp_netif_get_netif_impl(node_get_spi_netif());
 
-    return NULL;
+        default:
+            ESP_LOGW(TAG, "Routing result: UNKNOWN");
+            return NULL;
+    }
 }
 
 struct netif *routing_hook_home(const ip4_addr_t *src, const ip4_addr_t *dest) {
     uint32_t dst_ip = lwip_ntohl(ip4_addr_get_u32(dest));
 
+    ESP_LOGI(TAG, "HOME hook: dest_ip=%" PRIu32, dst_ip);
+
     if(node_is_message_to_home(dst_ip)){
-        return (struct netif *)esp_netif_get_netif_impl(node_get_wifi_netif()); 
+        ESP_LOGI(TAG, "Routing message to home via WiFi");
+        return (struct netif *)esp_netif_get_netif_impl(node_get_wifi_netif());
     } else {
+        ESP_LOGI(TAG, "Routing non-home message via SPI");
         return (struct netif *)esp_netif_get_netif_impl(node_get_spi_netif());
     }
-
 }
 
 struct netif *routing_hook_default(const ip4_addr_t *src, const ip4_addr_t *dest) {
