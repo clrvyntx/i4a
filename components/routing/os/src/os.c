@@ -1,6 +1,7 @@
 #include "os/os.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
+#include "freertos/task.h"
 #include "esp_log.h"
 #include "esp_system.h"
 #include <stdarg.h>
@@ -72,4 +73,8 @@ void os_log(os_log_level_t level, const char *tag, const char *fmt, ...)
     }
 
     va_end(args);
+}
+
+void os_delay_ms(uint32_t milliseconds){
+    vTaskDelay(pdMS_TO_TICKS(milliseconds));
 }
