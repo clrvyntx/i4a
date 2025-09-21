@@ -2,6 +2,7 @@
 #define _I4A_OS_H_
 
 #include <stdbool.h>
+#include <stdint.h>
 
 /**
  * OS provided abstractions:
@@ -59,5 +60,11 @@ void os_log(os_log_level_t level, const char *tag, const char *fmt, ...);
 #define log_warn(tag, fmt, ...) os_log(OS_LOG_LEVEL_WARNING, tag, fmt, ##__VA_ARGS__)
 #define log_error(tag, fmt, ...) os_log(OS_LOG_LEVEL_ERROR, tag, fmt, ##__VA_ARGS__)
 #define log_crit(tag, fmt, ...) os_log(OS_LOG_LEVEL_CRITICAL, tag, fmt, ##__VA_ARGS__)
+
+/**
+ * Called when the device needs a delay for stability or setup purposes
+ */
+
+void os_delay_ms(uint32_t milliseconds);
 
 #endif  // _I4A_OS_H_
