@@ -17,7 +17,6 @@
 
 #define UUID_LENGTH 7
 #define CENTER_STARTUP_DELAY_SECONDS 10
-#define ROOT_STARTUP_DELAY_SECONDS 10
 
 #define BRIDGE_NETWORK  0xC0A80300  // 192.168.3.0
 #define BRIDGE_MASK 0xFFFFFFFC  // /30
@@ -122,10 +121,6 @@ void node_setup(void){
       vTaskDelay(pdMS_TO_TICKS(100));
     }
     ESP_LOGI(TAG, "Center device UUID broadcasted: %s, Center root: %d", msg.uuid, msg.is_center_root);
-
-    if(node_ptr->node_device_is_center_root){
-      vTaskDelay(pdMS_TO_TICKS(ROOT_STARTUP_DELAY_SECONDS * 1000));
-    }
 
   } else {
     while(strlen(node_ptr->node_device_uuid) == 0){
@@ -255,3 +250,4 @@ esp_netif_t *node_get_wifi_netif(void) {
 esp_netif_t *node_get_spi_netif(void) {
   return get_ring_link_tx_netif();
 }
+
