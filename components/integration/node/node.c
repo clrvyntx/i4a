@@ -257,3 +257,7 @@ esp_netif_t *node_get_wifi_netif(void) {
 esp_netif_t *node_get_spi_netif(void) {
   return get_ring_link_tx_netif();
 }
+
+node_t *node_get_instance(void) {
+    return node_ptr;
+}
