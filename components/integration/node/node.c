@@ -15,6 +15,8 @@
 #define NAT_NETWORK_NAME "Internet4All_Root"
 #define NAT_NETWORK_PASSWORD "I4A123456"
 
+#define HOUSE_NETWORK_NAME "ComNetAR"
+
 #define UUID_LENGTH 7
 #define CENTER_STARTUP_DELAY_SECONDS 10
 
@@ -167,7 +169,7 @@ void node_set_as_ap(uint32_t network, uint32_t mask){
       ap_max_sta_connections = 1;
     } else {
       node_gateway = network + 1;
-      wifi_network_prefix = NODE_NAME_PREFIX;
+      wifi_network_prefix = HOUSE_NETWORK_NAME;
       wifi_network_password = "";
       ap_max_sta_connections = MAX_DEVICES_PER_HOUSE;
       home_subnet = network;
@@ -250,6 +252,7 @@ esp_netif_t *node_get_wifi_netif(void) {
 esp_netif_t *node_get_spi_netif(void) {
   return get_ring_link_tx_netif();
 }
+
 
 
 
