@@ -40,6 +40,9 @@ bool node_broadcast_to_siblings(const uint8_t *msg, uint16_t len); // Broadcast 
 esp_netif_t *node_get_wifi_netif(void); // Returns network interface for wireless link
 esp_netif_t *node_get_spi_netif(void); // Returns network interface for local communication
 
+// Debug 
+node_t *node_get_instance(void); // Node's internal structure, used for debugging and tests
+
 #ifdef __cplusplus
 }
 #endif
