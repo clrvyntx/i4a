@@ -17,7 +17,7 @@
 
 #define HOUSE_NETWORK_NAME "ComNetAR"
 
-#define UUID_LENGTH 7
+#define UUID_LENGTH 13
 #define CENTER_STARTUP_DELAY_SECONDS 10
 
 #define BRIDGE_NETWORK  0xC0A80300  // 192.168.3.0
@@ -59,7 +59,10 @@ static node_device_orientation_t node_get_config_orientation(void){
 static void generate_uuid_from_mac(char *uuid_out, size_t len) {
   uint8_t mac[6];
   esp_read_mac(mac, ESP_MAC_WIFI_SOFTAP);
-  snprintf(uuid_out, len, "%02X%02X%02X", mac[3], mac[4], mac[5]);
+
+  // Format full MAC: XX:XX:XX:XX:XX:XX (17 characters + 1 for null terminator)
+  snprintf(uuid_out, len, "%02X%02X%02X%02X%02X%02X",
+           mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 }
 
 static void read_uuid(void *ctx, const uint8_t *data, uint16_t len) {
@@ -252,6 +255,7 @@ esp_netif_t *node_get_wifi_netif(void) {
 esp_netif_t *node_get_spi_netif(void) {
   return get_ring_link_tx_netif();
 }
+
 
 
 
