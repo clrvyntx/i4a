@@ -9,6 +9,9 @@
 extern "C" {
 #endif
 
+// Forward declaration of internal structure
+typedef struct node node_t;
+
 // Node's device orientations, the values match the ones read in hardware
 typedef enum {
     NODE_DEVICE_ORIENTATION_NORTH = 0,
