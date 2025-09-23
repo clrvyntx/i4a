@@ -203,6 +203,10 @@ void node_set_as_ap(uint32_t network, uint32_t mask){
   device_start_ap(node_ptr->node_device_ptr);
 }
 
+const char *node_get_device_uuid(void) {
+    return node_ptr->node_device_uuid;
+}
+
 node_device_orientation_t node_get_device_orientation(void){
   return node_ptr->node_device_orientation;
 }
@@ -253,9 +257,3 @@ esp_netif_t *node_get_wifi_netif(void) {
 esp_netif_t *node_get_spi_netif(void) {
   return get_ring_link_tx_netif();
 }
-
-
-
-
-
-
