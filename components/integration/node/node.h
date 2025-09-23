@@ -28,6 +28,7 @@ bool node_is_point_to_point_message(uint32_t dst); // Returns whether it's a mes
 bool node_is_message_to_home(uint32_t dst); // Returns whether it's a message destined to the device's home subnet or not (useful for having a more simple logic on home devices)
 
 // Node parameters
+const char *node_get_device_uuid(void); // UUID of the entire node
 node_device_orientation_t node_get_device_orientation(void); // Orientation of node's specific device
 bool node_is_device_center_root(void); // Tells the device if they're center root or not
 
