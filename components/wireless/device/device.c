@@ -75,7 +75,7 @@ void device_init_ap(DevicePtr device_ptr, uint8_t channel, const char *wifi_netw
   strcpy(wifi_ssid, wifi_network_prefix);
 
   bool is_center = (orientation == 4);
-  if(!is_root || !is_center){
+  if(!is_center){
     strcat(wifi_ssid, dev_orientation[orientation]);
     strcat(wifi_ssid, device_uuid);
   }
