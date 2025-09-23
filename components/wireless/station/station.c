@@ -25,11 +25,6 @@ static bool is_network_allowed(char* device_uuid, char* network_prefix, char* ne
     return false;
   }
 
-  // Must NOT be a center node (check if "_C_" is part of the network name)
-  if (strstr(network_name, "_C_") != NULL) {
-    return false;
-  }
-
   return true;
 }
 
