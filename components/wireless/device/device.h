@@ -64,17 +64,9 @@ void device_restart_station(DevicePtr device_ptr);
 void device_stop_station(DevicePtr device_ptr);
 void device_set_network_ap(DevicePtr device_ptr, const char *network_cidr, const char *network_gateway, const char *network_mask);
 void device_destroy_netif(DevicePtr device_ptr);
-// void device_start_ap_station(DevicePtr device_ptr);
-// void device_stop_ap_station(DevicePtr device_ptr);
-// void device_restart_ap_station(DevicePtr device_ptr);
-// void device_start_tcp_server(DevicePtr device_ptr);
-// void device_stop_tcp_server(DevicePtr device_ptr);
-// void device_restart_tcp_server(DevicePtr device_ptr);
-// void device_handle_message(DevicePtr device_ptr);
-
-// Quiza podemos agregar un flag para saber a quien va el mensaje
-// Aca tendriamos el handle message y llamamos al station station_find_ap
-// lo mejor seria que ellos chequeen si es para nosotros 
+void device_start_ap_station(DevicePtr device_ptr);
+void device_stop_ap_station(DevicePtr device_ptr);
+void device_restart_ap_station(DevicePtr device_ptr);
 
 #ifdef __cplusplus
 }
