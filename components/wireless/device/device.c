@@ -47,6 +47,7 @@ esp_err_t device_wifi_init() {
 void device_init(DevicePtr device_ptr, const char *device_uuid, uint8_t device_orientation, const char *wifi_network_prefix, const char *wifi_network_password, uint8_t ap_channel_to_emit, uint8_t ap_max_sta_connections, uint8_t device_is_root, Device_Mode mode) {
   device_ptr->mode = mode;
   device_ptr->state = d_inactive;
+  device_ptr->active_interface = NAN;
   device_ptr->device_is_root = device_is_root;
   device_ptr->device_orientation = device_orientation;
 
