@@ -136,19 +136,16 @@ void ap_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, 
   if (event_base == WIFI_EVENT) {
     switch (event_id) {
 
-      case WIFI_EVENT_AP_START:
-        ESP_LOGI(LOGGING_TAG, "Access Point started");
-        if(!ap->is_center){
-          server_create();
-        }
-        break;
+    case WIFI_EVENT_AP_STACONNECTED:
+      if (!ap->is_center) {
+        server_create();
+      }
+      break;
 
-      case WIFI_EVENT_AP_STOP:
-        ESP_LOGI(LOGGING_TAG, "Access Point stopped");
-        if(!ap->is_center){
-          server_close();
-        }
-        break;
+    case WIFI_EVENT_AP_STADISCONNECTED:
+      if (!ap->is_center) {
+        server_close();
+      }
 
     }
   }
