@@ -59,11 +59,19 @@ void device_init(DevicePtr device_ptr, const char *device_uuid, uint8_t device_o
   device_ptr->station_ptr = &device_ptr->station;
 
   if (mode == AP) {
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
     device_init_ap(device_ptr, ap_channel_to_emit, wifi_network_prefix, device_uuid, wifi_network_password, ap_max_sta_connections, device_orientation, device_is_root);
   }
 
   if (mode == STATION) {
-      device_init_station(device_ptr, wifi_network_prefix, device_orientation, device_uuid, wifi_network_password);
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+    device_init_station(device_ptr, wifi_network_prefix, device_orientation, device_uuid, wifi_network_password);
+  }
+
+  if(mode == AP_STATION){
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
+    device_init_ap(device_ptr, ap_channel_to_emit, wifi_network_prefix, device_uuid, wifi_network_password, ap_max_sta_connections, device_orientation, device_is_root);
+    device_init_station(device_ptr, wifi_network_prefix, device_orientation, device_uuid, wifi_network_password);
   }
 
 }
