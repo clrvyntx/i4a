@@ -4,6 +4,8 @@
 #include "esp_wifi.h"
 #include "nvs_flash.h"
 #include "esp_log.h"
+#include "client.h"
+#include "server.h"
 #include "device.h"
 
 static const char *LOGGING_TAG = "device";
@@ -210,3 +212,38 @@ void device_restart_station(DevicePtr device_ptr) {
 void device_stop_station(DevicePtr device_ptr) {
   station_stop(device_ptr->station_ptr);
 };
+
+// Network interfaces
+
+esp_netif_t *device_get_netif(DevicePtr device_ptr){
+  if (device_ptr->mode == AP) {
+    return device_ptr->access_point_ptr->netif;
+  }
+
+  if (device_ptr->mode == STATION) {
+    return device_ptr->station_ptr->netif;
+  }
+
+  if(device_ptr->mode == AP_STATION){
+
+  }
+
+  return NULL;
+}
+
+// Wireless messages
+bool device_send_wireless_message(DevicePtr device_ptr, const uint8_t *msg, uint16_t len) {
+  if(device_ptr->mode == AP){
+    return server_send_message(msg, len);
+  }
+
+  if(device_ptr->mode == STATION){
+    return client_send_message(msg, len);
+  }
+
+  if(device_ptr->mode == AP_STATION){
+
+  }
+
+  return false;
+}
