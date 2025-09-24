@@ -92,7 +92,7 @@ void device_init_ap(DevicePtr device_ptr, uint8_t channel, const char *wifi_netw
 };
 
 void device_init_station(DevicePtr device_ptr, const char* wifi_ssid_like, uint16_t orientation, char* device_uuid, const char* password) {
-  station_init(device_ptr->station_ptr, wifi_ssid_like, orientation, device_uuid, password);
+  station_init(device_ptr->station_ptr, wifi_ssid_like, orientation, device_uuid, password, device_ptr->mode == AP_STATION);
 };
 
 void device_set_network_ap(DevicePtr device_ptr, const char *network_cidr, const char *network_gateway, const char *network_mask) {
