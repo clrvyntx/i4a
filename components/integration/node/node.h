@@ -9,9 +9,6 @@
 extern "C" {
 #endif
 
-// Forward declaration of internal structure
-typedef struct node node_t;
-
 // Node's device orientations, the values match the ones read in hardware
 typedef enum {
     NODE_DEVICE_ORIENTATION_NORTH = 0,
@@ -31,7 +28,6 @@ bool node_is_point_to_point_message(uint32_t dst); // Returns whether it's a mes
 bool node_is_message_to_home(uint32_t dst); // Returns whether it's a message destined to the device's home subnet or not (useful for having a more simple logic on home devices)
 
 // Node parameters
-const char *node_get_device_uuid(void); // UUID of the entire node
 node_device_orientation_t node_get_device_orientation(void); // Orientation of node's specific device
 bool node_is_device_center_root(void); // Tells the device if they're center root or not
 
@@ -42,9 +38,6 @@ bool node_broadcast_to_siblings(const uint8_t *msg, uint16_t len); // Broadcast 
 // Node network interfaces
 esp_netif_t *node_get_wifi_netif(void); // Returns network interface for wireless link
 esp_netif_t *node_get_spi_netif(void); // Returns network interface for local communication
-
-// Debug 
-node_t *node_get_instance(void); // Node's internal structure, used for debugging and tests
 
 #ifdef __cplusplus
 }

@@ -2,8 +2,6 @@
 #include "config.h"
 #include "ring_link.h"
 #include "esp_check.h"
-#include "client.h"
-#include "server.h"
 #include "callbacks.h"
 #include "node.h"
 
@@ -218,10 +216,6 @@ void node_set_as_ap(uint32_t network, uint32_t mask){
   }
 }
 
-const char *node_get_device_uuid(void) {
-    return node_ptr->node_device_uuid;
-}
-
 node_device_orientation_t node_get_device_orientation(void){
   return node_ptr->node_device_orientation;
 }
@@ -239,16 +233,7 @@ bool node_broadcast_to_siblings(const uint8_t *msg, uint16_t len){
 bool node_send_wireless_message(const uint8_t *msg, uint16_t len){
   ESP_LOGI(TAG, "Sending wireless message: mode=%d, len=%d", node_ptr->node_device_ptr->mode, len);
   ESP_LOG_BUFFER_HEXDUMP(TAG, msg, len, ESP_LOG_INFO);
-
-  if(node_ptr->node_device_ptr->mode == AP){
-    return server_send_message(msg, len);
-  }
-
-  if(node_ptr->node_device_ptr->mode == STATION){
-    return client_send_message(msg, len);
-  }
-
-  return false;
+  return device_send_wireless_message(node_ptr->node_device_ptr, msg, len);
 }
 
 bool node_is_point_to_point_message(uint32_t dst){
@@ -260,22 +245,9 @@ bool node_is_message_to_home(uint32_t dst){
 }
 
 esp_netif_t *node_get_wifi_netif(void) {
-  if (node_ptr->node_device_ptr->mode == AP) {
-    return node_ptr->node_device_ptr->access_point_ptr->netif;
-  }
-  if (node_ptr->node_device_ptr->mode == STATION) {
-    return node_ptr->node_device_ptr->station_ptr->netif;
-  }
-  return NULL;
+  return device_get_netif(node_ptr->node_device_ptr);
 }
 
 esp_netif_t *node_get_spi_netif(void) {
   return get_ring_link_tx_netif();
 }
-
-node_t *node_get_instance(void) {
-    return node_ptr;
-}
-
-
-
