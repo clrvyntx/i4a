@@ -37,7 +37,6 @@ struct Device {
   char password[64];
   uint8_t channel;
   Device_Mode mode;
-  Device_Mode active_interface;
   Device_State state;
   AccessPoint access_point;
   AccessPointPtr access_point_ptr;
