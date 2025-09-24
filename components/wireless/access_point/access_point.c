@@ -35,6 +35,7 @@ void ap_init(AccessPointPtr ap, uint8_t wifi_channel, const char *wifi_ssid, con
   ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &ap_event_handler, ap));
   ap->initialized = true;
   ap->is_center = is_center;
+  ap->server_is_up = false;
 }
 
 bool ap_is_initialized(AccessPointPtr ap) {
@@ -139,12 +140,14 @@ void ap_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, 
     case WIFI_EVENT_AP_STACONNECTED:
       if (!ap->is_center) {
         server_create();
+        ap->server_is_up = true;
       }
       break;
 
     case WIFI_EVENT_AP_STADISCONNECTED:
       if (!ap->is_center) {
         server_close();
+        ap->server_is_up = false;
       }
       break;
 
