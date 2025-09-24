@@ -12,12 +12,13 @@ extern "C" {
 #include "siblings/siblings.h"
 
 #define RS_MAX_BROADCAST_LEN 512
-#define RS_MAX_COMPONENTS 4
+#define RS_MAX_COMPONENTS 5
 
 typedef enum component_id {
     RS_SYNC = 0,
     RS_ROUTING = 1,
     RS_SHARED_STATE = 2,
+    RS_CHANNEL_MANAGER = 3,
 
     /* Keep this variant last */
     RS_LAST_COMPONENT_ID,
