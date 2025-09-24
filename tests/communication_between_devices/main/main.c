@@ -28,6 +28,19 @@ void app_main(void) {
     
     if(orientation == NODE_DEVICE_ORIENTATION_CENTER){
         node_set_as_sta();
+        msgs = 0;
+        while (msgs < 5) {
+            bool success = node_send_wireless_message(message, len);
+    
+            if (!success) {
+                ESP_LOGE(TAG, "Error sending message, retrying in 10 seconds...");
+                vTaskDelay(pdMS_TO_TICKS(10000)); // Retry after 10 seconds on failure
+            } else {
+                ESP_LOGI(TAG, "Message successfully sent");
+                vTaskDelay(pdMS_TO_TICKS(5000));  // Wait 5 seconds between successful sends
+                msgs++;
+            }
+        }
     } 
 
 }
