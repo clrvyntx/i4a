@@ -32,6 +32,7 @@ struct Station {
   bool active;
   bool ap_found;
   bool is_fully_connected;
+  bool is_apsta;
   Station_State state;
   wifi_config_t wifi_config;
   wifi_ap_record_t wifi_ap_found;
