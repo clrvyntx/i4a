@@ -198,7 +198,7 @@ void node_set_as_ap(uint32_t network, uint32_t mask){
   ip4addr_ntoa_r(&gateway_addr, network_gateway, sizeof(network_gateway));
   ip4addr_ntoa_r(&mask_addr, network_mask, sizeof(network_mask));
   
-  if (node_ptr->node_device_orientation == NODE_DEVICE_ORIENTATION_CENTER){
+  if (node_ptr->node_device_orientation == NODE_DEVICE_ORIENTATION_CENTER || node_ptr->node_device_is_center_root){
     device_init(node_ptr->node_device_ptr, node_ptr->node_device_uuid, node_ptr->node_device_orientation, wifi_network_prefix, wifi_network_password, ap_channel_to_emit, ap_max_sta_connections, (uint8_t)node_ptr->node_device_is_center_root, AP);
     device_set_network_ap(node_ptr->node_device_ptr, network_cidr, network_gateway, network_mask);
     device_start_ap(node_ptr->node_device_ptr);
@@ -269,4 +269,5 @@ esp_netif_t *node_get_spi_netif(void) {
 node_t *node_get_instance(void) {
     return node_ptr;
 }
+
 
