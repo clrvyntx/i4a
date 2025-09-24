@@ -197,10 +197,18 @@ void node_set_as_ap(uint32_t network, uint32_t mask){
   ip4addr_ntoa_r(&net_addr, network_cidr, sizeof(network_cidr));
   ip4addr_ntoa_r(&gateway_addr, network_gateway, sizeof(network_gateway));
   ip4addr_ntoa_r(&mask_addr, network_mask, sizeof(network_mask));
-
-  device_init(node_ptr->node_device_ptr, node_ptr->node_device_uuid, node_ptr->node_device_orientation, wifi_network_prefix, wifi_network_password, ap_channel_to_emit, ap_max_sta_connections, (uint8_t)node_ptr->node_device_is_center_root, AP);
-  device_set_network_ap(node_ptr->node_device_ptr, network_cidr, network_gateway, network_mask);
-  device_start_ap(node_ptr->node_device_ptr);
+  
+  if (node_ptr->node_device_orientation == NODE_DEVICE_ORIENTATION_CENTER){
+    device_init(node_ptr->node_device_ptr, node_ptr->node_device_uuid, node_ptr->node_device_orientation, wifi_network_prefix, wifi_network_password, ap_channel_to_emit, ap_max_sta_connections, (uint8_t)node_ptr->node_device_is_center_root, AP);
+    device_set_network_ap(node_ptr->node_device_ptr, network_cidr, network_gateway, network_mask);
+    device_start_ap(node_ptr->node_device_ptr);
+  } else {
+    device_init(node_ptr->node_device_ptr, node_ptr->node_device_uuid, node_ptr->node_device_orientation, wifi_network_prefix, wifi_network_password, ap_channel_to_emit, ap_max_sta_connections, (uint8_t)node_ptr->node_device_is_center_root, AP_STATION);
+    device_set_network_ap(node_ptr->node_device_ptr, network_cidr, network_gateway, network_mask);
+    device_start_ap(node_ptr->node_device_ptr);
+    //device_start_station(node_ptr->node_device_ptr);
+    //device_connect_station(node_ptr->node_device_ptr);
+  }
 }
 
 const char *node_get_device_uuid(void) {
@@ -261,3 +269,4 @@ esp_netif_t *node_get_spi_netif(void) {
 node_t *node_get_instance(void) {
     return node_ptr;
 }
+
