@@ -224,8 +224,12 @@ esp_netif_t *device_get_netif(DevicePtr device_ptr){
     return device_ptr->station_ptr->netif;
   }
 
-  if(device_ptr->mode == AP_STATION){
-
+  if(device_ptr->mode == AP_STATION) {
+    if(device_ptr->station_ptr->ap_found){
+      return device_ptr->station_ptr->netif;
+    } else {
+      return device_ptr->access_point_ptr->netif;
+    }
   }
 
   return NULL;
@@ -242,7 +246,11 @@ bool device_send_wireless_message(DevicePtr device_ptr, const uint8_t *msg, uint
   }
 
   if(device_ptr->mode == AP_STATION){
-
+    if(device_ptr->station_ptr->ap_found){
+      return client_send_message(msg, len);
+    } else {
+      return server_send_message(msg, len);
+    }
   }
 
   return false;
