@@ -1,9 +1,13 @@
+#include "esp_log.h"
 #include "lwip/esp_netif_net_stack.h"
 #include "esp_netif_net_stack.h"
 #include "node.h"
 
-static uint32_t r_subnet = 0x0A000000; // 10.0.0.0
-static uint32_t r_mask   = 0xFF000000; // 255.0.0.0 (/8)
+static uint32_t r_subnet = 0x0A000000;
+static uint32_t r_mask   = 0xFF000000;
+
+static const char *TAG = "NODE_APP";
+static void *message = "Hello from center node!";
 
 // Custom routing hook
 struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t *dest) {
@@ -18,6 +22,7 @@ struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t 
 
 
 void app_main(void) {
+    size_t len = strlen(message);
     node_setup();
 
     uint8_t orientation = node_get_device_orientation();
@@ -28,7 +33,7 @@ void app_main(void) {
     
     if(orientation == NODE_DEVICE_ORIENTATION_CENTER){
         node_set_as_sta();
-        msgs = 0;
+        int msgs = 0;
         while (msgs < 5) {
             bool success = node_send_wireless_message(message, len);
     
