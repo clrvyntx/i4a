@@ -6,6 +6,9 @@
 #include "client.h"
 #include "station.h"
 
+#define UUID_LEN 12
+#define SSID_UUID_OFFSET 6
+
 #define SCAN_LIST_SIZE 10
 #define MAX_RETRIES 10
 #define RSSI_THRESHOLD -128 // Minimum RSSI (in dBm) required to consider an AP as available
@@ -14,7 +17,7 @@ static const char* LOGGING_TAG = "station";
 
 static int s_retry_num = 0;
 
-static bool is_network_allowed(char* device_uuid, char* network_prefix, char* network_name) {
+static bool is_network_allowed(char* device_uuid, char* network_prefix, char* network_name, bool is_apsta) {
   // Must contain the prefix
   if (strstr(network_name, network_prefix) == NULL) {
     return false;
@@ -25,10 +28,16 @@ static bool is_network_allowed(char* device_uuid, char* network_prefix, char* ne
     return false;
   }
 
-  return true;
+  // Finish checking if it's not on APSTA mode, otherwise check to prevent redundant connections
+  if(is_apsta){
+    return strncmp(network_name + SSID_UUID_OFFSET, device_uuid, UUID_LEN) < 0;
+  } else {
+    return true;
+  }
+
 }
 
-void station_init(StationPtr stationPtr, const char* wifi_ssid_like, uint16_t orientation, char* device_uuid, const char* password) {
+void station_init(StationPtr stationPtr, const char* wifi_ssid_like, uint16_t orientation, char* device_uuid, const char* password, bool is_apsta) {
 
   strcpy(stationPtr->ssid_like, wifi_ssid_like);
   strcpy(stationPtr->device_uuid, device_uuid);
@@ -38,6 +47,7 @@ void station_init(StationPtr stationPtr, const char* wifi_ssid_like, uint16_t or
   stationPtr->state = s_inactive;
   stationPtr->ap_found = false;
   stationPtr->is_fully_connected = false;
+  stationPtr->is_apsta = is_apsta;
 
   esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta();
   assert(sta_netif);
@@ -63,7 +73,7 @@ void station_find_ap(StationPtr stationPtr) {
   int best_rssi = RSSI_THRESHOLD;
 
   for (int i = 0; i < networks_to_scan; i++) {
-    if (is_network_allowed(stationPtr->device_uuid, stationPtr->ssid_like, (char*)ap_info[i].ssid)) {
+    if (is_network_allowed(stationPtr->device_uuid, stationPtr->ssid_like, (char*)ap_info[i].ssid, stationPtr->is_apsta)) {
       ESP_LOGI(LOGGING_TAG, "Allowed SSID: %s | RSSI: %d | Channel: %d", ap_info[i].ssid, ap_info[i].rssi, ap_info[i].primary);
       if (ap_info[i].rssi > best_rssi) {
         best_ap = &ap_info[i];
