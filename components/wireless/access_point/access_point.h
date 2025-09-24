@@ -26,6 +26,7 @@ struct AccessPoint {
   uint8_t channel;
   bool initialized;
   bool is_center;
+  bool server_is_up;
   AccessPoint_State state;
   wifi_config_t wifi_config;
   char network_cidr[16];
