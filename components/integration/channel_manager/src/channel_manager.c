@@ -1,10 +1,10 @@
 #include "channel_manager/channel_manager.h"
 #include <string.h> // for memcpy if needed
 
-#define SIZE 4
+#define SIZE 5
 
 // Default orientation array
-static const uint8_t DEFAULT_ORIENTATION[SIZE] = {1, 6, 3, 9};
+static const uint8_t DEFAULT_ORIENTATION[SIZE] = {1, 6, 3, 9, 11};
 
 // Shifted orientation logic
 static void shift_orientation(const uint8_t *input, uint8_t *output, uint8_t orientation, uint8_t connected_channel) {
