@@ -20,19 +20,21 @@ static void shift_orientation(const uint8_t *input, uint8_t *output, uint8_t ori
         }
     }
 
-    if (current_index == -1) {
-        // Fallback: just use default as-is
-        memcpy(output, input, CHANNELS);
-        return;
-    }
-
     // Calculate shift so connected_channel ends up at index = orientation
     int shift = (orientation - current_index + CHANNELS) % CHANNELS;
 
-    // Circularly shift the array
-    for (int i = 0; i < CHANNELS; i++) {
-        output[i] = input[(i - shift + CHANNELS) % CHANNELS];
+    if (shift == 0 || current_index == -1) {
+        // Fallback: just use default as-is
+        for (int i = 0; i < CHANNELS; i++) {
+            output[i] = input[i];
+        }
+    } else {
+        // Circularly shift the array
+        for (int i = 0; i < CHANNELS; i++) {
+            output[i] = input[(i - shift + CHANNELS) % CHANNELS];
+        }
     }
+
 }
 
 // Called when sibling messages are received
