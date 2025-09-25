@@ -58,7 +58,7 @@ void cm_init(ring_share_t *rs, orientation_t orientation) {
 }
 
 // Broadcast channel provision to siblings
-void channel_provision(uint8_t connected_channel) {
+void cm_provide_to_siblings(uint8_t connected_channel) {
     // Shift default orientation so connected_channel ends up at orientation index
     uint8_t shifted[SIZE];
     shift_orientation(DEFAULT_ORIENTATION, shifted, cm->orientation, connected_channel);
