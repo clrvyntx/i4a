@@ -1,4 +1,5 @@
 #include "channel_manager/channel_manager.h"
+#include "esp_system.h"
 #include <string.h> // for memcpy if needed
 
 #define CHANNELS 5
@@ -63,7 +64,7 @@ void cm_init(ring_share_t *rs, orientation_t orientation) {
 
 // Broadcast channel provision to siblings
 void cm_provide_to_siblings(uint8_t connected_channel) {
-    // Do nothing if ring_share has not been initialized
+    // Do nothing if channel manager has not been initialized
     if (cm->rs == NULL) {
         return;
     }
@@ -81,5 +82,10 @@ void cm_provide_to_siblings(uint8_t connected_channel) {
 
 // Expose the suggested channel
 uint8_t cm_get_suggested_channel(void) {
-    return cm->suggested_channel;
+    // Return a random number if channel manager has not been initialized
+    if (cm->rs == NULL) {
+        return (uint8_t)((esp_random() % 11) + 1);
+    } else {
+     return cm->suggested_channel;
+    }
 }
