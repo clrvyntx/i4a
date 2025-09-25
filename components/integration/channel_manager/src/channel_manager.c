@@ -36,7 +36,11 @@ static void shift_orientation(const uint8_t *input, uint8_t *output, uint8_t ori
 
 // Called when sibling messages are received
 static void on_sibling_message(void *ctx, const uint8_t *msg, uint16_t len) {
-    if (len != CHANNELS) return;
+    // Don't update on wrong message
+    if (len != CHANNELS) {
+        return;
+    }
+    
     channel_manager_t *cm = ctx;
     cm->suggested_channel = msg[cm->orientation];
 }
@@ -59,6 +63,11 @@ void cm_init(ring_share_t *rs, orientation_t orientation) {
 
 // Broadcast channel provision to siblings
 void cm_provide_to_siblings(uint8_t connected_channel) {
+    // Do nothing if ring_share has not been initialized
+    if (cm->rs == NULL) {
+        return;
+    }
+    
     // Shift default orientation so connected_channel ends up at orientation index
     uint8_t shifted[CHANNELS];
     shift_orientation(default_channels, shifted, cm->orientation, connected_channel);
