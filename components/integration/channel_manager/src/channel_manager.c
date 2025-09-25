@@ -5,6 +5,8 @@
 
 // Default orientation array
 static const uint8_t DEFAULT_ORIENTATION[SIZE] = {1, 6, 3, 9, 11};
+static channel_manager_t channel_manager = { 0 };
+static channel_manager_t *cm = &channel_manager;
 
 // Shifted orientation logic
 static void shift_orientation(const uint8_t *input, uint8_t *output, uint8_t orientation, uint8_t connected_channel) {
@@ -35,40 +37,40 @@ static void shift_orientation(const uint8_t *input, uint8_t *output, uint8_t ori
 // Called when sibling messages are received
 static void on_sibling_message(void *ctx, const uint8_t *msg, uint16_t len) {
     if (len != SIZE) return;
-    channel_manager_t *self = ctx;
-    self->suggested_channel = msg[self->orientation];
+    channel_manager_t *cm = ctx;
+    cm->suggested_channel = msg[cm->orientation];
 }
 
 // Called once during init
-void cm_init(channel_manager_t *self, ring_share_t *rs, orientation_t orientation) {
-    self->rs = rs;
-    self->orientation = orientation;
-    self->suggested_channel = DEFAULT_ORIENTATION[self->orientation];
+void cm_init(ring_share_t *rs, orientation_t orientation) {
+    cm->rs = rs;
+    cm->orientation = orientation;
+    cm->suggested_channel = DEFAULT_ORIENTATION[cm->orientation];
 
     rs_register_component(
-        self->rs, RS_CHANNEL_MANAGER,
+        cm->rs, RS_CHANNEL_MANAGER,
         (ring_callback_t){
             .callback = on_sibling_message,
-            .context = self,
+            .context = cm,
         }
     );
     
 }
 
 // Broadcast channel provision to siblings
-void channel_provision(channel_manager_t *self, uint8_t connected_channel) {
+void channel_provision(uint8_t connected_channel) {
     // Shift default orientation so connected_channel ends up at orientation index
     uint8_t shifted[SIZE];
-    shift_orientation(DEFAULT_ORIENTATION, shifted, self->orientation, connected_channel);
+    shift_orientation(DEFAULT_ORIENTATION, shifted, cm->orientation, connected_channel);
 
     // Use the channel that maps to our orientation
-    self->suggested_channel = shifted[self->orientation];
+    cm->suggested_channel = shifted[cm->orientation];
 
     // Broadcast the shifted array to siblings
-    rs_broadcast(self->rs, RS_CHANNEL_MANAGER, shifted, SIZE);
+    rs_broadcast(cm->rs, RS_CHANNEL_MANAGER, shifted, SIZE);
 }
 
 // Expose the suggested channel
-uint8_t cm_get_suggested_channel(channel_manager_t *self) {
-    return self->suggested_channel;
+uint8_t cm_get_suggested_channel(void) {
+    return cm->suggested_channel;
 }
