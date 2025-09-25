@@ -1,6 +1,5 @@
 #include "channel_manager/channel_manager.h"
 #include "esp_random.h"
-#include <string.h> // for memcpy if needed
 
 #define CHANNELS 5
 
