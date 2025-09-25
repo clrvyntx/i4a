@@ -31,7 +31,7 @@ static void shift_orientation(const uint8_t *input, uint8_t *output, uint8_t ori
     } else {
         // Circularly shift the array
         for (int i = 0; i < CHANNELS; i++) {
-            output[i] = input[(i - shift + CHANNELS) % CHANNELS];
+            output[i] = input[(i + shift) % CHANNELS];
         }
     }
 
