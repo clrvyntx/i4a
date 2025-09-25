@@ -4,7 +4,7 @@
 #define SIZE 5
 
 // Default orientation array
-static const uint8_t DEFAULT_ORIENTATION[SIZE] = {1, 6, 3, 9, 11};
+static const uint8_t default_channels[SIZE] = {1, 6, 3, 9, 11};
 static channel_manager_t channel_manager = { 0 };
 static channel_manager_t *cm = &channel_manager;
 
@@ -45,7 +45,7 @@ static void on_sibling_message(void *ctx, const uint8_t *msg, uint16_t len) {
 void cm_init(ring_share_t *rs, orientation_t orientation) {
     cm->rs = rs;
     cm->orientation = orientation;
-    cm->suggested_channel = DEFAULT_ORIENTATION[cm->orientation];
+    cm->suggested_channel = default_channels[cm->orientation];
 
     rs_register_component(
         cm->rs, RS_CHANNEL_MANAGER,
@@ -61,7 +61,7 @@ void cm_init(ring_share_t *rs, orientation_t orientation) {
 void cm_provide_to_siblings(uint8_t connected_channel) {
     // Shift default orientation so connected_channel ends up at orientation index
     uint8_t shifted[SIZE];
-    shift_orientation(DEFAULT_ORIENTATION, shifted, cm->orientation, connected_channel);
+    shift_orientation(default_channels, shifted, cm->orientation, connected_channel);
 
     // Use the channel that maps to our orientation
     cm->suggested_channel = shifted[cm->orientation];
