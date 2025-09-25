@@ -14,7 +14,7 @@ typedef struct channel_manager {
 } channel_manager_t;
 
 void cm_init(ring_share_t *rs, orientation_t orientation);
-void channel_provision(uint8_t connected_channel);
+void cm_provide_to_siblings(uint8_t connected_channel);
 uint8_t cm_get_suggested_channel(void);
 
 #endif  // _CHANNEL_MANAGER_H_
