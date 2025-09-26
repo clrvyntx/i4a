@@ -3,6 +3,7 @@
 #include "ring_link.h"
 #include "esp_check.h"
 #include "callbacks.h"
+#include "channel_manager/channel_manager.h"
 #include "node.h"
 
 #define ROOT_UUID "000000000000"
@@ -156,7 +157,7 @@ void node_set_as_ap(uint32_t network, uint32_t mask){
   }
 
   uint32_t node_gateway;
-  uint8_t ap_channel_to_emit = (rand() % 11) + 1;
+  uint8_t ap_channel_to_emit = cm_get_suggested_channel();
   uint8_t ap_max_sta_connections;
   char *wifi_network_prefix;
   char *wifi_network_password;
