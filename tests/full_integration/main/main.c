@@ -9,6 +9,7 @@
 #include "sync/sync.h"
 #include "routing_config/routing_config.h"
 #include "routing/routing.h"
+#include "channel_manager/channel_manager.h"
 #include "callbacks.h"
 #include "node.h"
 
@@ -61,6 +62,7 @@ void app_main(void) {
     rs_init(&rs, sb);
     sync_init(&_sync, &rs, orientation);
     ss_init(&ss, &_sync, &rs, orientation);
+    cm_init(&rs, orientation);
     rt_create(&rt, &rs, wl, &_sync, &ss, orientation);
 
     if(orientation == NODE_DEVICE_ORIENTATION_CENTER){
