@@ -25,7 +25,7 @@ static routing_t rt = { 0 };
 struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t *dest) {
     uint32_t src_ip = lwip_ntohl(ip4_addr_get_u32(src));
     uint32_t dst_ip = lwip_ntohl(ip4_addr_get_u32(dest));
-    ESP_LOGI(TAG, "hook triggered: dest_ip=0x%08" PRIx32, dst_ip);
+    ESP_LOGI(TAG, "Hook called for: src_ip=0x%08" PRIx32 ", dest_ip=0x%08" PRIx32, src_ip, dst_ip);
     
     if(node_is_point_to_point_message(dst_ip)){
         ESP_LOGI(TAG, "Routing P2P message via WiFi");
