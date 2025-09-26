@@ -24,9 +24,6 @@
 
 static const char *TAG = "node";
 
-static uint32_t home_subnet = 0x00000000;
-static uint32_t home_mask = 0xFFFFFFFF;
-
 typedef struct node {
   DevicePtr node_device_ptr;
   char node_device_uuid[UUID_LENGTH];
@@ -79,7 +76,6 @@ static void read_uuid(void *ctx, const uint8_t *data, uint16_t len) {
 
   node_ptr->node_device_is_center_root = (bool)msg->is_center_root;
 }
-
 
 static void do_nothing_peer(void *ctx, uint32_t net, uint32_t mask) {
 }
@@ -178,8 +174,6 @@ void node_set_as_ap(uint32_t network, uint32_t mask){
       wifi_network_prefix = HOUSE_NETWORK_NAME;
       wifi_network_password = "";
       ap_max_sta_connections = MAX_DEVICES_PER_HOUSE;
-      home_subnet = network;
-      home_mask = mask;
     }
   } else {
     network = BRIDGE_NETWORK;
@@ -240,15 +234,10 @@ bool node_is_point_to_point_message(uint32_t dst){
   return ((dst & BRIDGE_MASK) == BRIDGE_NETWORK);
 }
 
-bool node_is_message_to_home(uint32_t dst){
-  return ((dst & home_mask) == home_subnet);
-}
-
 esp_netif_t *node_get_wifi_netif(void) {
   return device_get_netif(node_ptr->node_device_ptr);
 }
 
 esp_netif_t *node_get_spi_netif(void) {
   return get_ring_link_tx_netif();
-
 }
