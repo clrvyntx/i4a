@@ -1,6 +1,15 @@
+#include "esp_log.h"
 #include "lwip/esp_netif_net_stack.h"
 #include "esp_netif_net_stack.h"
+#include "ring_share/ring_share.h"
+#include "siblings/siblings.h"
+#include "channel_manager/channel_manager.h"
+#include "callbacks.h"
 #include "node.h"
+
+const char *TAG = "main";
+
+static ring_share_t rs = { 0 };
 
 static uint32_t r_subnet = 0x0A000000; // 10.0.0.0
 static uint32_t r_mask   = 0xFF000000; // 255.0.0.0 (/8)
@@ -70,8 +79,12 @@ struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t 
 void app_main(void) {
     node_setup();
 
-    uint8_t orientation = node_get_device_orientation();
-    uint8_t device_is_root = node_is_device_center_root();
+    node_device_orientation_t orientation = node_get_device_orientation();
+    bool device_is_root = node_is_device_center_root();
+
+    siblings_t *sb = node_get_siblings_instance();
+    rs_init(&rs, sb);
+    cm_init(&rs, orientation);
 
     if(orientation == NODE_DEVICE_ORIENTATION_CENTER){
         if(device_is_root){
@@ -87,5 +100,11 @@ void app_main(void) {
 
     if(orientation == NODE_DEVICE_ORIENTATION_WEST && !device_is_root){
         node_set_as_sta();
+    }
+
+    while(1) {
+        vTaskDelay(pdMS_TO_TICKS(10000));
+        uint8_t my_channel = cm_get_suggested_channel();
+        ESP_LOGI(TAG, "Got suggested channel: %u", my_channel);
     }
 }
