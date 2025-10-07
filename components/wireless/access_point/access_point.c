@@ -36,6 +36,7 @@ void ap_init(AccessPointPtr ap, uint8_t wifi_channel, const char *wifi_ssid, con
   ap->initialized = true;
   ap->is_center = is_center;
   ap->server_is_up = false;
+  ap->is_locked = false;
 }
 
 bool ap_is_initialized(AccessPointPtr ap) {
@@ -135,12 +136,14 @@ void ap_destroy_netif(AccessPointPtr ap) {
 void ap_lock(AccessPointPtr ap) {
   ESP_LOGI(LOGGING_TAG, "Locking down AP (hiding SSID)");
   ap->wifi_config.ap.ssid_hidden = 1;
+  ap->is_locked = true;
   ap_update(ap);
 }
 
 void ap_unlock(AccessPointPtr ap) {
   ESP_LOGI("AP", "Unlocking AP (broadcasting SSID)");
   ap->wifi_config.ap.ssid_hidden = 0;
+  ap->is_locked = false;
   ap_update(ap);
 }
 
