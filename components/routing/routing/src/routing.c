@@ -234,8 +234,6 @@ rt_routing_result_t rt_do_route(routing_t *self, uint32_t src_ip, uint32_t dst_i
     orientation_t output;
     WITH_LOCK(self->node_state.m_lock, { output = routing_table_route(&self->node_state.routing_table, dst_ip); });
 
-    routing_table_show(&self->node_state.routing_table);
-
     if (output == self->orientation)
         return ROUTE_WIFI;
 
