@@ -132,6 +132,18 @@ void ap_destroy_netif(AccessPointPtr ap) {
   }
 }
 
+void ap_lock(AccessPointPtr ap) {
+  ESP_LOGI(LOGGING_TAG, "Locking down AP (hiding SSID)");
+  ap->wifi_config.ap.ssid_hidden = 1;
+  ap_update(ap);
+}
+
+void ap_unlock(AccessPointPtr ap) {
+  ESP_LOGI("AP", "Unlocking AP (broadcasting SSID)");
+  ap->wifi_config.ap.ssid_hidden = 0;
+  ap_update(ap);
+}
+
 void ap_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
   AccessPointPtr ap = (AccessPointPtr)arg;
   if (event_base == WIFI_EVENT) {
