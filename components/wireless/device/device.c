@@ -178,9 +178,19 @@ static void device_connect_station_task(void* arg) {
     // If station is disconnected, start scanning for APs
       if (!station_is_active(device_ptr->station_ptr)) {
         ESP_LOGI(LOGGING_TAG, "Wi-Fi not connected. Scanning for available networks...");
+
+        if(device_ptr->mode == AP_STATION && device_ptr->access_point_ptr->is_locked){
+          ap_unlock(device_ptr->access_point_ptr);
+        }
+        
         station_find_ap(device_ptr->station_ptr);
         if (station_found_ap(device_ptr->station_ptr)) {
           ESP_LOGI(LOGGING_TAG, "Wi-Fi found! Attempting to connect.");
+  
+          if(device_ptr->mode == AP_STATION && !device_ptr->access_point_ptr->is_locked){
+            ap_lock(device_ptr->access_point_ptr);
+          }
+          
           station_connect(device_ptr->station_ptr);
         } else {
           ESP_LOGE(LOGGING_TAG, "No Wi-Fi found. Re-scanning in 10 seconds.");
