@@ -49,6 +49,11 @@ static routing_hook_func_t routing_hooks[ROUTING_HOOK_COUNT] = {
 struct netif *routing_hook_root(uint32_t src_ip, uint32_t dst_ip) {
     ESP_LOGI(TAG, "ROOT hook: dest_ip=0x%08" PRIx32, dst_ip);
 
+    if(node_is_point_to_point_message(dst_ip)){
+        ESP_LOGI(TAG, "Routing P2P message via WiFi");
+        return (struct netif *)esp_netif_get_netif_impl(node_get_wifi_netif());
+    }
+
     if(node_is_packet_for_this_subnet(dst_ip)){
         ESP_LOGI(TAG, "Routing via SPI (dst_ip matches root network)");
         return (struct netif *)esp_netif_get_netif_impl(node_get_spi_netif());
@@ -61,6 +66,11 @@ struct netif *routing_hook_root(uint32_t src_ip, uint32_t dst_ip) {
 // Root forwarder hook: route own subnet to WiFi, everything else SPI
 struct netif *routing_hook_root_forwarder(uint32_t src_ip, uint32_t dst_ip) {
     ESP_LOGI(TAG, "ROOT FORWARDER hook: dest_ip=0x%08" PRIx32, dst_ip);
+
+    if(node_is_point_to_point_message(dst_ip)){
+        ESP_LOGI(TAG, "Routing P2P message via WiFi");
+        return (struct netif *)esp_netif_get_netif_impl(node_get_wifi_netif());
+    }
 
     if(node_is_packet_for_this_subnet(dst_ip)){
         ESP_LOGI(TAG, "Routing via WiFi (dst_ip matches my own network)");
