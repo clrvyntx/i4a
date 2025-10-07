@@ -134,17 +134,13 @@ void ap_destroy_netif(AccessPointPtr ap) {
 }
 
 void ap_lock(AccessPointPtr ap) {
-  ESP_LOGI(LOGGING_TAG, "Locking down AP (hiding SSID)");
-  ap->wifi_config.ap.ssid_hidden = 1;
+  ESP_LOGI(LOGGING_TAG, "Locking down AP (rejecting all connections)");
   ap->is_locked = true;
-  ap_update(ap);
 }
 
 void ap_unlock(AccessPointPtr ap) {
-  ESP_LOGI("AP", "Unlocking AP (broadcasting SSID)");
-  ap->wifi_config.ap.ssid_hidden = 0;
+  ESP_LOGI("AP", "Unlocking AP (accepting all connections)");
   ap->is_locked = false;
-  ap_update(ap);
 }
 
 void ap_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
@@ -153,7 +149,9 @@ void ap_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, 
     switch (event_id) {
 
     case WIFI_EVENT_AP_STACONNECTED:
-      if (!ap->is_center) {
+      if(ap->is_locked) {
+        esp_wifi_deauth_sta(0);
+      } else if (!ap->is_center) {
         server_create();
         ap->server_is_up = true;
       }
