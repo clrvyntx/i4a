@@ -23,6 +23,9 @@
 #define BRIDGE_NETWORK  0xC0A80300  // 192.168.3.0
 #define BRIDGE_MASK 0xFFFFFFFC  // /30
 
+static uint32_t my_subnet = 0x00000000;
+static uint32_t my_mask = 0xFFFFFFFF;
+
 static const char *TAG = "node";
 
 typedef struct node {
@@ -156,6 +159,9 @@ void node_set_as_ap(uint32_t network, uint32_t mask){
     device_reset(node_ptr->node_device_ptr);
   }
 
+  my_subnet = network;
+  my_mask = mask;
+
   uint32_t node_gateway;
   uint8_t ap_channel_to_emit = cm_get_suggested_channel();
   uint8_t ap_max_sta_connections;
@@ -235,6 +241,10 @@ bool node_is_point_to_point_message(uint32_t dst){
   return ((dst & BRIDGE_MASK) == BRIDGE_NETWORK);
 }
 
+bool node_is_packet_for_this_subnet(uint32_t dst) {
+    return ((dst & my_mask) == my_subnet);
+}
+
 esp_netif_t *node_get_wifi_netif(void) {
   return device_get_netif(node_ptr->node_device_ptr);
 }
@@ -242,3 +252,4 @@ esp_netif_t *node_get_wifi_netif(void) {
 esp_netif_t *node_get_spi_netif(void) {
   return get_ring_link_tx_netif();
 }
+
