@@ -23,8 +23,8 @@
 #define BRIDGE_NETWORK  0xC0A80300  // 192.168.3.0
 #define BRIDGE_MASK 0xFFFFFFFC  // /30
 
-static uint32_t my_subnet = 0x00000000;
-static uint32_t my_mask = 0xFFFFFFFF;
+#define DEFAULT_SUBNET 0x00000000
+#define DEFAULT_MASK 0xFFFFFFFF
 
 static const char *TAG = "node";
 
@@ -33,6 +33,8 @@ typedef struct node {
   char node_device_uuid[UUID_LENGTH];
   node_device_orientation_t node_device_orientation;
   bool node_device_is_center_root;
+  uint32_t node_device_subnet;
+  uint32_t node_device_mask;
 } node_t;
 
 typedef struct {
@@ -40,7 +42,11 @@ typedef struct {
   uint8_t is_center_root;
 } center_broadcast_msg_t;
 
-static node_t node = { 0 };
+static node_t node = {
+  .node_device_subnet = DEFAULT_SUBNET,
+  .node_device_mask = DEFAULT_MASK,
+};
+
 static Device node_device = {
   .mode = NAN,
 };
@@ -159,8 +165,8 @@ void node_set_as_ap(uint32_t network, uint32_t mask){
     device_reset(node_ptr->node_device_ptr);
   }
 
-  my_subnet = network;
-  my_mask = mask;
+  node_ptr->node_device_subnet = network;
+  node_ptr->node_device_mask = mask;
 
   uint32_t node_gateway;
   uint8_t ap_channel_to_emit = cm_get_suggested_channel();
@@ -242,7 +248,7 @@ bool node_is_point_to_point_message(uint32_t dst){
 }
 
 bool node_is_packet_for_this_subnet(uint32_t dst) {
-    return ((dst & my_mask) == my_subnet);
+    return ((dst & node_ptr->node_device_mask) == node_ptr->node_device_subnet);
 }
 
 esp_netif_t *node_get_wifi_netif(void) {
@@ -252,5 +258,6 @@ esp_netif_t *node_get_wifi_netif(void) {
 esp_netif_t *node_get_spi_netif(void) {
   return get_ring_link_tx_netif();
 }
+
 
 
