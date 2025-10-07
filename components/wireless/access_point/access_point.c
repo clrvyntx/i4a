@@ -158,7 +158,7 @@ void ap_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, 
       break;
 
     case WIFI_EVENT_AP_STADISCONNECTED:
-      if (!ap->is_center) {
+      if (!ap->is_center && ap->server_is_up) {
         server_close();
         ap->server_is_up = false;
       }
