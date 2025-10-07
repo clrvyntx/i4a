@@ -25,6 +25,7 @@ void node_setup(void); // Always call this before doing anything with this modul
 void node_set_as_ap(uint32_t network, uint32_t mask); // Sets device as AP with desired subnet/mask
 void node_set_as_sta(void); // Sets device as Station, scanning for nearby connections
 bool node_is_point_to_point_message(uint32_t dst); // Returns whether it's a message between point-to-point devices or not (useful for point-to-point connections that should bypass the routing algorithm)
+bool node_is_packet_for_this_subnet(uint32_t dst); // Returns whether the incoming packet is destined to the device's own subnet or not (useful for house or root devices)
 
 // Node parameters
 node_device_orientation_t node_get_device_orientation(void); // Orientation of node's specific device
