@@ -9,6 +9,7 @@
 #include "sync/sync.h"
 #include "routing_config/routing_config.h"
 #include "routing/routing.h"
+#include "channel_manager/channel_manager.h"
 #include "callbacks.h"
 #include "node.h"
 
