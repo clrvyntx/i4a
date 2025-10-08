@@ -8,32 +8,53 @@ static const uint8_t default_channels[CHANNELS] = {1, 6, 3, 9, 11};
 static channel_manager_t channel_manager = { 0 };
 static channel_manager_t *cm = &channel_manager;
 
-// Shifted orientation logic
-static void shift_orientation(const uint8_t *input, uint8_t *output, uint8_t orientation, uint8_t connected_channel) {
-    // Find index of connected_channel in the current input array
-    int current_index = -1;
-    for (int i = 0; i < CHANNELS; i++) {
-        if (input[i] == connected_channel) {
-            current_index = i;
-            break;
+// Rotate the directional part of the array (N, S, E, W), center stays unchanged
+static void rotate_channels(const uint8_t *input, uint8_t *output, int rotation_degrees) {
+    // Map directions: [NORTH, SOUTH, EAST, WEST] -> indices 0,1,2,3
+    const int dir_indices[4] = {0, 1, 2, 3};
+
+    // Copy CENTER (index 4) as-is
+    output[4] = input[4];
+
+    // Determine new index mapping after rotation
+    for (int i = 0; i < 4; i++) {
+        int new_index = -1;
+        switch (rotation_degrees) {
+            case 0:
+                new_index = dir_indices[i];
+                break;
+            case 90:
+                new_index = dir_indices[(i + 3) % 4];  // Rotate clockwise
+                break;
+            case 180:
+                new_index = dir_indices[(i + 2) % 4];
+                break;
+            case 270:
+                new_index = dir_indices[(i + 1) % 4];
+                break;
+            default:
+                // Invalid rotation, fallback to original
+                new_index = dir_indices[i];
+                break;
+        }
+        output[new_index] = input[dir_indices[i]];
+    }
+}
+
+static int get_rotation_from_channel(uint8_t connected_channel) {
+    for (int i = 0; i < 4; i++) {
+        if (default_channels[i] == connected_channel) {
+            // Map index to rotation needed to bring it to CENTER (index 4)
+            switch (i) {
+                case 0: return 180; // NORTH
+                case 1: return 0;   // SOUTH
+                case 2: return 270; // EAST
+                case 3: return 90;  // WEST
+            }
         }
     }
-
-    // Calculate shift so connected_channel ends up at index = orientation
-    int shift = (orientation - current_index + CHANNELS) % CHANNELS;
-
-    if (shift == 0 || current_index == -1) {
-        // Fallback: just use default as-is
-        for (int i = 0; i < CHANNELS; i++) {
-            output[i] = input[i];
-        }
-    } else {
-        // Circularly shift the array
-        for (int i = 0; i < CHANNELS; i++) {
-            output[i] = input[(i + shift) % CHANNELS];
-        }
-    }
-
+    // If channel not found or from CENTER, no rotation
+    return 0;
 }
 
 // Called when sibling messages are received
@@ -70,15 +91,16 @@ void cm_provide_to_siblings(uint8_t connected_channel) {
         return;
     }
     
-    // Shift default orientation so connected_channel ends up at orientation index
-    uint8_t shifted[CHANNELS];
-    shift_orientation(default_channels, shifted, cm->orientation, connected_channel);
+    // Rotate default orientations
+    uint8_t rotated[CHANNELS];
+    int rotation = get_rotation_from_channel(connected_channel);
+    rotate_channels(default_channels, rotated, rotation);
 
     // Use the channel that maps to our orientation
-    cm->suggested_channel = shifted[cm->orientation];
+    cm->suggested_channel = rotated[cm->orientation];
 
     // Broadcast the shifted array to siblings
-    rs_broadcast(cm->rs, RS_CHANNEL_MANAGER, shifted, CHANNELS);
+    rs_broadcast(cm->rs, RS_CHANNEL_MANAGER, rotated, CHANNELS);
 }
 
 // Expose the suggested channel
