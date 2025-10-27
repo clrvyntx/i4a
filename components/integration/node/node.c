@@ -18,7 +18,7 @@
 #define HOUSE_NETWORK_NAME "ComNetAR"
 
 #define UUID_LENGTH 13
-#define CENTER_STARTUP_DELAY_SECONDS 10
+#define CENTER_STARTUP_DELAY_SECONDS 30
 
 #define BRIDGE_NETWORK  0xC0A80300  // 192.168.3.0
 #define BRIDGE_MASK 0xFFFFFFFC  // /30
@@ -254,6 +254,7 @@ esp_netif_t *node_get_wifi_netif(void) {
 esp_netif_t *node_get_spi_netif(void) {
   return get_ring_link_tx_netif();
 }
+
 
 
 
