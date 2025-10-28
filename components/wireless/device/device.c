@@ -157,102 +157,45 @@ void device_restart_ap(DevicePtr device_ptr) {
 
 // Station
 
-void device_start_station(DevicePtr device_ptr) {
-  ESP_LOGI(LOGGING_TAG, ">>> Entering device_start_station()");
-
-  if (device_ptr == NULL) {
-    ESP_LOGE(LOGGING_TAG, "device_start_station: device_ptr is NULL!");
-    return;
-  }
-
-  if (station_is_initialized(device_ptr->station_ptr)) {
-    ESP_LOGI(LOGGING_TAG, "Station is initialized, starting station...");
-    station_start(device_ptr->station_ptr);
-    device_ptr->state = d_active;
-    ESP_LOGI(LOGGING_TAG, "Station started successfully. Device state set to d_active.");
-  } else {
-    ESP_LOGE(LOGGING_TAG, "Station is not initialized. Cannot start station.");
-  }
-
-  ESP_LOGI(LOGGING_TAG, "<<< Exiting device_start_station()");
-};
-
-
 static void device_connect_station_task(void* arg) {
-  ESP_LOGI(LOGGING_TAG, ">>> Entering device_connect_station_task()");
-
   DevicePtr device_ptr = (DevicePtr)arg;  // Get the device pointer from the task argument
-  if (device_ptr == NULL) {
-    ESP_LOGE(LOGGING_TAG, "device_connect_station_task: device_ptr is NULL!");
-    vTaskDelete(NULL);
-    return;
-  }
-
-  ESP_LOGI(LOGGING_TAG, "Task started for device mode: %d", device_ptr->mode);
 
   while (is_on_connect_loop) {
-    ESP_LOGD(LOGGING_TAG, "Checking station connection loop...");
 
-    // Determine if we should skip connecting
-    bool skip_station_connect = 
-        device_ptr->mode == AP_STATION && 
-        device_ptr->access_point_ptr->server_is_up;
+    // If on AP+STA mode, check if the STA interface is being used by checking if the AP server is up or not
+    bool skip_station_connect = device_ptr->mode == AP_STATION && device_ptr->access_point_ptr->server_is_up;
+    
+    if(!skip_station_connect){
+    // If station is disconnected, start scanning for APs
+      if (!station_is_active(device_ptr->station_ptr)) {
+        ESP_LOGI(LOGGING_TAG, "Wi-Fi not connected. Scanning for available networks...");
 
-    ESP_LOGI(LOGGING_TAG, 
-        "Connection check: mode=%d, AP server is up=%d, skip_station_connect=%d",
-        device_ptr->mode,
-        device_ptr->access_point_ptr ? device_ptr->access_point_ptr->server_is_up : -1,
-        skip_station_connect
-    );
-
-    if (!skip_station_connect) {
-      // Check if the station is active (connected)
-      bool is_active = station_is_active(device_ptr->station_ptr);
-      ESP_LOGI(LOGGING_TAG, "Station active status: %d", is_active);
-
-      if (!is_active) {
-        ESP_LOGW(LOGGING_TAG, "Wi-Fi not connected. Scanning for available networks...");
-
-        if (device_ptr->mode == AP_STATION && device_ptr->access_point_ptr->is_locked) {
-          ESP_LOGI(LOGGING_TAG, "Access Point is locked. Unlocking before scan...");
+        if(device_ptr->mode == AP_STATION && device_ptr->access_point_ptr->is_locked) {
           ap_unlock(device_ptr->access_point_ptr);
         }
-
-        ESP_LOGI(LOGGING_TAG, "Starting Wi-Fi scan...");
+        
         station_find_ap(device_ptr->station_ptr);
-        bool found_ap = station_found_ap(device_ptr->station_ptr);
-        ESP_LOGI(LOGGING_TAG, "Wi-Fi scan complete. Found AP: %d", found_ap);
-
-        if (found_ap) {
-          ESP_LOGI(LOGGING_TAG, "Wi-Fi found! Preparing to connect...");
-
-          if (device_ptr->mode == AP_STATION && !device_ptr->access_point_ptr->is_locked) {
-            ESP_LOGI(LOGGING_TAG, "Locking AP before connecting...");
+        if (station_found_ap(device_ptr->station_ptr)) {
+          ESP_LOGI(LOGGING_TAG, "Wi-Fi found! Attempting to connect.");
+  
+          if(device_ptr->mode == AP_STATION && !device_ptr->access_point_ptr->is_locked) {
             ap_lock(device_ptr->access_point_ptr);
           }
-
-          ESP_LOGI(LOGGING_TAG, "Attempting to connect to Wi-Fi...");
+          
           station_connect(device_ptr->station_ptr);
-          ESP_LOGI(LOGGING_TAG, "station_connect() call completed.");
         } else {
-          ESP_LOGE(LOGGING_TAG, "No Wi-Fi networks found. Will re-scan in 10 seconds.");
+          ESP_LOGE(LOGGING_TAG, "No Wi-Fi found. Re-scanning in 10 seconds.");
         }
-      } else {
-        ESP_LOGD(LOGGING_TAG, "Station already connected. No action needed.");
-      }
-    } else {
-      ESP_LOGD(LOGGING_TAG, "Skipping station connection (AP+STA mode and AP server active).");
+      } 
     }
-
-    ESP_LOGD(LOGGING_TAG, "Sleeping for 10 seconds before next loop iteration...");
+    
     vTaskDelay(pdMS_TO_TICKS(10000)); // Wait 10 seconds before checking again
   }
 
-  ESP_LOGW(LOGGING_TAG, "Station connect loop flag is false. Stopping task.");
-  ESP_LOGI(LOGGING_TAG, "<<< Exiting device_connect_station_task()");
+  ESP_LOGW(LOGGING_TAG, "Station not on connect loop, killing the task.");
   vTaskDelete(NULL);  // Delete the task
-}
 
+}
 
 void device_connect_station(DevicePtr device_ptr) {
   is_on_connect_loop = true;
