@@ -12,7 +12,7 @@
 #include "sync/sync.h"
 #include "wireless/wireless.h"
 
-#define NODE_STARTUP_DELAY_SECONDS 10
+#define NODE_STARTUP_DELAY_SECONDS 30
 
 static void on_sibling_message(void *ctx, const uint8_t *raw_event, uint16_t len) {
     routing_t *self = ctx;
