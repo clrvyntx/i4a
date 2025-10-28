@@ -157,6 +157,15 @@ void device_restart_ap(DevicePtr device_ptr) {
 
 // Station
 
+void device_start_station(DevicePtr device_ptr) {
+  if (station_is_initialized(device_ptr->station_ptr)) {
+    station_start(device_ptr->station_ptr);
+    device_ptr->state = d_active;
+  } else {
+    ESP_LOGE(LOGGING_TAG, "Station is not initialized");
+  }
+};
+
 static void device_connect_station_task(void* arg) {
   DevicePtr device_ptr = (DevicePtr)arg;  // Get the device pointer from the task argument
 
