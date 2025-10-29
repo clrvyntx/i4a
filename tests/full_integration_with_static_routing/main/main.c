@@ -135,7 +135,7 @@ struct netif *routing_hook_default(uint32_t src_ip, uint32_t dst_ip) {
     }
 
     // === Case 3: West and Not Root ===
-    if (orientation == NODE_DEVICE_ORIENTATION_WEST && !is_root) {
+    if (orientation == NODE_DEVICE_ORIENTATION_NORTH && !is_root) {
         if (node_is_point_to_point_message(dst_ip)) {
             return (struct netif *)esp_netif_get_netif_impl(node_get_wifi_netif());
         }
@@ -186,7 +186,7 @@ void app_main(void) {
     rt_on_start(&rt);
     rt_on_tick(&rt, 1);
 
-    if(orientation == NODE_DEVICE_ORIENTATION_WEST && !is_center_root){ // For testing, have a single one, in reality all non centers should be stations
+    if(orientation == NODE_DEVICE_ORIENTATION_NORTH && !is_center_root){ // For testing, have a single one, in reality all non centers should be stations
         node_set_as_sta();
     }
     
