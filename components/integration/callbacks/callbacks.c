@@ -7,7 +7,7 @@
 #include "esp_log.h"
 #include "callbacks.h"
 
-#define MAX_MESSAGE_SIZE 256
+#define MAX_MESSAGE_SIZE 512
 #define QUEUE_LENGTH 10
 #define PEER_DELAY_SECONDS 5
 
