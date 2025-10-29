@@ -38,7 +38,6 @@ static void peer_connected_task(void *arg) {
     peer_event_t event;
     while (1) {
         if (xQueueReceive(peer_connected_queue, &event, portMAX_DELAY)) {
-            ESP_LOGI(TAG, "Peer connected: net=0x%08" PRIx32 ", mask=0x%08" PRIx32, event.net, event.mask);
             wl->callbacks.on_peer_connected(wl->context, event.net, event.mask);
         }
     }
@@ -48,7 +47,6 @@ static void peer_lost_task(void *arg) {
     peer_event_t event;
     while (1) {
         if (xQueueReceive(peer_lost_queue, &event, portMAX_DELAY)) {
-            ESP_LOGI(TAG, "Peer lost: net=0x%08" PRIx32 ", mask=0x%08" PRIx32, event.net, event.mask);
             wl->callbacks.on_peer_lost(wl->context, event.net, event.mask);
         }
     }
@@ -58,8 +56,6 @@ static void peer_message_task(void *arg) {
     message_t m;
     while (1) {
         if (xQueueReceive(peer_message_queue, &m, portMAX_DELAY)) {
-            ESP_LOGI(TAG, "Received wireless message: len=%d", m.length);
-            ESP_LOG_BUFFER_HEXDUMP(TAG, m.data, m.length, ESP_LOG_INFO);
             wl->callbacks.on_peer_message(wl->context, m.data, m.length);
         }
     }
@@ -69,8 +65,6 @@ static void sibling_message_task(void *arg) {
     message_t m;
     while (1) {
         if (xQueueReceive(sibling_message_queue, &m, portMAX_DELAY)) {
-            ESP_LOGI(TAG, "Received sibling message: len=%d", m.length);
-            ESP_LOG_BUFFER_HEXDUMP(TAG, m.data, m.length, ESP_LOG_INFO);
             sb->callback(sb->context, m.data, m.length);
         }
     }
