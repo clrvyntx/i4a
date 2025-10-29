@@ -45,14 +45,6 @@ static routing_hook_func_t routing_hooks[ROUTING_HOOK_COUNT] = {
     [ROUTING_HOOK_ROOT_FORWARDER] = routing_hook_root_forwarder
 };
 
-void routing_task(void *pvParameters) {
-    routing_t *rt = (routing_t *)pvParameters;
-    while (true) {
-        vTaskDelay(pdMS_TO_TICKS(1000));
-        rt_on_tick(rt, 1000);
-    }
-}
-
 // Root hook: route root subnet to SPI, everything else WiFi
 struct netif *routing_hook_root(uint32_t src_ip, uint32_t dst_ip) {
 
@@ -198,5 +190,8 @@ void app_main(void) {
         node_set_as_sta();
     }
     
-    xTaskCreatePinnedToCore(routing_task, "routing_task", 4096, &rt, (tskIDLE_PRIORITY + 2), NULL, 1);
+    while (true) {
+        vTaskDelay(pdMS_TO_TICKS(1000));
+        rt_on_tick(&rt, 1000);
+    }
 }
