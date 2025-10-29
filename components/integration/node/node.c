@@ -231,40 +231,12 @@ bool node_is_device_center_root(void){
   return node_ptr->node_device_is_center_root;
 }
 
-bool node_broadcast_to_siblings(const uint8_t *msg, uint16_t len) {
-  ESP_LOGI(TAG, "Broadcasting to siblings: UUID=%s, length=%d",
-           node_ptr->node_device_uuid, len);
-
-  // Full hexdump of broadcast data
-  ESP_LOG_BUFFER_HEXDUMP(TAG, msg, len, ESP_LOG_INFO);
-
-  bool result = broadcast_to_siblings(msg, len);
-
-  if (result) {
-    ESP_LOGI(TAG, "Broadcast to siblings succeeded");
-  } else {
-    ESP_LOGW(TAG, "Broadcast to siblings failed");
-  }
-
-  return result;
+bool node_broadcast_to_siblings(const uint8_t *msg, uint16_t len){
+  return broadcast_to_siblings(msg, len);
 }
 
-bool node_send_wireless_message(const uint8_t *msg, uint16_t len) {
-  ESP_LOGI(TAG, "Sending wireless message: UUID=%s, length=%d",
-           node_ptr->node_device_uuid, len);
-
-  // Full hexdump of wireless message
-  ESP_LOG_BUFFER_HEXDUMP(TAG, msg, len, ESP_LOG_INFO);
-
-  bool result = device_send_wireless_message(node_ptr->node_device_ptr, msg, len);
-
-  if (result) {
-    ESP_LOGI(TAG, "Wireless message sent successfully");
-  } else {
-    ESP_LOGW(TAG, "Wireless message failed to send");
-  }
-
-  return result;
+bool node_send_wireless_message(const uint8_t *msg, uint16_t len){
+  return device_send_wireless_message(node_ptr->node_device_ptr, msg, len);
 }
 
 bool node_is_point_to_point_message(uint32_t dst){
@@ -282,6 +254,7 @@ esp_netif_t *node_get_wifi_netif(void) {
 esp_netif_t *node_get_spi_netif(void) {
   return get_ring_link_tx_netif();
 }
+
 
 
 
