@@ -232,10 +232,14 @@ bool node_is_device_center_root(void){
 }
 
 bool node_broadcast_to_siblings(const uint8_t *msg, uint16_t len){
+  ESP_LOGI(TAG, "Broadcasting message to siblings: len=%d", len);
+  ESP_LOG_BUFFER_HEXDUMP(TAG, msg, len, ESP_LOG_INFO);
   return broadcast_to_siblings(msg, len);
 }
 
 bool node_send_wireless_message(const uint8_t *msg, uint16_t len){
+  ESP_LOGI(TAG, "Sending wireless message: mode=%d, len=%d", node_ptr->node_device_ptr->mode, len);
+  ESP_LOG_BUFFER_HEXDUMP(TAG, msg, len, ESP_LOG_INFO);
   return device_send_wireless_message(node_ptr->node_device_ptr, msg, len);
 }
 
@@ -254,11 +258,6 @@ esp_netif_t *node_get_wifi_netif(void) {
 esp_netif_t *node_get_spi_netif(void) {
   return get_ring_link_tx_netif();
 }
-
-
-
-
-
 
 
 
