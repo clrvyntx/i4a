@@ -3,38 +3,14 @@
 
 #define CHANNELS 5
 
-// Default orientation array
-static const uint8_t default_channels[CHANNELS] = {1, 6, 3, 9, 11};
+// Default orientation array: {North, South, East, West, Center}
+static const uint8_t formation_1[CHANNELS] = {1, 6, 3, 9, 11};
+static const uint8_t formation_3[CHANNELS] = {3, 9, 1, 6, 11};
+static const uint8_t formation_6[CHANNELS] = {6, 1, 9, 3, 11};
+static const uint8_t formation_9[CHANNELS] = {9, 3, 6, 1, 11};
+
 static channel_manager_t channel_manager = { 0 };
 static channel_manager_t *cm = &channel_manager;
-
-// Shifted orientation logic
-static void shift_orientation(const uint8_t *input, uint8_t *output, uint8_t orientation, uint8_t connected_channel) {
-    // Find index of connected_channel in the current input array
-    int current_index = -1;
-    for (int i = 0; i < CHANNELS; i++) {
-        if (input[i] == connected_channel) {
-            current_index = i;
-            break;
-        }
-    }
-
-    // Calculate shift so connected_channel ends up at index = orientation
-    int shift = (orientation - current_index + CHANNELS) % CHANNELS;
-
-    if (shift == 0 || current_index == -1) {
-        // Fallback: just use default as-is
-        for (int i = 0; i < CHANNELS; i++) {
-            output[i] = input[i];
-        }
-    } else {
-        // Circularly shift the array
-        for (int i = 0; i < CHANNELS; i++) {
-            output[i] = input[(i + shift) % CHANNELS];
-        }
-    }
-
-}
 
 // Called when sibling messages are received
 static void on_sibling_message(void *ctx, const uint8_t *msg, uint16_t len) {
@@ -51,7 +27,7 @@ static void on_sibling_message(void *ctx, const uint8_t *msg, uint16_t len) {
 void cm_init(ring_share_t *rs, orientation_t orientation) {
     cm->rs = rs;
     cm->orientation = orientation;
-    cm->suggested_channel = default_channels[cm->orientation];
+    cm->suggested_channel = formation_1[cm->orientation];
 
     rs_register_component(
         cm->rs, RS_CHANNEL_MANAGER,
@@ -63,6 +39,17 @@ void cm_init(ring_share_t *rs, orientation_t orientation) {
     
 }
 
+// Helper: select the formation where `connected_channel` is at our orientation
+static const uint8_t *select_formation(uint8_t connected_channel, uint8_t orientation) {
+    static const uint8_t *formations[] = {formation_1, formation_3, formation_6, formation_9};
+    for (int f = 0; f < 4; f++) {
+        if (formations[f][orientation] == connected_channel) {
+            return formations[f];
+        }
+    }
+    return formation_1; // fallback
+}
+
 // Broadcast channel provision to siblings
 void cm_provide_to_siblings(uint8_t connected_channel) {
     // Do nothing if channel manager has not been initialized
@@ -71,14 +58,13 @@ void cm_provide_to_siblings(uint8_t connected_channel) {
     }
     
     // Shift default orientation so connected_channel ends up at orientation index
-    uint8_t shifted[CHANNELS];
-    shift_orientation(default_channels, shifted, cm->orientation, connected_channel);
+    const uint8_t *selected_formation = select_formation(connected_channel, cm->orientation);
 
-    // Use the channel that maps to our orientation
-    cm->suggested_channel = shifted[cm->orientation];
+    // Pick our own suggested channel
+    cm->suggested_channel = selected_formation[cm->orientation];
 
-    // Broadcast the shifted array to siblings
-    rs_broadcast(cm->rs, RS_CHANNEL_MANAGER, shifted, CHANNELS);
+    // Broadcast full formation to siblings
+    rs_broadcast(cm->rs, RS_CHANNEL_MANAGER, selected_formation, CHANNELS);
 }
 
 // Expose the suggested channel
