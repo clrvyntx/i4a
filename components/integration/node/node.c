@@ -19,7 +19,7 @@
 
 #define UUID_LENGTH 13
 #define CENTER_STARTUP_DELAY_SECONDS 10
-#define CALIBRATION_DELAY_SECONDS 2
+#define CALIBRATION_DELAY_SECONDS 1
 #define AP_STA_DELAY_SECONDS 1
 
 #define BRIDGE_NETWORK  0xC0A80300  // 192.168.3.0
@@ -265,6 +265,7 @@ esp_netif_t *node_get_wifi_netif(void) {
 esp_netif_t *node_get_spi_netif(void) {
   return get_ring_link_tx_netif();
 }
+
 
 
 
