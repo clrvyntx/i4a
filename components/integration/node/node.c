@@ -19,6 +19,7 @@
 
 #define UUID_LENGTH 13
 #define CENTER_STARTUP_DELAY_SECONDS 10
+#define AP_CALIBRATION_DELAY_SECONDS 1
 
 #define BRIDGE_NETWORK  0xC0A80300  // 192.168.3.0
 #define BRIDGE_MASK 0xFFFFFFFC  // /30
@@ -209,6 +210,9 @@ void node_set_as_ap(uint32_t network, uint32_t mask){
   ip4addr_ntoa_r(&net_addr, network_cidr, sizeof(network_cidr));
   ip4addr_ntoa_r(&gateway_addr, network_gateway, sizeof(network_gateway));
   ip4addr_ntoa_r(&mask_addr, network_mask, sizeof(network_mask));
+
+  // Wait in sequence to avoid current peaks while AP starts up
+  vTaskDelay(pdMS_TO_TICKS(node_ptr->node_device_orientation * AP_CALIBRATION_DELAY_SECONDS * 1000));
   
   if (node_ptr->node_device_orientation == NODE_DEVICE_ORIENTATION_CENTER || node_ptr->node_device_is_center_root){
     device_init(node_ptr->node_device_ptr, node_ptr->node_device_uuid, node_ptr->node_device_orientation, wifi_network_prefix, wifi_network_password, ap_channel_to_emit, ap_max_sta_connections, (uint8_t)node_ptr->node_device_is_center_root, AP);
@@ -254,6 +258,7 @@ esp_netif_t *node_get_wifi_netif(void) {
 esp_netif_t *node_get_spi_netif(void) {
   return get_ring_link_tx_netif();
 }
+
 
 
 
