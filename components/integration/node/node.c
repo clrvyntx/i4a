@@ -19,7 +19,7 @@
 
 #define UUID_LENGTH 13
 #define CENTER_STARTUP_DELAY_SECONDS 5
-#define CALIBRATION_DELAY_SECONDS 1
+#define CALIBRATION_DELAY_SECONDS 2
 #define AP_STA_DELAY_SECONDS 1
 
 #define BRIDGE_NETWORK  0xC0A80300  // 192.168.3.0
@@ -133,8 +133,6 @@ void node_setup(void){
     center_broadcast_msg_t msg;
     memcpy(msg.uuid, node_ptr->node_device_uuid, sizeof(msg.uuid));
     msg.is_center_root = (uint8_t)node_ptr->node_device_is_center_root;
-
-    vTaskDelay(pdMS_TO_TICKS(CENTER_STARTUP_DELAY_SECONDS * 1000));
 
     while (!node_broadcast_to_siblings((uint8_t *)&msg, sizeof(msg))) {
       vTaskDelay(pdMS_TO_TICKS(100));
@@ -265,6 +263,7 @@ esp_netif_t *node_get_wifi_netif(void) {
 esp_netif_t *node_get_spi_netif(void) {
   return get_ring_link_tx_netif();
 }
+
 
 
 
