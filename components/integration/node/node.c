@@ -27,6 +27,9 @@
 #define DEFAULT_SUBNET 0x00000000
 #define DEFAULT_MASK 0xFFFFFFFF
 
+#define MAX_RETRIES 5
+#define RETRY_DELAY_MS 500
+
 static const char *TAG = "node";
 
 typedef struct node {
@@ -133,7 +136,7 @@ void node_setup(void){
     memcpy(msg.uuid, node_ptr->node_device_uuid, sizeof(msg.uuid));
     msg.is_center_root = (uint8_t)node_ptr->node_device_is_center_root;
 
-    while (!node_broadcast_to_siblings((uint8_t *)&msg, sizeof(msg))) {
+    while (!broadcast_to_siblings((uint8_t *)&msg, sizeof(msg))) {
       vTaskDelay(pdMS_TO_TICKS(500));
     }
     ESP_LOGI(TAG, "Center device UUID broadcasted: %s, Center root: %d", msg.uuid, msg.is_center_root);
@@ -239,14 +242,24 @@ bool node_is_device_center_root(void){
   return node_ptr->node_device_is_center_root;
 }
 
-bool node_broadcast_to_siblings(const uint8_t *msg, uint16_t len){
-  vTaskDelay(pdMS_TO_TICKS(500));
-  return broadcast_to_siblings(msg, len);
+bool node_broadcast_to_siblings(const uint8_t *msg, uint16_t len) {
+    for (int attempt = 0; attempt < MAX_RETRIES; attempt++) {
+        if (broadcast_to_siblings(msg, len)) {
+            return true;
+        }
+        vTaskDelay(pdMS_TO_TICKS(RETRY_DELAY_MS));
+    }
+    return false;
 }
 
 bool node_send_wireless_message(const uint8_t *msg, uint16_t len) {
-  vTaskDelay(pdMS_TO_TICKS(500));
-  return device_send_wireless_message(node_ptr->node_device_ptr, msg, len);
+    for (int attempt = 0; attempt < MAX_RETRIES; attempt++) {
+        if (device_send_wireless_message(node_ptr->node_device_ptr, msg, len)) {
+            return true;
+        }
+    }
+    vTaskDelay(pdMS_TO_TICKS(RETRY_DELAY_MS));
+    return false;
 }
 
 bool node_is_point_to_point_message(uint32_t dst){
@@ -264,3 +277,4 @@ esp_netif_t *node_get_wifi_netif(void) {
 esp_netif_t *node_get_spi_netif(void) {
   return get_ring_link_tx_netif();
 }
+
