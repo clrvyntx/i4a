@@ -134,7 +134,7 @@ void node_setup(void){
     memcpy(msg.uuid, node_ptr->node_device_uuid, sizeof(msg.uuid));
     msg.is_center_root = (uint8_t)node_ptr->node_device_is_center_root;
 
-    while (broadcast_to_siblings((uint8_t *)&msg, sizeof(msg))) {
+    while (!node_single_sibling_broadcast((uint8_t *)&msg, sizeof(msg))) {
       vTaskDelay(pdMS_TO_TICKS(STARTUP_RETRY_DELAY_MS));
     }
     ESP_LOGI(TAG, "Center device UUID broadcasted: %s, Center root: %d", msg.uuid, msg.is_center_root);
@@ -271,3 +271,4 @@ esp_netif_t *node_get_wifi_netif(void) {
 esp_netif_t *node_get_spi_netif(void) {
   return get_ring_link_tx_netif();
 }
+
