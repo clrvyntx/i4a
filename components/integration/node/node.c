@@ -22,8 +22,8 @@
 #define AP_STA_DELAY_SECONDS 1
 #define STARTUP_RETRY_DELAY_MS 500
 
-#define BRIDGE_NETWORK  0xAC100300  // 172.16.3.0
-#define BRIDGE_MASK     0xFFFFFFFC  // /30
+#define BRIDGE_NETWORK  0xC0A80300  // 192.168.3.0
+#define BRIDGE_MASK 0xFFFFFFFC  // /30
 
 #define DEFAULT_SUBNET 0x00000000
 #define DEFAULT_MASK 0xFFFFFFFF
@@ -271,4 +271,5 @@ esp_netif_t *node_get_wifi_netif(void) {
 esp_netif_t *node_get_spi_netif(void) {
   return get_ring_link_tx_netif();
 }
+
 
