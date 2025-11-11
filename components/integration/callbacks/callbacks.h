@@ -26,6 +26,8 @@ void node_on_peer_connected(uint32_t net, uint32_t mask);
 void node_on_peer_lost(uint32_t net, uint32_t mask);
 void node_on_peer_message(void *msg, uint16_t len);
 void node_on_sibling_message(void *msg, uint16_t len);
+bool node_enqueue_peer_send(void *msg, uint16_t len);
+bool node_enqueue_sibling_send(void *msg, uint16_t len);
 
 #ifdef __cplusplus
 }
