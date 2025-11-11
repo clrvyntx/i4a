@@ -110,14 +110,14 @@ void node_setup(void){
   config_setup();
   config_print();
 
+  node_ptr->node_device_ptr = &node_device;
+  node_ptr->node_device_orientation = node_get_config_orientation();
+
   // Wait in sequence to avoid current peaks while node calibrates
   vTaskDelay(pdMS_TO_TICKS(node_ptr->node_device_orientation * CALIBRATION_DELAY_SECONDS * 1000));
 
   ESP_ERROR_CHECK(device_wifi_init());
   ESP_ERROR_CHECK(ring_link_init());
-
-  node_ptr->node_device_ptr = &node_device;
-  node_ptr->node_device_orientation = node_get_config_orientation();
 
   if(node_ptr->node_device_orientation == NODE_DEVICE_ORIENTATION_CENTER){
     node_ptr->node_device_is_center_root = config_mode_is(CONFIG_MODE_ROOT);
@@ -266,6 +266,7 @@ esp_netif_t *node_get_wifi_netif(void) {
 esp_netif_t *node_get_spi_netif(void) {
   return get_ring_link_tx_netif();
 }
+
 
 
 
