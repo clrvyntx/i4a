@@ -84,6 +84,7 @@ static void peer_send_task(void *arg) {
     message_t m;
     while (1) {
         if (xQueueReceive(peer_send_queue, &m, portMAX_DELAY)) {
+            vTaskDelay(pdMS_TO_TICKS(SEND_DELAY_MS)); // spacing between messages
             int attempt = 0;
             bool sent = false;
             while (attempt < MAX_RETRIES && !sent) {
@@ -93,7 +94,6 @@ static void peer_send_task(void *arg) {
                     vTaskDelay(pdMS_TO_TICKS(RETRY_DELAY_MS));
                 }
             }
-            vTaskDelay(pdMS_TO_TICKS(SEND_DELAY_MS)); // spacing between messages
         }
     }
 }
@@ -102,6 +102,7 @@ static void sibling_send_task(void *arg) {
     message_t m;
     while (1) {
         if (xQueueReceive(sibling_send_queue, &m, portMAX_DELAY)) {
+            vTaskDelay(pdMS_TO_TICKS(SEND_DELAY_MS)); // spacing between messages
             int attempt = 0;
             bool sent = false;
             while (attempt < MAX_RETRIES && !sent) {
@@ -111,7 +112,6 @@ static void sibling_send_task(void *arg) {
                     vTaskDelay(pdMS_TO_TICKS(RETRY_DELAY_MS));
                 }
             }
-            vTaskDelay(pdMS_TO_TICKS(SEND_DELAY_MS)); // spacing between messages
         }
     }
 }
