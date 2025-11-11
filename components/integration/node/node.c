@@ -243,7 +243,8 @@ bool node_broadcast_to_siblings(const uint8_t *msg, uint16_t len){
   return broadcast_to_siblings(msg, len);
 }
 
-bool node_send_wireless_message(const uint8_t *msg, uint16_t len){
+bool node_send_wireless_message(const uint8_t *msg, uint16_t len) {
+  vTaskDelay(pdMS_TO_TICKS(5000));
   return device_send_wireless_message(node_ptr->node_device_ptr, msg, len);
 }
 
@@ -262,5 +263,6 @@ esp_netif_t *node_get_wifi_netif(void) {
 esp_netif_t *node_get_spi_netif(void) {
   return get_ring_link_tx_netif();
 }
+
 
 
