@@ -9,7 +9,6 @@
 
 #define MAX_MESSAGE_SIZE 512
 #define QUEUE_LENGTH 10
-#define PEER_DELAY_SECONDS 5
 
 static const char *TAG = "callbacks";
 
@@ -171,5 +170,6 @@ wireless_t *node_get_wireless_instance(void){
 siblings_t *node_get_siblings_instance(void){
     return sb;
 }
+
 
 
