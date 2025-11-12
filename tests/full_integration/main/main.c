@@ -113,6 +113,15 @@ struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t 
     return selected_routing_hook(src_ip, dst_ip);
 }
 
+void routing_task(void *pvParameters) {
+    routing_t *rt = (routing_t *)pvParameters;
+
+    while (true) {
+        vTaskDelay(pdMS_TO_TICKS(1000));
+        rt_on_tick(rt, 1000);
+    }
+}
+
 void app_main(void) {
     node_setup();
 
@@ -155,9 +164,14 @@ void app_main(void) {
         node_set_as_sta();
     }
     
-    while (true) {
-        vTaskDelay(pdMS_TO_TICKS(1000));
-        rt_on_tick(&rt, 1000);
-    }
-}
+xTaskCreatePinnedToCore(
+    routing_task,            
+    "routing_task",          
+    4096,                    
+    &rt,                     
+    tskIDLE_PRIORITY + 2,    
+    NULL,                    
+    0                        
+);
 
+}
