@@ -34,8 +34,6 @@ bool node_is_device_center_root(void); // Tells the device if they're center roo
 // Node communication functions
 bool node_send_wireless_message(const uint8_t *msg, uint16_t len); // Send a wireless message to the other side of the wireless link between two devices of different nodes
 bool node_broadcast_to_siblings(const uint8_t *msg, uint16_t len); // Broadcast a message to all devices of the same node
-bool node_single_sibling_broadcast(const uint8_t *msg, uint16_t len);
-bool node_single_wireless_message(const uint8_t *msg, uint16_t len);
 
 // Node network interfaces
 esp_netif_t *node_get_wifi_netif(void); // Returns network interface for wireless link

@@ -20,7 +20,9 @@
 #define UUID_LENGTH 13
 #define CALIBRATION_DELAY_SECONDS 2
 #define AP_STA_DELAY_SECONDS 1
-#define STARTUP_RETRY_DELAY_MS 500
+
+#define MAX_RETRIES 5
+#define RETRY_DELAY_MS 500
 
 #define BRIDGE_NETWORK  0xC0A80300  // 192.168.3.0
 #define BRIDGE_MASK 0xFFFFFFFC  // /30
@@ -134,14 +136,14 @@ void node_setup(void){
     memcpy(msg.uuid, node_ptr->node_device_uuid, sizeof(msg.uuid));
     msg.is_center_root = (uint8_t)node_ptr->node_device_is_center_root;
 
-    while (!node_single_sibling_broadcast((uint8_t *)&msg, sizeof(msg))) {
-      vTaskDelay(pdMS_TO_TICKS(STARTUP_RETRY_DELAY_MS));
+    while (!node_broadcast_to_siblings((uint8_t *)&msg, sizeof(msg))) {
+      vTaskDelay(pdMS_TO_TICKS(100));
     }
     ESP_LOGI(TAG, "Center device UUID broadcasted: %s, Center root: %d", msg.uuid, msg.is_center_root);
 
   } else {
     while(strlen(node_ptr->node_device_uuid) == 0){
-      vTaskDelay(pdMS_TO_TICKS(STARTUP_RETRY_DELAY_MS));
+      vTaskDelay(pdMS_TO_TICKS(100));
     }
     ESP_LOGI(TAG, "Peripheral received UUID: %s, Center root: %d", node_ptr->node_device_uuid, node_ptr->node_device_is_center_root);
   }
@@ -218,7 +220,7 @@ void node_set_as_ap(uint32_t network, uint32_t mask){
 
   // Wait in sequence to avoid current peaks while AP starts up
   vTaskDelay(pdMS_TO_TICKS(node_ptr->node_device_orientation * AP_STA_DELAY_SECONDS * 1000));
-  
+
   if (node_ptr->node_device_orientation == NODE_DEVICE_ORIENTATION_CENTER || node_ptr->node_device_is_center_root){
     device_init(node_ptr->node_device_ptr, node_ptr->node_device_uuid, node_ptr->node_device_orientation, wifi_network_prefix, wifi_network_password, ap_channel_to_emit, ap_max_sta_connections, (uint8_t)node_ptr->node_device_is_center_root, AP);
     device_set_network_ap(node_ptr->node_device_ptr, network_cidr, network_gateway, network_mask);
@@ -241,19 +243,23 @@ bool node_is_device_center_root(void){
 }
 
 bool node_broadcast_to_siblings(const uint8_t *msg, uint16_t len) {
-  return node_enqueue_sibling_send(msg, len);
+  for (int i = 0; i < MAX_RETRIES; i++) {
+    vTaskDelay(pdMS_TO_TICKS(RETRY_DELAY_MS));
+    if (broadcast_to_siblings(msg, len)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 bool node_send_wireless_message(const uint8_t *msg, uint16_t len) {
-  return node_enqueue_peer_send(msg, len);
-}
-
-bool node_single_sibling_broadcast(const uint8_t *msg, uint16_t len) {
-  return broadcast_to_siblings(msg, len);
-}
-
-bool node_single_wireless_message(const uint8_t *msg, uint16_t len) {
- return device_send_wireless_message(node_ptr->node_device_ptr, msg, len);
+  for (int i = 0; i < MAX_RETRIES; i++) {
+    vTaskDelay(pdMS_TO_TICKS(RETRY_DELAY_MS));
+    if (device_send_wireless_message(node_ptr->node_device_ptr, msg, len)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 bool node_is_point_to_point_message(uint32_t dst){
@@ -271,5 +277,6 @@ esp_netif_t *node_get_wifi_netif(void) {
 esp_netif_t *node_get_spi_netif(void) {
   return get_ring_link_tx_netif();
 }
+
 
 
