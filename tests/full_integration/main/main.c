@@ -164,14 +164,14 @@ void app_main(void) {
         node_set_as_sta();
     }
     
-xTaskCreatePinnedToCore(
-    routing_task,            
-    "routing_task",          
-    4096,                    
-    &rt,                     
-    tskIDLE_PRIORITY + 2,    
-    NULL,                    
-    0                        
-);
+    xTaskCreatePinnedToCore(
+        routing_task,
+        "routing_task",
+        4096,
+        &rt,
+        tskIDLE_PRIORITY + 2,
+        NULL,
+        0
+    );
 
 }
