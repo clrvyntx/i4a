@@ -171,8 +171,9 @@ void app_main(void) {
         &rt,
         tskIDLE_PRIORITY + 2,
         NULL,
-        1
+        0
     );
 
 }
+
 
