@@ -17,13 +17,18 @@ typedef struct message {
     uint16_t length;
 } message_t;
 
-typedef struct peer_event {
+typedef enum {
+    PEER_EVENT_CONNECTED,
+    PEER_EVENT_LOST
+} peer_event_type_t;
+
+typedef struct {
+    peer_event_type_t type;
     uint32_t net;
     uint32_t mask;
 } peer_event_t;
 
-static QueueHandle_t peer_connected_queue = NULL;
-static QueueHandle_t peer_lost_queue = NULL;
+static QueueHandle_t peer_event_queue = NULL;
 static QueueHandle_t peer_message_queue = NULL;
 static QueueHandle_t sibling_message_queue = NULL;
 
@@ -33,20 +38,15 @@ static siblings_t siblings = {0};
 static wireless_t *wl = &wireless;
 static siblings_t *sb = &siblings;
 
-static void peer_connected_task(void *arg) {
+static void peer_event_task(void *arg) {
     peer_event_t event;
     while (1) {
-        if (xQueueReceive(peer_connected_queue, &event, portMAX_DELAY)) {
-            wl->callbacks.on_peer_connected(wl->context, event.net, event.mask);
-        }
-    }
-}
-
-static void peer_lost_task(void *arg) {
-    peer_event_t event;
-    while (1) {
-        if (xQueueReceive(peer_lost_queue, &event, portMAX_DELAY)) {
-            wl->callbacks.on_peer_lost(wl->context, event.net, event.mask);
+        if (xQueueReceive(peer_event_queue, &event, portMAX_DELAY)) {
+            if (event.type == PEER_EVENT_CONNECTED) {
+                wl->callbacks.on_peer_connected(wl->context, event.net, event.mask);
+            } else {
+                wl->callbacks.on_peer_lost(wl->context, event.net, event.mask);
+            }
         }
     }
 }
@@ -70,40 +70,29 @@ static void sibling_message_task(void *arg) {
 }
 
 esp_err_t node_init_event_queues(void) {
-    peer_connected_queue = xQueueCreate(QUEUE_LENGTH, sizeof(peer_event_t));
-    peer_lost_queue      = xQueueCreate(QUEUE_LENGTH, sizeof(peer_event_t));
-    peer_message_queue   = xQueueCreate(QUEUE_LENGTH, sizeof(message_t));
-    sibling_message_queue= xQueueCreate(QUEUE_LENGTH, sizeof(message_t));
+    peer_event_queue = xQueueCreate(QUEUE_LENGTH, sizeof(peer_event_t));
+    peer_message_queue = xQueueCreate(QUEUE_LENGTH, sizeof(message_t));
+    sibling_message_queue = xQueueCreate(QUEUE_LENGTH, sizeof(message_t));
 
-    if (!peer_connected_queue ||
-        !peer_lost_queue ||
-        !peer_message_queue ||
-        !sibling_message_queue) {
-
+    if (!peer_event_queue || !peer_message_queue || !sibling_message_queue) {
         ESP_LOGE(TAG, "Failed to create one or more queues");
-    return ESP_FAIL;
-        }
+        return ESP_FAIL;
+    }
 
-        ESP_LOGI(TAG, "All event queues created successfully");
-        return ESP_OK;
+    ESP_LOGI(TAG, "Event queues created successfully");
+    return ESP_OK;
 }
 
 esp_err_t node_start_event_tasks(void) {
     BaseType_t res;
 
-    res = xTaskCreatePinnedToCore(peer_connected_task, "peer_conn_task", 2048, NULL, (tskIDLE_PRIORITY + 2), NULL, 0);
+    res = xTaskCreatePinnedToCore(peer_event_task, "peer_event_task", 2048, NULL, (tskIDLE_PRIORITY + 2), NULL, 0);
     if (res != pdPASS) {
-        ESP_LOGE(TAG, "Failed to create peer_connected_task");
+        ESP_LOGE(TAG, "Failed to create peer_event_task");
         return ESP_FAIL;
     }
 
-    res = xTaskCreatePinnedToCore(peer_lost_task, "peer_lost_task", 2048, NULL, (tskIDLE_PRIORITY + 2), NULL, 0);
-    if (res != pdPASS) {
-        ESP_LOGE(TAG, "Failed to create peer_lost_task");
-        return ESP_FAIL;
-    }
-
-    res = xTaskCreatePinnedToCore(peer_message_task, "peer_msg_task", 6144, NULL, (tskIDLE_PRIORITY + 2), NULL, 0);
+    res = xTaskCreatePinnedToCore(peer_message_task, "peer_msg_task", 4096, NULL, (tskIDLE_PRIORITY + 2), NULL, 0);
     if (res != pdPASS) {
         ESP_LOGE(TAG, "Failed to create peer_message_task");
         return ESP_FAIL;
@@ -121,20 +110,20 @@ esp_err_t node_start_event_tasks(void) {
 
 void node_on_peer_connected(uint32_t net, uint32_t mask) {
     peer_event_t event = {
+        .type = PEER_EVENT_CONNECTED,
         .net = net,
-        .mask = mask,
+        .mask = mask
     };
-
-    xQueueSend(peer_connected_queue, &event, portMAX_DELAY);
+    xQueueSend(peer_event_queue, &event, portMAX_DELAY);
 }
 
 void node_on_peer_lost(uint32_t net, uint32_t mask) {
     peer_event_t event = {
+        .type = PEER_EVENT_LOST,
         .net = net,
-        .mask = mask,
+        .mask = mask
     };
-
-    xQueueSend(peer_lost_queue, &event, portMAX_DELAY);
+    xQueueSend(peer_event_queue, &event, portMAX_DELAY);
 }
 
 void node_on_peer_message(void *msg, uint16_t len) {
@@ -170,8 +159,4 @@ wireless_t *node_get_wireless_instance(void){
 siblings_t *node_get_siblings_instance(void){
     return sb;
 }
-
-
-
-
 
