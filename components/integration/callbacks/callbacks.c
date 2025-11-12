@@ -8,7 +8,8 @@
 #include "callbacks.h"
 
 #define MAX_MESSAGE_SIZE 512
-#define QUEUE_LENGTH 10
+#define SIBLING_QUEUE_LENGTH 10
+#define PEER_QUEUE_LENGTH 5
 
 static const char *TAG = "callbacks";
 
@@ -70,9 +71,9 @@ static void sibling_message_task(void *arg) {
 }
 
 esp_err_t node_init_event_queues(void) {
-    peer_event_queue = xQueueCreate(QUEUE_LENGTH, sizeof(peer_event_t));
-    peer_message_queue = xQueueCreate(QUEUE_LENGTH, sizeof(message_t));
-    sibling_message_queue = xQueueCreate(QUEUE_LENGTH, sizeof(message_t));
+    peer_event_queue = xQueueCreate(PEER_QUEUE_LENGTH, sizeof(peer_event_t));
+    peer_message_queue = xQueueCreate(PEER_QUEUE_LENGTH, sizeof(message_t));
+    sibling_message_queue = xQueueCreate(SIBLING_QUEUE_LENGTH, sizeof(message_t));
 
     if (!peer_event_queue || !peer_message_queue || !sibling_message_queue) {
         ESP_LOGE(TAG, "Failed to create one or more queues");
@@ -159,4 +160,5 @@ wireless_t *node_get_wireless_instance(void){
 siblings_t *node_get_siblings_instance(void){
     return sb;
 }
+
 
