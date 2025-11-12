@@ -138,22 +138,22 @@ esp_err_t node_init_event_queues(void) {
 esp_err_t node_start_event_tasks(void) {
     BaseType_t res;
 
-    res = xTaskCreatePinnedToCore(peer_connected_task, "peer_conn_task", 2048, NULL, tskIDLE_PRIORITY + 2, NULL, 1);
+    res = xTaskCreatePinnedToCore(peer_connected_task, "peer_conn_task", 2048, NULL, tskIDLE_PRIORITY + 2, NULL, 0);
     if (res != pdPASS) { ESP_LOGE(TAG, "Failed to create peer_connected_task"); return ESP_FAIL; }
 
     res = xTaskCreatePinnedToCore(peer_lost_task, "peer_lost_task", 2048, NULL, tskIDLE_PRIORITY + 2, NULL, 0);
     if (res != pdPASS) { ESP_LOGE(TAG, "Failed to create peer_lost_task"); return ESP_FAIL; }
 
-    res = xTaskCreatePinnedToCore(peer_message_task, "peer_msg_task", 6144, NULL, tskIDLE_PRIORITY + 2, NULL, 1);
+    res = xTaskCreatePinnedToCore(peer_message_task, "peer_msg_task", 6144, NULL, tskIDLE_PRIORITY + 2, NULL, 0);
     if (res != pdPASS) { ESP_LOGE(TAG, "Failed to create peer_message_task"); return ESP_FAIL; }
 
-    res = xTaskCreatePinnedToCore(sibling_message_task, "sib_msg_task", 6144, NULL, tskIDLE_PRIORITY + 2, NULL, 0);
+    res = xTaskCreatePinnedToCore(sibling_message_task, "sib_msg_task", 6144, NULL, tskIDLE_PRIORITY + 2, NULL, 1);
     if (res != pdPASS) { ESP_LOGE(TAG, "Failed to create sibling_message_task"); return ESP_FAIL; }
 
-    res = xTaskCreatePinnedToCore(peer_send_task, "peer_send_task", 6144, NULL, tskIDLE_PRIORITY + 2, NULL, 1);
+    res = xTaskCreatePinnedToCore(peer_send_task, "peer_send_task", 6144, NULL, tskIDLE_PRIORITY + 2, NULL, 0);
     if (res != pdPASS) { ESP_LOGE(TAG, "Failed to create peer_send_task"); return ESP_FAIL; }
 
-    res = xTaskCreatePinnedToCore(sibling_send_task, "sib_send_task", 6144, NULL, tskIDLE_PRIORITY + 2, NULL, 0);
+    res = xTaskCreatePinnedToCore(sibling_send_task, "sib_send_task", 6144, NULL, tskIDLE_PRIORITY + 2, NULL, 1);
     if (res != pdPASS) { ESP_LOGE(TAG, "Failed to create sibling_send_task"); return ESP_FAIL; }
 
     ESP_LOGI(TAG, "All event tasks created successfully");
@@ -219,5 +219,6 @@ wireless_t *node_get_wireless_instance(void) {
 siblings_t *node_get_siblings_instance(void) {
     return sb;
 }
+
 
 
