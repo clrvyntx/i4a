@@ -193,7 +193,7 @@ void node_set_as_ap(uint32_t network, uint32_t mask){
     } else {
       node_gateway = network + 1;
       wifi_network_prefix = HOUSE_NETWORK_NAME;
-      wifi_network_password = "";
+      wifi_network_password = NAT_NETWORK_PASSWORD;
       ap_max_sta_connections = MAX_DEVICES_PER_HOUSE;
     }
   } else {
@@ -277,3 +277,4 @@ esp_netif_t *node_get_wifi_netif(void) {
 esp_netif_t *node_get_spi_netif(void) {
   return get_ring_link_tx_netif();
 }
+
