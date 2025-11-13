@@ -20,13 +20,12 @@ static uint32_t l_mask   = 0xFFE00000; // 255.224.0.0 (/11)
 static uint32_t c_subnet = 0x0A600000; // 10.96.0.0
 static uint32_t c_mask   = 0xFFFC0000; // 255.252.0.0 (/14)
 
-static uint8_t orientation;
-static uint8_t is_root;
-
 // Custom routing hook
 struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t *dest) {
     uint32_t src_ip = lwip_ntohl(ip4_addr_get_u32(src));
     uint32_t dst_ip = lwip_ntohl(ip4_addr_get_u32(dest));
+    uint8_t orientation = node_get_device_orientation();
+    uint8_t is_root = node_is_device_center_root();
 
     // === Case 1: Center ===
     if (orientation == NODE_DEVICE_ORIENTATION_CENTER) {
@@ -76,8 +75,8 @@ struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t 
 void app_main(void) {
     node_setup();
 
-    orientation = node_get_device_orientation();
-    is_root = node_is_device_center_root();
+    uint8_t orientation = node_get_device_orientation();
+    uint8_t is_root = node_is_device_center_root();
 
     siblings_t *sb = node_get_siblings_instance();
     rs_init(&rs, sb);
@@ -103,4 +102,3 @@ void app_main(void) {
         vTaskDelay(pdMS_TO_TICKS(10000));
     }
 }
-
