@@ -141,10 +141,11 @@ void app_main(void) {
         &rt,
         tskIDLE_PRIORITY + 2,
         NULL,
-        1
+        0
     );
 
     // After initialization, switch to static routing hook
     selected_routing_hook = routing_hook_static;
 }
+
 
