@@ -57,8 +57,8 @@ struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t 
         }
     }
 
-    // === Case 3: West and Not Root ===
-    if (orientation == NODE_DEVICE_ORIENTATION_WEST && !is_root) {
+    // === Case 3: North and Not Root ===
+    if (orientation == NODE_DEVICE_ORIENTATION_NORTH && !is_root) {
         if (node_is_point_to_point_message(dst_ip)) {
             return (struct netif *)esp_netif_get_netif_impl(node_get_wifi_netif());
         }
@@ -95,7 +95,7 @@ void app_main(void) {
         node_set_as_ap(l_subnet, l_mask);
     }
 
-    if(orientation == NODE_DEVICE_ORIENTATION_WEST && !is_root) {
+    if(orientation == NODE_DEVICE_ORIENTATION_NORTH && !is_root) {
         node_set_as_sta();
     }
 
@@ -103,3 +103,4 @@ void app_main(void) {
         vTaskDelay(pdMS_TO_TICKS(10000));
     }
 }
+
