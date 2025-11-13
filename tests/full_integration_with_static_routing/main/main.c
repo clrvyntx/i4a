@@ -14,7 +14,7 @@
 #include "node.h"
 
 #define ROOT_NETWORK 0x0A000000  // 10.0.0.0
-#define ROOT_MASK 0xFF000000 // 255.0.0.0
+#define ROOT_MASK    0xFF000000  // 255.0.0.0 (/8)
 
 static const char *TAG = "routing_hook";
 
@@ -24,23 +24,19 @@ static shared_state_t ss = { 0 };
 static routing_t rt = { 0 };
 
 static uint32_t r_subnet = 0x0A000000; // 10.0.0.0
-static uint32_t r_mask   = 0xFF000000; // 255.0.0.0 (/8)
-
-static uint32_t l_subnet = 0x0A200000; // 10.32.0.0
-static uint32_t l_mask   = 0xFFE00000; // 255.224.0.0 (/11)
-
-static uint32_t c_subnet = 0x0A600000; // 10.96.0.0
-static uint32_t c_mask   = 0xFFFC0000; // 255.252.0.0 (/14)
+static uint32_t r_mask   = 0xFF000000; // /8
 
 static node_device_orientation_t orientation;
 static bool is_center_root;
 
-// Custom routing hook
-struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t *dest) {
-    uint32_t src_ip = lwip_ntohl(ip4_addr_get_u32(src));
-    uint32_t dst_ip = lwip_ntohl(ip4_addr_get_u32(dest));
+// ---------------- Default routing hook ----------------
+struct netif *routing_hook_default(uint32_t src_ip, uint32_t dst_ip) {
+    return (struct netif *)esp_netif_get_netif_impl(node_get_spi_netif());
+}
 
-    // === Case 1: Center ===
+// ---------------- Static routing hook ----------------
+struct netif *routing_hook_static(uint32_t src_ip, uint32_t dst_ip) {
+    // Center nodes
     if (orientation == NODE_DEVICE_ORIENTATION_CENTER) {
         if (is_center_root) {
             if ((dst_ip & r_mask) == r_subnet) {
@@ -57,43 +53,50 @@ struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t 
         }
     }
 
-    // === Case 2: North and Root ===
-    if (orientation == NODE_DEVICE_ORIENTATION_NORTH && is_center_root) {
+    // North nodes
+    if (orientation == NODE_DEVICE_ORIENTATION_NORTH) {
         if (node_is_point_to_point_message(dst_ip)) {
             return (struct netif *)esp_netif_get_netif_impl(node_get_wifi_netif());
         }
-        if ((dst_ip & r_mask) != r_subnet) {
-            return (struct netif *)esp_netif_get_netif_impl(node_get_spi_netif());
+        if (is_center_root) {
+            if ((dst_ip & r_mask) != r_subnet) {
+                return (struct netif *)esp_netif_get_netif_impl(node_get_spi_netif());
+            } else {
+                return (struct netif *)esp_netif_get_netif_impl(node_get_wifi_netif());
+            }
         } else {
-            return (struct netif *)esp_netif_get_netif_impl(node_get_wifi_netif());
+            if ((dst_ip & r_mask) == r_subnet) {
+                return (struct netif *)esp_netif_get_netif_impl(node_get_spi_netif());
+            } else {
+                return (struct netif *)esp_netif_get_netif_impl(node_get_wifi_netif());
+            }
         }
     }
 
-    // === Case 3: North and Not Root ===
-    if (orientation == NODE_DEVICE_ORIENTATION_NORTH && !is_center_root) {
-        if (node_is_point_to_point_message(dst_ip)) {
-            return (struct netif *)esp_netif_get_netif_impl(node_get_wifi_netif());
-        }
-        if ((dst_ip & r_mask) == r_subnet) {
-            return (struct netif *)esp_netif_get_netif_impl(node_get_spi_netif());
-        } else {
-            return (struct netif *)esp_netif_get_netif_impl(node_get_wifi_netif());
-        }
-    }
-
-    // === Default ===
+    // Fallback
     return (struct netif *)esp_netif_get_netif_impl(node_get_spi_netif());
 }
 
+// ---------------- Selected hook ----------------
+static struct netif *(*selected_routing_hook)(uint32_t src_ip, uint32_t dst_ip) = routing_hook_default;
+
+// ---------------- IP4 hook called by LWIP ----------------
+struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t *dest) {
+    uint32_t src_ip = lwip_ntohl(ip4_addr_get_u32(src));
+    uint32_t dst_ip = lwip_ntohl(ip4_addr_get_u32(dest));
+    return selected_routing_hook(src_ip, dst_ip);
+}
+
+// ---------------- Routing task ----------------
 void routing_task(void *pvParameters) {
     routing_t *rt = (routing_t *)pvParameters;
-
     while (true) {
         vTaskDelay(pdMS_TO_TICKS(1000));
         rt_on_tick(rt, 1000);
     }
 }
 
+// ---------------- Main ----------------
 void app_main(void) {
     node_setup();
 
@@ -108,8 +111,9 @@ void app_main(void) {
     cm_init(&rs, orientation);
     rt_create(&rt, &rs, wl, &_sync, &ss, orientation);
 
-    if(orientation == NODE_DEVICE_ORIENTATION_CENTER){
-        if(is_center_root){
+    // Initialize routing tables
+    if (orientation == NODE_DEVICE_ORIENTATION_CENTER) {
+        if (is_center_root) {
             rt_init_root(&rt, r_subnet, r_mask);
         } else {
             rt_init_home(&rt);
@@ -117,18 +121,19 @@ void app_main(void) {
     } else {
         rt_init_forwarder(&rt);
     }
-    
+
     rt_on_start(&rt);
     rt_on_tick(&rt, 1);
 
-    if(orientation == NODE_DEVICE_ORIENTATION_CENTER && is_center_root){
+    // Set AP/STA as needed
+    if (orientation == NODE_DEVICE_ORIENTATION_CENTER && is_center_root) {
         node_set_as_ap(r_subnet, r_mask);
     }
-
-    if(orientation == NODE_DEVICE_ORIENTATION_NORTH && !is_center_root){ // For testing, have a single one, in reality all non centers should be stations
+    if (orientation == NODE_DEVICE_ORIENTATION_NORTH && !is_center_root) {
         node_set_as_sta();
     }
-    
+
+    // Start routing task
     xTaskCreatePinnedToCore(
         routing_task,
         "routing_task",
@@ -139,4 +144,6 @@ void app_main(void) {
         0
     );
 
+    // After initialization, switch to static routing hook
+    selected_routing_hook = routing_hook_static;
 }
