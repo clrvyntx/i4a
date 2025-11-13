@@ -155,7 +155,7 @@ static void tcp_server_task(void *pvParameters) {
 void server_create() {
   if (!server_is_up) {  // Prevent starting the server if it's already running
     server_is_up = true;
-    xTaskCreatePinnedToCore(tcp_server_task, "tcp_server", 4096, NULL, (tskIDLE_PRIORITY + 2), NULL, 0);
+    xTaskCreatePinnedToCore(tcp_server_task, "tcp_server", 4096, NULL, (tskIDLE_PRIORITY + 2), NULL, 1);
     ESP_LOGI(LOGGING_TAG, "Server started");
   } else {
     ESP_LOGW(LOGGING_TAG, "Server is already running");
@@ -197,4 +197,5 @@ bool server_send_message(const uint8_t *msg, uint16_t len) {
   }
 
 }
+
 
