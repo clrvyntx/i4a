@@ -87,19 +87,19 @@ esp_err_t node_init_event_queues(void) {
 esp_err_t node_start_event_tasks(void) {
     BaseType_t res;
 
-    res = xTaskCreatePinnedToCore(peer_event_task, "peer_event_task", 4096, NULL, (tskIDLE_PRIORITY + 2), NULL, 1);
+    res = xTaskCreatePinnedToCore(peer_event_task, "peer_event_task", 4096, NULL, (tskIDLE_PRIORITY + 2), NULL, 0);
     if (res != pdPASS) {
         ESP_LOGE(TAG, "Failed to create peer_event_task");
         return ESP_FAIL;
     }
 
-    res = xTaskCreatePinnedToCore(peer_message_task, "peer_msg_task", 4096, NULL, (tskIDLE_PRIORITY + 2), NULL, 1);
+    res = xTaskCreatePinnedToCore(peer_message_task, "peer_msg_task", 4096, NULL, (tskIDLE_PRIORITY + 2), NULL, 0);
     if (res != pdPASS) {
         ESP_LOGE(TAG, "Failed to create peer_message_task");
         return ESP_FAIL;
     }
 
-    res = xTaskCreatePinnedToCore(sibling_message_task, "sib_msg_task", 4096, NULL, (tskIDLE_PRIORITY + 2), NULL, 1);
+    res = xTaskCreatePinnedToCore(sibling_message_task, "sib_msg_task", 4096, NULL, (tskIDLE_PRIORITY + 2), NULL, 0);
     if (res != pdPASS) {
         ESP_LOGE(TAG, "Failed to create sibling_message_task");
         return ESP_FAIL;
@@ -160,6 +160,7 @@ wireless_t *node_get_wireless_instance(void){
 siblings_t *node_get_siblings_instance(void){
     return sb;
 }
+
 
 
 
