@@ -160,7 +160,7 @@ void ap_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, 
           server_create();
           ap->server_is_up = true;
         }
-      break;
+        break;
 
       case WIFI_EVENT_AP_STADISCONNECTED:
         if (ap->server_is_up) {
@@ -172,5 +172,6 @@ void ap_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, 
     }
   }
 }
+
 
 
