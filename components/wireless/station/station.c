@@ -34,7 +34,7 @@ static bool is_network_allowed(char* device_uuid, char* network_prefix, char* ne
 
   // Finish checking if it's not on APSTA mode, otherwise check to prevent redundant connections
   if(is_apsta){
-    return strncmp(network_name + SSID_UUID_OFFSET, device_uuid, UUID_LEN) < 0;
+    return strncmp(network_name + SSID_UUID_OFFSET, device_uuid, UUID_LEN) > 0;
   } else {
     return true;
   }
@@ -203,3 +203,4 @@ void transform_wifi_ap_record_to_config(StationPtr stationPtr) {
   memcpy(stationPtr->wifi_config.sta.password, stationPtr->password, sizeof(stationPtr->password));
   stationPtr->wifi_config.sta.bssid_set = true;
 }
+
