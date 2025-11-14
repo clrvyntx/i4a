@@ -208,7 +208,7 @@ static void device_connect_station_task(void* arg) {
 
 void device_connect_station(DevicePtr device_ptr) {
   is_on_connect_loop = true;
-  xTaskCreatePinnedToCore(device_connect_station_task, "device_connect_station_task", 4096, device_ptr, (tskIDLE_PRIORITY + 2), NULL, 1);
+  xTaskCreatePinnedToCore(device_connect_station_task, "device_connect_station_task", 4096, device_ptr, (tskIDLE_PRIORITY + 2), NULL, 0);
 }
 
 void device_disconnect_station(DevicePtr device_ptr) {
@@ -266,3 +266,4 @@ bool device_send_wireless_message(DevicePtr device_ptr, const uint8_t *msg, uint
 
   return false;
 }
+
