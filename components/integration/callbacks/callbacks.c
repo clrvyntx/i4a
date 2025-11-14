@@ -10,6 +10,7 @@
 #define MAX_MESSAGE_SIZE 512
 #define SIBLING_QUEUE_LENGTH 10
 #define PEER_QUEUE_LENGTH 5
+#define PEER_DELAY_SECONDS 5
 
 static const char *TAG = "callbacks";
 
@@ -43,6 +44,7 @@ static void peer_event_task(void *arg) {
     peer_event_t event;
     while (1) {
         if (xQueueReceive(peer_event_queue, &event, portMAX_DELAY)) {
+            vTaskDelay(pdMS_TO_TICKS(PEER_DELAY_SECONDS * 1000));
             if (event.type == PEER_EVENT_CONNECTED) {
                 wl->callbacks.on_peer_connected(wl->context, event.net, event.mask);
             } else {
@@ -160,8 +162,3 @@ wireless_t *node_get_wireless_instance(void){
 siblings_t *node_get_siblings_instance(void){
     return sb;
 }
-
-
-
-
-
