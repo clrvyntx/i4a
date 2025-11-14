@@ -244,20 +244,20 @@ bool node_is_device_center_root(void){
 
 bool node_broadcast_to_siblings(const uint8_t *msg, uint16_t len) {
   for (int i = 0; i < MAX_RETRIES; i++) {
-    vTaskDelay(pdMS_TO_TICKS(RETRY_DELAY_MS));
     if (broadcast_to_siblings(msg, len)) {
       return true;
     }
+    vTaskDelay(pdMS_TO_TICKS(RETRY_DELAY_MS));
   }
   return false;
 }
 
 bool node_send_wireless_message(const uint8_t *msg, uint16_t len) {
   for (int i = 0; i < MAX_RETRIES; i++) {
-    vTaskDelay(pdMS_TO_TICKS(RETRY_DELAY_MS));
     if (device_send_wireless_message(node_ptr->node_device_ptr, msg, len)) {
       return true;
     }
+    vTaskDelay(pdMS_TO_TICKS(RETRY_DELAY_MS));
   }
   return false;
 }
@@ -277,4 +277,5 @@ esp_netif_t *node_get_wifi_netif(void) {
 esp_netif_t *node_get_spi_netif(void) {
   return get_ring_link_tx_netif();
 }
+
 
