@@ -7,8 +7,5 @@ menu "Internet for all: Ring Link Lowlevel Configuration"
     config RING_LINK_LOWLEVEL_IMPL_SPI
         bool "SPI"
 
-    config RING_LINK_LOWLEVEL_IMPL_PHYSIM
-        bool "PHYSIM"
-
     endchoice
 endmenu
