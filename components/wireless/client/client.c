@@ -128,7 +128,7 @@ static void tcp_client_task(void *pvParameters) {
 void client_open() {
     if (!sta_is_up) {
         sta_is_up = true;
-        xTaskCreatePinnedToCore(tcp_client_task, "tcp_client", 4096, NULL, (tskIDLE_PRIORITY + 2), NULL, 0);
+        xTaskCreatePinnedToCore(tcp_client_task, "tcp_client", 4096, NULL, (tskIDLE_PRIORITY + 2), NULL, 1);
         ESP_LOGI(LOGGING_TAG, "Client started");
     } else {
         ESP_LOGW(LOGGING_TAG, "Client is already running");
@@ -163,6 +163,7 @@ bool client_send_message(const uint8_t *msg, uint16_t len) {
         return false;
     }
 }
+
 
 
 
