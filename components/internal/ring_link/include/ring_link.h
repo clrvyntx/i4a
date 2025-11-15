@@ -8,7 +8,7 @@
 extern "C" {
 #endif
 
-#define RING_LINK_MEM_TASK 4096
+#define RING_LINK_MEM_TASK 16384
 
 esp_err_t ring_link_init(void);
 
@@ -16,5 +16,4 @@ esp_err_t ring_link_init(void);
 #ifdef __cplusplus
 }
 #endif
-
 

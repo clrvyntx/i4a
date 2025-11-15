@@ -1,5 +1,4 @@
 #include "ring_link_internal.h"
-#include "callbacks.h"
 
 static const char* TAG = "==> ring_link_internal";
 static QueueHandle_t ring_link_internal_queue = NULL;
@@ -67,6 +66,6 @@ esp_err_t ring_link_internal_init(QueueHandle_t **queue)
 
 esp_err_t ring_link_internal_process(ring_link_payload_t *p)
 {
-    node_on_sibling_message(p->buffer, p->len);
+    ESP_LOGD(TAG, "call on_sibling_message(%s, %i)\n", p->buffer, p->len);
     return ESP_OK;
 }
