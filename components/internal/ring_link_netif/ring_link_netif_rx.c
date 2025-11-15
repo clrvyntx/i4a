@@ -1,4 +1,5 @@
 #include "ring_link_netif_rx.h"
+#include "esp_timer.h"
 
 static const char* TAG = "==> ring_link_netif_rx";
 
@@ -6,6 +7,35 @@ ESP_EVENT_DEFINE_BASE(RING_LINK_RX_EVENT);
 
 static esp_netif_t *ring_link_rx_netif = NULL;
 static ring_link_payload_id_t s_id_counter_rx = 0;
+
+#define RX_RATE_LIMIT_BYTES_PER_SEC 250000      // 2 Mbps
+#define RX_BUCKET_MAX               4096        // burst allowance
+
+static int rx_bucket = RX_BUCKET_MAX;
+static int64_t rx_last_refill_us = 0;
+
+static inline void rx_rate_limit_refill(void)
+{
+    int64_t now = esp_timer_get_time();
+    int64_t delta = now - rx_last_refill_us;
+    if (delta <= 0) return;
+
+    int add = (delta * RX_RATE_LIMIT_BYTES_PER_SEC) / 1000000;
+    rx_bucket += add;
+    if (rx_bucket > RX_BUCKET_MAX) rx_bucket = RX_BUCKET_MAX;
+
+    rx_last_refill_us = now;
+}
+
+static inline bool rx_rate_limit_allow(int bytes)
+{
+    rx_rate_limit_refill();
+
+    if (bytes > rx_bucket) return false;
+
+    rx_bucket -= bytes;
+    return true;
+}
 
 static const struct esp_netif_netstack_config netif_netstack_config = {
     .lwip = {
@@ -43,6 +73,10 @@ esp_err_t ring_link_rx_netif_receive(ring_link_payload_t *p)
         return ESP_OK;
     }
 
+    if (!rx_rate_limit_allow(p->len)) {
+        return ESP_OK;
+    }
+
     ip_header = (struct ip_hdr *)p->buffer;
 
     if (!((IPH_V(ip_header) == 4) || (IPH_V(ip_header) == 6))) {
@@ -53,7 +87,7 @@ esp_err_t ring_link_rx_netif_receive(ring_link_payload_t *p)
     u16_t iphdr_len = lwip_ntohs(IPH_LEN(ip_header));
 
     if (iphdr_len > p->len) {
-        ESP_LOGW(TAG, "Payload size (%d) is smaller than IP length (%d). Discarding packet.", p->len, iphdr_len);
+        ESP_LOGW(TAG, "Payload size (%d) < IP length (%d). Dropping.", p->len, iphdr_len);
         return ESP_OK;
     }
 
@@ -72,10 +106,10 @@ esp_err_t ring_link_rx_netif_receive(ring_link_payload_t *p)
     error = esp_netif_receive(ring_link_rx_netif, q, q->tot_len, NULL);
     if (error != ESP_OK) {
         ESP_LOGW(TAG, "esp_netif_receive failed: %d", error);
-        return error;
+        pbuf_free(q);
     }
 
-    return ESP_OK;
+    return error;
 }
 
 static err_t output_function(struct netif *netif, struct pbuf *p, const ip4_addr_t *ipaddr)
@@ -95,14 +129,16 @@ static err_t linkoutput_function(struct netif *netif, struct pbuf *p)
     esp_err_t ret = ESP_FAIL;
 
     if (!esp_netif) {
-        LWIP_DEBUGF(NETIF_DEBUG, ("corresponding esp-netif is NULL: netif=%p pbuf=%p len=%d\n", netif, p, p->len));
+        LWIP_DEBUGF(NETIF_DEBUG,
+                    ("esp-netif is NULL: netif=%p pbuf=%p len=%d\n",
+                     netif, p, p->len));
         return ERR_IF;
     }
 
     if (q->next == NULL) {
         ret = esp_netif_transmit(esp_netif, q->payload, q->len);
     } else {
-        ESP_LOGE(TAG, "low_level_output: pbuf is a list, application may have bug");
+        ESP_LOGE(TAG, "linkoutput: pbuf is a chain, unexpected.");
         q = pbuf_alloc(PBUF_RAW_TX, p->tot_len, PBUF_RAM);
         if (!q) return ERR_MEM;
         pbuf_copy(q, p);
@@ -110,7 +146,7 @@ static err_t linkoutput_function(struct netif *netif, struct pbuf *p)
         pbuf_free(q);
     }
 
-    if (likely(ret == ESP_OK)) return ERR_OK;
+    if (ret == ESP_OK) return ERR_OK;
     if (ret == ESP_ERR_NO_MEM) return ERR_MEM;
     return ERR_IF;
 }
@@ -151,7 +187,7 @@ esp_netif_recv_ret_t ring_link_rx_netstack_lwip_input_fn(void *h, void *buffer, 
 
 static esp_err_t ring_link_rx_driver_transmit(void *h, void *buffer, size_t len)
 {
-    ESP_LOGW(TAG, "This netif should not transmit but ring_link_rx_driver_transmit was called");
+    ESP_LOGW(TAG, "This netif should not transmit but was called");
     return ESP_OK;
 }
 
@@ -160,6 +196,7 @@ static esp_err_t ring_link_rx_driver_post_attach(esp_netif_t * esp_netif, void *
     ESP_LOGI(TAG, "Calling esp_netif_ring_link_post_attach_start");
     ring_link_netif_driver_t driver = (ring_link_netif_driver_t) args;
     driver->base.netif = esp_netif;
+
     esp_netif_driver_ifconfig_t driver_ifconfig = {
         .handle = driver,
         .transmit = ring_link_rx_driver_transmit,
@@ -191,11 +228,29 @@ static void ring_link_rx_default_action_start(void *arg, esp_event_base_t base, 
 esp_err_t ring_link_rx_netif_init(void)
 {
     ESP_LOGI(TAG, "Calling ring_link_rx_netif_init");
+
     ring_link_rx_netif = ring_link_netif_new(&netif_config);
 
-    ESP_ERROR_CHECK(ring_link_netif_esp_netif_attach(ring_link_rx_netif, ring_link_rx_driver_post_attach));
+    ESP_ERROR_CHECK(ring_link_netif_esp_netif_attach(
+        ring_link_rx_netif,
+        ring_link_rx_driver_post_attach
+    ));
 
-    ESP_ERROR_CHECK(esp_event_handler_instance_register(RING_LINK_RX_EVENT, RING_LINK_EVENT_START, ring_link_rx_default_action_start, NULL, NULL));
-    ESP_ERROR_CHECK(esp_event_post(RING_LINK_RX_EVENT, RING_LINK_EVENT_START, NULL, 0, portMAX_DELAY));
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(
+        RING_LINK_RX_EVENT,
+        RING_LINK_EVENT_START,
+        ring_link_rx_default_action_start,
+        NULL,
+        NULL
+    ));
+
+    ESP_ERROR_CHECK(esp_event_post(
+        RING_LINK_RX_EVENT,
+        RING_LINK_EVENT_START,
+        NULL,
+        0,
+        portMAX_DELAY
+    ));
+
     return ESP_OK;
 }
