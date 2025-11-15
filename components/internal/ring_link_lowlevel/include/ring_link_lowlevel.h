@@ -16,7 +16,7 @@ extern "C" {
 #endif
 
 
-#define RING_LINK_READ_MEM_TASK 16384 * 2
+#define RING_LINK_READ_MEM_TASK 4096
 #define RING_LINK_READ_QUEUE_SIZE 40
 
 esp_err_t ring_link_lowlevel_init(QueueHandle_t **queue);
@@ -30,4 +30,5 @@ esp_err_t ring_link_lowlevel_free_rx_buffer(void *p);
 #ifdef __cplusplus
 }
 #endif
+
 
