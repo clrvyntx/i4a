@@ -22,7 +22,7 @@
 #define AP_STA_DELAY_SECONDS 1
 
 #define MAX_RETRIES 5
-#define RETRY_DELAY_MS 100
+#define RETRY_DELAY_MS 500
 
 #define BRIDGE_NETWORK  0xC0A80300  // 192.168.3.0
 #define BRIDGE_MASK 0xFFFFFFFC  // /30
@@ -247,7 +247,7 @@ bool node_broadcast_to_siblings(const uint8_t *msg, uint16_t len) {
     if (broadcast_to_siblings(msg, len)) {
       return true;
     }
-    vTaskDelay(pdMS_TO_TICKS(RETRY_DELAY_MS * (1 << i)));
+    vTaskDelay(pdMS_TO_TICKS(RETRY_DELAY_MS));
   }
   return false;
 }
@@ -257,7 +257,7 @@ bool node_send_wireless_message(const uint8_t *msg, uint16_t len) {
     if (device_send_wireless_message(node_ptr->node_device_ptr, msg, len)) {
       return true;
     }
-    vTaskDelay(pdMS_TO_TICKS(RETRY_DELAY_MS * (1 << i)));
+    vTaskDelay(pdMS_TO_TICKS(RETRY_DELAY_MS));
   }
   return false;
 }
@@ -277,6 +277,7 @@ esp_netif_t *node_get_wifi_netif(void) {
 esp_netif_t *node_get_spi_netif(void) {
   return get_ring_link_tx_netif();
 }
+
 
 
 
