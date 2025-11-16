@@ -95,7 +95,7 @@ esp_err_t ring_link_rx_netif_receive(ring_link_payload_t *p)
     }
 
     // Allocate pbuf with required size
-    q = pbuf_alloc(PBUF_TRANSPORT, iphdr_len, PBUF_RAM);
+    q = pbuf_alloc(PBUF_TRANSPORT, iphdr_len, PBUF_POOL);
     if (q == NULL) {
         ESP_LOGW(TAG, "Failed to allocate pbuf.");
         return ESP_FAIL;
