@@ -103,6 +103,14 @@ static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_
 
   if (event_base == WIFI_EVENT) {
     switch (event_id) {
+      case WIFI_EVENT_STA_CONNECTED:
+        if (!stationPtr->is_apsta) {
+            cm_provide_to_siblings(stationPtr->wifi_ap_found.primary);
+        }
+        client_open();
+        stationPtr->is_fully_connected = true;
+        break;
+      
       case WIFI_EVENT_STA_DISCONNECTED:
         if(stationPtr->is_fully_connected){
           client_close();
@@ -119,19 +127,6 @@ static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_
           stationPtr->state = s_inactive;
           stationPtr->is_fully_connected = false;
         }
-        break;
-    }
-  }
-
-  if (event_base == IP_EVENT) {
-    switch (event_id) {
-      case IP_EVENT_STA_GOT_IP:
-        if(!stationPtr->is_apsta) {
-          cm_provide_to_siblings(stationPtr->wifi_ap_found.primary);
-        }
-        client_open();
-        stationPtr->is_fully_connected = true;
-        s_retry_num = 0;
         break;
     }
   }
@@ -203,4 +198,5 @@ void transform_wifi_ap_record_to_config(StationPtr stationPtr) {
   memcpy(stationPtr->wifi_config.sta.password, stationPtr->password, sizeof(stationPtr->password));
   stationPtr->wifi_config.sta.bssid_set = true;
 }
+
 
