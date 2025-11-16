@@ -107,8 +107,12 @@ static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_
         if (!stationPtr->is_apsta) {
             cm_provide_to_siblings(stationPtr->wifi_ap_found.primary);
         }
-        client_open();
-        stationPtr->is_fully_connected = true;
+
+        if(!stationPtr->is_fully_connected){
+          client_open();
+          stationPtr->is_fully_connected = true;
+        }
+
         break;
       
       case WIFI_EVENT_STA_DISCONNECTED:
@@ -198,5 +202,6 @@ void transform_wifi_ap_record_to_config(StationPtr stationPtr) {
   memcpy(stationPtr->wifi_config.sta.password, stationPtr->password, sizeof(stationPtr->password));
   stationPtr->wifi_config.sta.bssid_set = true;
 }
+
 
 
