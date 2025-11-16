@@ -22,7 +22,7 @@
 #define AP_STA_DELAY_SECONDS 1
 
 #define MAX_RETRIES 5
-#define RETRY_DELAY_MS 500
+#define RETRY_DELAY_MS 100
 
 #define BRIDGE_NETWORK  0xC0A80300  // 192.168.3.0
 #define BRIDGE_MASK 0xFFFFFFFC  // /30
@@ -137,13 +137,13 @@ void node_setup(void){
     msg.is_center_root = (uint8_t)node_ptr->node_device_is_center_root;
 
     while (!node_broadcast_to_siblings((uint8_t *)&msg, sizeof(msg))) {
-      vTaskDelay(pdMS_TO_TICKS(100));
+      vTaskDelay(pdMS_TO_TICKS(RETRY_DELAY_MS));
     }
     ESP_LOGI(TAG, "Center device UUID broadcasted: %s, Center root: %d", msg.uuid, msg.is_center_root);
 
   } else {
     while(strlen(node_ptr->node_device_uuid) == 0){
-      vTaskDelay(pdMS_TO_TICKS(100));
+      vTaskDelay(pdMS_TO_TICKS(RETRY_DELAY_MS));
     }
     ESP_LOGI(TAG, "Peripheral received UUID: %s, Center root: %d", node_ptr->node_device_uuid, node_ptr->node_device_is_center_root);
   }
@@ -244,20 +244,20 @@ bool node_is_device_center_root(void){
 
 bool node_broadcast_to_siblings(const uint8_t *msg, uint16_t len) {
   for (int i = 0; i < MAX_RETRIES; i++) {
-    vTaskDelay(pdMS_TO_TICKS(RETRY_DELAY_MS));
     if (broadcast_to_siblings(msg, len)) {
       return true;
     }
+    vTaskDelay(pdMS_TO_TICKS(RETRY_DELAY_MS * (1 << i)));
   }
   return false;
 }
 
 bool node_send_wireless_message(const uint8_t *msg, uint16_t len) {
   for (int i = 0; i < MAX_RETRIES; i++) {
-    vTaskDelay(pdMS_TO_TICKS(RETRY_DELAY_MS));
     if (device_send_wireless_message(node_ptr->node_device_ptr, msg, len)) {
       return true;
     }
+    vTaskDelay(pdMS_TO_TICKS(RETRY_DELAY_MS * (1 << i)));
   }
   return false;
 }
@@ -277,6 +277,7 @@ esp_netif_t *node_get_wifi_netif(void) {
 esp_netif_t *node_get_spi_netif(void) {
   return get_ring_link_tx_netif();
 }
+
 
 
 
