@@ -102,7 +102,7 @@ struct netif *routing_hook_home(uint32_t src_ip, uint32_t dst_ip) {
 }
 
 struct netif *routing_hook_default(uint32_t src_ip, uint32_t dst_ip) {
-    return (struct netif *)esp_netif_get_netif_impl(node_get_spi_netif());
+    return NULL;
 }
 
 static routing_hook_func_t selected_routing_hook = routing_hook_default;
@@ -175,5 +175,6 @@ void app_main(void) {
     );
 
 }
+
 
 
