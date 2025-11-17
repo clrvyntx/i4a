@@ -6,6 +6,7 @@
 #include "channel_manager/channel_manager.h"
 #include "node.h"
 
+#define ROOT_UUID "000000000000"
 #define MAX_DEVICES_PER_HOUSE 4
 
 #define NODE_NAME_PREFIX "I4A"
@@ -40,6 +41,11 @@ typedef struct node {
   uint32_t node_device_mask;
 } node_t;
 
+typedef struct {
+  char uuid[UUID_LENGTH];
+  uint8_t is_center_root;
+} center_broadcast_msg_t;
+
 static node_t node = {
   .node_device_subnet = DEFAULT_SUBNET,
   .node_device_mask = DEFAULT_MASK,
@@ -67,6 +73,24 @@ static void generate_uuid_from_mac(char *uuid_out, size_t len) {
            mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 }
 
+static void read_uuid(void *ctx, const uint8_t *data, uint16_t len) {
+  if (strlen(node_ptr->node_device_uuid) != 0) {
+    return;
+  }
+
+  if (len != sizeof(center_broadcast_msg_t)) {
+    ESP_LOGW(TAG, "Received unexpected message length: %d", len);
+    return;
+  }
+
+  const center_broadcast_msg_t *msg = (const center_broadcast_msg_t *)data;
+
+  memcpy(node_ptr->node_device_uuid, msg->uuid, sizeof(msg->uuid));
+  node_ptr->node_device_uuid[sizeof(msg->uuid) - 1] = '\0';
+
+  node_ptr->node_device_is_center_root = (bool)msg->is_center_root;
+}
+
 static void do_nothing_peer(void *ctx, uint32_t net, uint32_t mask) {
 }
 
@@ -84,7 +108,7 @@ void node_setup(void){
   ESP_ERROR_CHECK(node_start_event_tasks());
 
   node_register_wireless_callbacks(default_callbacks, NULL);
-  node_register_siblings_callbacks(do_nothing_message, NULL);
+  node_register_siblings_callbacks(read_uuid, NULL);
 
   config_setup();
   config_print();
@@ -97,9 +121,34 @@ void node_setup(void){
 
   ESP_ERROR_CHECK(device_wifi_init());
   ESP_ERROR_CHECK(ring_link_init());
-  
-  node_ptr->node_device_is_center_root = config_mode_is(CONFIG_MODE_ROOT);
-  generate_uuid_from_mac(node_ptr->node_device_uuid, sizeof(node_ptr->node_device_uuid));
+
+  if(node_ptr->node_device_orientation == NODE_DEVICE_ORIENTATION_CENTER){
+    node_ptr->node_device_is_center_root = config_mode_is(CONFIG_MODE_ROOT);
+
+    if(node_ptr->node_device_is_center_root){
+      strncpy(node_ptr->node_device_uuid, ROOT_UUID, UUID_LENGTH);
+      node_ptr->node_device_uuid[UUID_LENGTH - 1] = '\0';
+    } else {
+      generate_uuid_from_mac(node_ptr->node_device_uuid, sizeof(node_ptr->node_device_uuid));
+    }
+
+    center_broadcast_msg_t msg;
+    memcpy(msg.uuid, node_ptr->node_device_uuid, sizeof(msg.uuid));
+    msg.is_center_root = (uint8_t)node_ptr->node_device_is_center_root;
+
+    while (!node_broadcast_to_siblings((uint8_t *)&msg, sizeof(msg))) {
+      vTaskDelay(pdMS_TO_TICKS(RETRY_DELAY_MS));
+    }
+    ESP_LOGI(TAG, "Center device UUID broadcasted: %s, Center root: %d", msg.uuid, msg.is_center_root);
+
+  } else {
+    while(strlen(node_ptr->node_device_uuid) == 0){
+      vTaskDelay(pdMS_TO_TICKS(RETRY_DELAY_MS));
+    }
+    ESP_LOGI(TAG, "Peripheral received UUID: %s, Center root: %d", node_ptr->node_device_uuid, node_ptr->node_device_is_center_root);
+  }
+
+  node_register_siblings_callbacks(do_nothing_message, NULL);
 
 }
 
@@ -172,7 +221,7 @@ void node_set_as_ap(uint32_t network, uint32_t mask){
   // Wait in sequence to avoid current peaks while AP starts up
   vTaskDelay(pdMS_TO_TICKS(node_ptr->node_device_orientation * AP_STA_DELAY_SECONDS * 1000));
 
-  if (node_ptr->node_device_orientation == NODE_DEVICE_ORIENTATION_CENTER){
+  if (node_ptr->node_device_orientation == NODE_DEVICE_ORIENTATION_CENTER || node_ptr->node_device_is_center_root){
     device_init(node_ptr->node_device_ptr, node_ptr->node_device_uuid, node_ptr->node_device_orientation, wifi_network_prefix, wifi_network_password, ap_channel_to_emit, ap_max_sta_connections, (uint8_t)node_ptr->node_device_is_center_root, AP);
     device_set_network_ap(node_ptr->node_device_ptr, network_cidr, network_gateway, network_mask);
     device_start_ap(node_ptr->node_device_ptr);
