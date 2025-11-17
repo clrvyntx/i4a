@@ -3,6 +3,7 @@
 #include "ring_link.h"
 #include "esp_check.h"
 #include "callbacks.h"
+#include "internal_messages.h"
 #include "channel_manager/channel_manager.h"
 #include "node.h"
 
@@ -115,6 +116,7 @@ void node_setup(void){
 
   node_ptr->node_device_ptr = &node_device;
   node_ptr->node_device_orientation = node_get_config_orientation();
+  node_setup_internal_messages(node_ptr->node_device_orientation);
 
   // Wait in sequence to avoid current peaks while node calibrates
   vTaskDelay(pdMS_TO_TICKS(node_ptr->node_device_orientation * CALIBRATION_DELAY_SECONDS * 1000));
