@@ -9,7 +9,7 @@
 #include "sync/sync.h"
 #include "routing_config/routing_config.h"
 #include "routing/routing.h"
-#include "channel_manager/channel_manager.h"
+#include "internal_messages.h"
 #include "callbacks.h"
 #include "node.h"
 
@@ -18,7 +18,6 @@
 
 static const char *TAG = "routing_hook";
 
-static ring_share_t rs = { 0 };
 static sync_t _sync = { 0 };
 static shared_state_t ss = { 0 };
 static routing_t rt = { 0 };
@@ -127,14 +126,14 @@ void app_main(void) {
 
     siblings_t *sb = node_get_siblings_instance();
     wireless_t *wl = node_get_wireless_instance();
+    ring_share_t *rs = node_get_rs_instance();
     node_device_orientation_t orientation = node_get_device_orientation();
     bool is_center_root = node_is_device_center_root();
 
-    rs_init(&rs, sb);
-    sync_init(&_sync, &rs, orientation);
-    ss_init(&ss, &_sync, &rs, orientation);
-    cm_init(&rs, orientation);
-    rt_create(&rt, &rs, wl, &_sync, &ss, orientation);
+    rs_init(rs, sb);
+    sync_init(&_sync, rs, orientation);
+    ss_init(&ss, &_sync, rs, orientation);
+    rt_create(&rt, rs, wl, &_sync, &ss, orientation);
 
     if(orientation == NODE_DEVICE_ORIENTATION_CENTER){
         if(is_center_root){
@@ -175,6 +174,3 @@ void app_main(void) {
     );
 
 }
-
-
-
