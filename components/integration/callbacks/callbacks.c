@@ -14,6 +14,12 @@
 
 static const char *TAG = "callbacks";
 
+static void do_nothing_peer(void *ctx, uint32_t net, uint32_t mask) {
+}
+
+static void do_nothing_message(void *ctx, const uint8_t *data, uint16_t len) {
+}
+
 typedef struct message {
     uint8_t data[MAX_MESSAGE_SIZE];
     uint16_t length;
@@ -34,8 +40,19 @@ static QueueHandle_t peer_event_queue = NULL;
 static QueueHandle_t peer_message_queue = NULL;
 static QueueHandle_t sibling_message_queue = NULL;
 
-static wireless_t wireless = {0};
-static siblings_t siblings = {0};
+static wireless_t wireless = {
+    .callbacks = {
+        .on_peer_connected = do_nothing_peer,
+        .on_peer_lost = do_nothing_peer,
+        .on_peer_message = do_nothing_message
+    },
+    .context = NULL
+};
+
+static siblings_t siblings = {
+    .callback = do_nothing_message,
+    .context = NULL
+};
 
 static wireless_t *wl = &wireless;
 static siblings_t *sb = &siblings;
