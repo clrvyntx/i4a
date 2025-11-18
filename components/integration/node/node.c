@@ -7,7 +7,6 @@
 #include "channel_manager/channel_manager.h"
 #include "node.h"
 
-#define ROOT_UUID "000000000000"
 #define MAX_DEVICES_PER_HOUSE 4
 
 #define NODE_NAME_PREFIX "I4A"
@@ -254,4 +253,5 @@ esp_netif_t *node_get_wifi_netif(void) {
 esp_netif_t *node_get_spi_netif(void) {
   return get_ring_link_tx_netif();
 }
+
 
