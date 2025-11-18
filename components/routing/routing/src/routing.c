@@ -12,6 +12,8 @@
 #include "sync/sync.h"
 #include "wireless/wireless.h"
 
+#define NODE_STARTUP_DELAY_SECONDS 10
+
 static void on_sibling_message(void *ctx, const uint8_t *raw_event, uint16_t len) {
     routing_t *self = ctx;
     rt_internal_queue_t *queue = &self->internal_queue;
@@ -219,6 +221,9 @@ void rt_on_start(routing_t *self) {
         self->deps.rs, RS_ROUTING, (ring_callback_t){ .callback = on_sibling_message, .context = self }
     );
 
+    // Wait for all devices of the node to setup
+    os_delay_ms(NODE_STARTUP_DELAY_SECONDS * 1000);
+
     // Request the first critical section
     sync_request_critical_section(self->deps.sync, RS_ROUTING);
 }
@@ -243,4 +248,5 @@ void rt_on_tick(routing_t *self, uint32_t dt_ms) {
 void rt_destroy(routing_t *self) {
     mutex_destroy(self->node_state.m_lock);
 }
+
 
