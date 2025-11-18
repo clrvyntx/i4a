@@ -5,6 +5,7 @@
 #include "lwip/ip_addr.h"
 #include "client.h"
 #include "channel_manager/channel_manager.h"
+#include "traffic.h"
 #include "station.h"
 
 #define STA_BRIDGE_NETWORK  0xC0A80300  // 192.168.3.0
@@ -105,7 +106,11 @@ static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_
     switch (event_id) {
       case WIFI_EVENT_STA_CONNECTED:
         if (!stationPtr->is_apsta) {
-          cm_provide_to_siblings(stationPtr->wifi_ap_found.primary);
+          int retry = 0;
+          while(!cm_provide_to_siblings(stationPtr->wifi_ap_found.primary) && retry < MAX_RETRIES){
+            retry++;
+            vTaskDelay(pdMS_TO_TICKS(100));
+          }
         }
 
         if(!stationPtr->is_fully_connected){
@@ -154,6 +159,7 @@ void station_connect(StationPtr stationPtr) {
   ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &stationPtr->wifi_config));
   ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, stationPtr));
   ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, stationPtr));
+  node_traffic_start(stationPtr->netif);
   ESP_ERROR_CHECK(esp_wifi_connect());
 }
 
@@ -175,6 +181,7 @@ void station_restart(StationPtr stationPtr) {
 void station_destroy_netif(StationPtr stationPtr) {
   if (stationPtr->netif) {
     ESP_LOGW(LOGGING_TAG, "Destroying STA netif...");
+    node_traffic_stop(stationPtr->netif);
     esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler);
     esp_event_handler_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler);
     esp_netif_destroy_default_wifi(stationPtr->netif);

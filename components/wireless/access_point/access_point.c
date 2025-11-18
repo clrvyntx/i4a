@@ -5,6 +5,7 @@
 #include "lwip/esp_netif_net_stack.h"
 #include "esp_netif_net_stack.h"
 #include "server.h"
+#include "traffic.h"
 #include "dhcpserver/dhcpserver.h"
 #include "dhcpserver/dhcpserver_options.h"
 #include "access_point.h"
@@ -33,6 +34,8 @@ void ap_init(AccessPointPtr ap, uint8_t wifi_channel, const char *wifi_ssid, con
   ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &ap->wifi_config));
   // Register the event handler
   ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &ap_event_handler, ap));
+  // Start traffic monitoring
+  node_traffic_start(ap->netif);
   ap->initialized = true;
   ap->is_center = is_center;
   ap->server_is_up = false;
@@ -125,6 +128,7 @@ void ap_restart(AccessPointPtr ap) {
 void ap_destroy_netif(AccessPointPtr ap) {
   if (ap->netif) {
     ESP_LOGW(LOGGING_TAG, "Destroying AP netif...");
+    node_traffic_stop(ap->netif);
     esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &ap_event_handler);
     esp_netif_destroy_default_wifi(ap->netif);
     ap->netif = NULL;  // Prevent reuse or double free
