@@ -6,6 +6,7 @@
 #include "internal_messages.h"
 #include "channel_manager/channel_manager.h"
 #include "reset_manager/reset_manager.h"
+#include "traffic.h"
 #include "node.h"
 
 #define MAX_DEVICES_PER_HOUSE 4
@@ -103,7 +104,7 @@ void node_setup(void){
 
   node_ptr->node_device_uuid = rm_get_uuid();
   node_ptr->node_device_is_center_root = rm_is_root();
-
+  node_traffic_init();
 }
 
 void node_set_as_sta(){
