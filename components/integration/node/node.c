@@ -109,7 +109,7 @@ void node_setup(void){
   ESP_ERROR_CHECK(node_start_event_tasks());
 
   node_register_wireless_callbacks(default_callbacks, NULL);
-  node_register_siblings_callbacks(read_uuid, NULL);
+  node_register_siblings_callbacks(do_nothing_message, NULL);
 
   config_setup();
   config_print();
@@ -124,33 +124,8 @@ void node_setup(void){
   ESP_ERROR_CHECK(device_wifi_init());
   ESP_ERROR_CHECK(ring_link_init());
 
-  if(node_ptr->node_device_orientation == NODE_DEVICE_ORIENTATION_CENTER){
-    node_ptr->node_device_is_center_root = config_mode_is(CONFIG_MODE_ROOT);
-
-    if(node_ptr->node_device_is_center_root){
-      strncpy(node_ptr->node_device_uuid, ROOT_UUID, UUID_LENGTH);
-      node_ptr->node_device_uuid[UUID_LENGTH - 1] = '\0';
-    } else {
-      generate_uuid_from_mac(node_ptr->node_device_uuid, sizeof(node_ptr->node_device_uuid));
-    }
-
-    center_broadcast_msg_t msg;
-    memcpy(msg.uuid, node_ptr->node_device_uuid, sizeof(msg.uuid));
-    msg.is_center_root = (uint8_t)node_ptr->node_device_is_center_root;
-
-    while (!node_broadcast_to_siblings((uint8_t *)&msg, sizeof(msg))) {
-      vTaskDelay(pdMS_TO_TICKS(RETRY_DELAY_MS));
-    }
-    ESP_LOGI(TAG, "Center device UUID broadcasted: %s, Center root: %d", msg.uuid, msg.is_center_root);
-
-  } else {
-    while(strlen(node_ptr->node_device_uuid) == 0){
-      vTaskDelay(pdMS_TO_TICKS(RETRY_DELAY_MS));
-    }
-    ESP_LOGI(TAG, "Peripheral received UUID: %s, Center root: %d", node_ptr->node_device_uuid, node_ptr->node_device_is_center_root);
-  }
-
-  node_register_siblings_callbacks(do_nothing_message, NULL);
+  node_ptr->node_device_is_center_root = config_mode_is(CONFIG_MODE_ROOT);
+  generate_uuid_from_mac(node_ptr->node_device_uuid, sizeof(node_ptr->node_device_uuid));
 
 }
 
@@ -223,7 +198,7 @@ void node_set_as_ap(uint32_t network, uint32_t mask){
   // Wait in sequence to avoid current peaks while AP starts up
   vTaskDelay(pdMS_TO_TICKS(node_ptr->node_device_orientation * AP_STA_DELAY_SECONDS * 1000));
 
-  if (node_ptr->node_device_orientation == NODE_DEVICE_ORIENTATION_CENTER || node_ptr->node_device_is_center_root){
+  if (node_ptr->node_device_orientation == NODE_DEVICE_ORIENTATION_CENTER){
     device_init(node_ptr->node_device_ptr, node_ptr->node_device_uuid, node_ptr->node_device_orientation, wifi_network_prefix, wifi_network_password, ap_channel_to_emit, ap_max_sta_connections, (uint8_t)node_ptr->node_device_is_center_root, AP);
     device_set_network_ap(node_ptr->node_device_ptr, network_cidr, network_gateway, network_mask);
     device_start_ap(node_ptr->node_device_ptr);
@@ -279,3 +254,4 @@ esp_netif_t *node_get_wifi_netif(void) {
 esp_netif_t *node_get_spi_netif(void) {
   return get_ring_link_tx_netif();
 }
+
