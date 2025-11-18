@@ -1,176 +1,140 @@
+#include "reset_manager/reset_manager.h"
+#include "esp_timer.h"
 #include "esp_log.h"
-#include <inttypes.h>
-#include "lwip/esp_netif_net_stack.h"
-#include "esp_netif_net_stack.h"
-#include "wireless/wireless.h"
-#include "siblings/siblings.h"
-#include "ring_share/ring_share.h"
-#include "shared_state/shared_state.h"
-#include "sync/sync.h"
-#include "routing_config/routing_config.h"
-#include "routing/routing.h"
-#include "internal_messages.h"
-#include "callbacks.h"
-#include "node.h"
+#include "esp_mac.h"
+#include "esp_system.h"
+#include <string.h>
 
-#define ROOT_NETWORK 0x0A000000  // 10.0.0.0
-#define ROOT_MASK 0xFF000000 // 255.0.0.0
+static const char *TAG = "reset_manager";
 
-static const char *TAG = "routing_hook";
+static reset_manager_t reset_manager = {0};
+static reset_manager_t *rm = &reset_manager;
 
-static sync_t _sync = { 0 };
-static shared_state_t ss = { 0 };
-static routing_t rt = { 0 };
+#define RESET_TIMEOUT_US 30000000 // 30 Seconds
 
-typedef struct netif *(*routing_hook_func_t)(uint32_t src_ip, uint32_t dst_ip);
+#define RM_OPCODE_RESET    0xA5
+#define RM_OPCODE_STARTUP  0xB6
 
-struct netif *routing_hook_root(uint32_t src_ip, uint32_t dst_ip);
-struct netif *routing_hook_forwarder(uint32_t src_ip, uint32_t dst_ip);
-struct netif *routing_hook_home(uint32_t src_ip, uint32_t dst_ip);
-struct netif *routing_hook_root_forwarder(uint32_t src_ip, uint32_t dst_ip);
-
-typedef enum routing_hook_type {
-    ROUTING_HOOK_ROOT,
-    ROUTING_HOOK_FORWARDER,
-    ROUTING_HOOK_HOME,
-    ROUTING_HOOK_ROOT_FORWARDER,
-    ROUTING_HOOK_COUNT
-} routing_hook_type_t;
-
-static routing_hook_func_t routing_hooks[ROUTING_HOOK_COUNT] = {
-    [ROUTING_HOOK_ROOT] = routing_hook_root,
-    [ROUTING_HOOK_FORWARDER] = routing_hook_forwarder,
-    [ROUTING_HOOK_HOME] = routing_hook_home,
-    [ROUTING_HOOK_ROOT_FORWARDER] = routing_hook_root_forwarder
-};
-
-// Root hook: route root subnet to SPI, everything else WiFi
-struct netif *routing_hook_root(uint32_t src_ip, uint32_t dst_ip) {
-
-    if(node_is_point_to_point_message(dst_ip)){
-        return (struct netif *)esp_netif_get_netif_impl(node_get_wifi_netif());
-    }
-
-    if(node_is_packet_for_this_subnet(dst_ip)){
-        return (struct netif *)esp_netif_get_netif_impl(node_get_spi_netif());
-    } else {
-        return (struct netif *)esp_netif_get_netif_impl(node_get_wifi_netif());
-    }
+static void rm_generate_uuid_from_mac(char *uuid_out, size_t len) {
+    uint8_t mac[6];
+    esp_read_mac(mac, ESP_MAC_WIFI_SOFTAP);
+    snprintf(uuid_out, len, "%02X%02X%02X%02X%02X%02X",
+             mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 }
 
-// Root forwarder hook: route own subnet to WiFi, everything else SPI
-struct netif *routing_hook_root_forwarder(uint32_t src_ip, uint32_t dst_ip) {
-    if(node_is_point_to_point_message(dst_ip)){
-        return (struct netif *)esp_netif_get_netif_impl(node_get_wifi_netif());
+static void rm_on_sibling_message(void *ctx, const uint8_t *msg, uint16_t len) {
+    if (len < 1) {
+        return;
     }
 
-    if(node_is_packet_for_this_subnet(dst_ip)){
-        return (struct netif *)esp_netif_get_netif_impl(node_get_wifi_netif());
-    } else {
-        return (struct netif *)esp_netif_get_netif_impl(node_get_spi_netif());
-    }
-}
+    switch (msg[0]) {
+        case RM_OPCODE_RESET:
+            if (!rm->is_up) {
+                rm->last_reset_time = esp_timer_get_time();
+                ESP_LOGI(TAG, "Reset signal received: still on setup, not resetting");
+                return;
+            } else {
+                ESP_LOGI(TAG, "Reset signal received: resetting device");
+                esp_restart();
+            }
 
-// Forwarder hook: route point-to-point messages via WiFi, else use routing table
-struct netif *routing_hook_forwarder(uint32_t src_ip, uint32_t dst_ip) {
-    if(node_is_point_to_point_message(dst_ip)){
-        return (struct netif *)esp_netif_get_netif_impl(node_get_wifi_netif());
-    }
+            break;
 
-    rt_routing_result_t routing_result = rt_do_route(&rt, src_ip, dst_ip);
+        case RM_OPCODE_STARTUP:
+            if (len != sizeof(rm_startup_packet_t)) {
+                ESP_LOGW(TAG, "Invalid startup message length: %d", len);
+                return;
+            } else {
+                const rm_startup_packet_t *startup = (const rm_startup_packet_t *)msg;
 
-    switch (routing_result) {
-        case ROUTE_WIFI:
-            return (struct netif *)esp_netif_get_netif_impl(node_get_wifi_netif());
+                strncpy(rm->uuid, startup->uuid, UUID_LENGTH);
+                rm->uuid[UUID_LENGTH - 1] = '\0';
+                rm->is_root = startup->is_root;
+                ESP_LOGI(TAG, "Startup message received: UUID=%s, is_root=%d", rm->uuid, rm->is_root);
 
-        case ROUTE_SPI:
-            return (struct netif *)esp_netif_get_netif_impl(node_get_spi_netif());
+                rm->is_up = true;
+            }
+            break;
 
         default:
-            return NULL;
+            ESP_LOGW(TAG, "Unknown message opcode: 0x%02X", msg[0]);
+            break;
     }
 }
 
-// Home hook: if message to home subnet, route via WiFi, else SPI
-struct netif *routing_hook_home(uint32_t src_ip, uint32_t dst_ip) {
-    if(node_is_packet_for_this_subnet(dst_ip)){
-        return (struct netif *)esp_netif_get_netif_impl(node_get_wifi_netif());
-    } else {
-        return (struct netif *)esp_netif_get_netif_impl(node_get_spi_netif());
-    }
-}
+// Initialize reset manager
+void rm_init(ring_share_t *rs) {
+    rm->rs = rs;
+    rm->is_up = false;
+    rm->is_root = false;
+    rm->last_reset_time = 0;
+    memset(rm->uuid, 0, sizeof(rm->uuid));
 
-struct netif *routing_hook_default(uint32_t src_ip, uint32_t dst_ip) {
-    return NULL;
-}
-
-static routing_hook_func_t selected_routing_hook = routing_hook_default;
-
-struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t *dest) {
-    uint32_t src_ip = lwip_ntohl(ip4_addr_get_u32(src));
-    uint32_t dst_ip = lwip_ntohl(ip4_addr_get_u32(dest));
-    return selected_routing_hook(src_ip, dst_ip);
-}
-
-void routing_task(void *pvParameters) {
-    routing_t *rt = (routing_t *)pvParameters;
-
-    while (true) {
-        vTaskDelay(pdMS_TO_TICKS(1000));
-        rt_on_tick(rt, 1000);
-    }
-}
-
-void app_main(void) {
-    node_setup();
-
-    siblings_t *sb = node_get_siblings_instance();
-    wireless_t *wl = node_get_wireless_instance();
-    ring_share_t *rs = node_get_rs_instance();
-    node_device_orientation_t orientation = node_get_device_orientation();
-    bool is_center_root = node_is_device_center_root();
-
-    rs_init(rs, sb);
-    sync_init(&_sync, rs, orientation);
-    ss_init(&ss, &_sync, rs, orientation);
-    rt_create(&rt, rs, wl, &_sync, &ss, orientation);
-
-    if(orientation == NODE_DEVICE_ORIENTATION_CENTER){
-        if(is_center_root){
-            selected_routing_hook = routing_hooks[ROUTING_HOOK_ROOT];
-            rt_init_root(&rt, ROOT_NETWORK, ROOT_MASK);
-        } else {
-            selected_routing_hook = routing_hooks[ROUTING_HOOK_HOME];
-            rt_init_home(&rt);
+    rs_register_component(
+        rm->rs,
+        RS_RESET_MANAGER,
+        (ring_callback_t){
+            .callback = rm_on_sibling_message,
+            .context = rm
         }
-    } else {
-        if(is_center_root){
-            selected_routing_hook = routing_hooks[ROUTING_HOOK_ROOT_FORWARDER];
-        } else {
-            selected_routing_hook = routing_hooks[ROUTING_HOOK_FORWARDER];
-        }
-        rt_init_forwarder(&rt);
-    }
-    
-    rt_on_start(&rt);
-    rt_on_tick(&rt, 1);
-
-    if(orientation == NODE_DEVICE_ORIENTATION_CENTER && is_center_root){
-        node_set_as_ap(ROOT_NETWORK, ROOT_MASK);
-    }
-
-    if(orientation == NODE_DEVICE_ORIENTATION_NORTH && !is_center_root){ // For testing, have a single one, in reality all non centers should be stations
-        node_set_as_sta();
-    }
-    
-    xTaskCreatePinnedToCore(
-        routing_task,
-        "routing_task",
-        4096,
-        &rt,
-        tskIDLE_PRIORITY + 2,
-        NULL,
-        0
     );
 
+    ESP_LOGI(TAG, "Reset manager initialized");
+}
+
+bool rm_broadcast_reset(void) {
+    if (!rm->rs) {
+        ESP_LOGW(TAG, "RESET broadcast skipped: manager not initialized");
+        return false;
+    }
+
+    rm->last_reset_time = esp_timer_get_time();
+    uint8_t opcode = RM_OPCODE_RESET;
+    return rs_broadcast(rm->rs, RS_RESET_MANAGER, &opcode, 1);
+}
+
+bool rm_broadcast_startup_info(bool is_root) {
+    if (!rm->rs) {
+        ESP_LOGW(TAG, "STARTUP broadcast skipped: manager not initialized");
+        return false;
+    }
+
+    rm_startup_packet_t packet;
+    packet.opcode = RM_OPCODE_STARTUP;
+    if(!is_root){
+        rm_generate_uuid_from_mac(packet.uuid, sizeof(packet.uuid));
+    } else {
+        strncpy(packet.uuid, "000000000000", sizeof(packet.uuid));
+    }
+
+    packet.is_root = is_root ? 1 : 0;
+
+    strncpy(rm->uuid, packet.uuid, UUID_LENGTH);
+    rm->is_root = is_root;
+
+    bool broadcast = rs_broadcast(rm->rs, RS_RESET_MANAGER, (uint8_t *)&packet, sizeof(packet));
+
+    if(broadcast) {
+        ESP_LOGI(TAG, "Startup message broadcasted: UUID=%s, is_root=%d", rm->uuid, rm->is_root);
+        rm->is_up = true;
+    }
+
+    return broadcast;
+}
+
+bool rm_should_device_reset(void){
+    int64_t current_time = esp_timer_get_time();
+    return ((current_time - rm->last_reset_time) > RESET_TIMEOUT_US);
+}
+
+bool rm_is_device_up(void) {
+    return rm->is_up;
+}
+
+bool rm_is_root(void){
+    return rm->is_root;
+}
+
+char *rm_get_uuid(void) {
+    return rm->uuid;
 }
