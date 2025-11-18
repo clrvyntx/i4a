@@ -10,7 +10,7 @@ static const char *TAG = "reset_manager";
 static reset_manager_t reset_manager = {0};
 static reset_manager_t *rm = &reset_manager;
 
-#define RESET_TIMEOUT_US 30000000 // 30 Seconds
+#define RESET_TIMEOUT_US 20000000 // 20 Seconds
 
 #define RM_OPCODE_RESET    0xA5
 #define RM_OPCODE_STARTUP  0xB6
