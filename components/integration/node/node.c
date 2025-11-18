@@ -5,6 +5,7 @@
 #include "callbacks.h"
 #include "internal_messages.h"
 #include "channel_manager/channel_manager.h"
+#include "reset_manager/reset_manager.h"
 #include "node.h"
 
 #define MAX_DEVICES_PER_HOUSE 4
@@ -17,7 +18,6 @@
 
 #define HOUSE_NETWORK_NAME "ComNetAR"
 
-#define UUID_LENGTH 13
 #define CALIBRATION_DELAY_SECONDS 2
 #define AP_STA_DELAY_SECONDS 1
 
@@ -34,17 +34,12 @@ static const char *TAG = "node";
 
 typedef struct node {
   DevicePtr node_device_ptr;
-  char node_device_uuid[UUID_LENGTH];
+  char *node_device_uuid;
   node_device_orientation_t node_device_orientation;
   bool node_device_is_center_root;
   uint32_t node_device_subnet;
   uint32_t node_device_mask;
 } node_t;
-
-typedef struct {
-  char uuid[UUID_LENGTH];
-  uint8_t is_center_root;
-} center_broadcast_msg_t;
 
 static node_t node = {
   .node_device_subnet = DEFAULT_SUBNET,
@@ -64,31 +59,6 @@ static node_device_orientation_t node_get_config_orientation(void){
   } else {
       return NODE_DEVICE_ORIENTATION_CENTER;
   }
-}
-
-static void generate_uuid_from_mac(char *uuid_out, size_t len) {
-  uint8_t mac[6];
-  esp_read_mac(mac, ESP_MAC_WIFI_SOFTAP);
-  snprintf(uuid_out, len, "%02X%02X%02X%02X%02X%02X",
-           mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-}
-
-static void read_uuid(void *ctx, const uint8_t *data, uint16_t len) {
-  if (strlen(node_ptr->node_device_uuid) != 0) {
-    return;
-  }
-
-  if (len != sizeof(center_broadcast_msg_t)) {
-    ESP_LOGW(TAG, "Received unexpected message length: %d", len);
-    return;
-  }
-
-  const center_broadcast_msg_t *msg = (const center_broadcast_msg_t *)data;
-
-  memcpy(node_ptr->node_device_uuid, msg->uuid, sizeof(msg->uuid));
-  node_ptr->node_device_uuid[sizeof(msg->uuid) - 1] = '\0';
-
-  node_ptr->node_device_is_center_root = (bool)msg->is_center_root;
 }
 
 static void do_nothing_peer(void *ctx, uint32_t net, uint32_t mask) {
@@ -123,8 +93,30 @@ void node_setup(void){
   ESP_ERROR_CHECK(device_wifi_init());
   ESP_ERROR_CHECK(ring_link_init());
 
-  node_ptr->node_device_is_center_root = config_mode_is(CONFIG_MODE_ROOT);
-  generate_uuid_from_mac(node_ptr->node_device_uuid, sizeof(node_ptr->node_device_uuid));
+  if(node_ptr->node_device_orientation == NODE_DEVICE_ORIENTATION_CENTER) {
+    while (!rm_broadcast_reset()) {
+      vTaskDelay(pdMS_TO_TICKS(100));
+    }
+
+    vTaskDelay(pdMS_TO_TICKS(10000)); // Wait 10 seconds so all the devices come back up in case this was an actual node reset
+
+    while (!rm_broadcast_startup_info(config_mode_is(CONFIG_MODE_ROOT))) {
+      vTaskDelay(pdMS_TO_TICKS(100));
+    }
+
+  } else {
+    while (!rm_is_device_up()){
+      if(rm_should_device_reset()){
+        while (!rm_broadcast_reset()) {
+          vTaskDelay(pdMS_TO_TICKS(100));
+        }
+      }
+      vTaskDelay(pdMS_TO_TICKS(100));
+    }
+  }
+
+  node_ptr->node_device_uuid = rm_get_uuid();
+  node_ptr->node_device_is_center_root = rm_is_root();
 
 }
 
