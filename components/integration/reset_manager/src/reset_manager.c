@@ -10,7 +10,7 @@ static const char *TAG = "reset_manager";
 static reset_manager_t reset_manager = {0};
 static reset_manager_t *rm = &reset_manager;
 
-#define RESET_TIMEOUT_SECONDS 30
+#define RESET_TIMEOUT_US 30000000 // 30 Seconds
 
 #define RM_OPCODE_RESET    0xA5
 #define RM_OPCODE_STARTUP  0xB6
@@ -108,7 +108,7 @@ bool rm_broadcast_startup_info(bool is_root) {
 
 bool rm_should_device_reset(void){
     int64_t current_time = esp_timer_get_time();
-    return ((current_time - rm->last_reset_time) > (RESET_TIMEOUT_SECONDS * 1000000ULL));
+    return ((current_time - rm->last_reset_time) > RESET_TIMEOUT_US);
 }
 
 bool rm_is_device_up(void) {
