@@ -87,6 +87,7 @@ bool rm_broadcast_reset(void) {
         return false;
     }
 
+    rm->last_reset_time = esp_timer_get_time();
     uint8_t opcode = RM_OPCODE_RESET;
     return rs_broadcast(rm->rs, RS_RESET_MANAGER, &opcode, 1);
 }
@@ -99,7 +100,12 @@ bool rm_broadcast_startup_info(bool is_root) {
 
     rm_startup_packet_t packet;
     packet.opcode = RM_OPCODE_STARTUP;
-    rm_generate_uuid_from_mac(packet.uuid, sizeof(packet.uuid));
+    if(!is_root){
+        rm_generate_uuid_from_mac(packet.uuid, sizeof(packet.uuid));
+    } else {
+        strncpy(packet.uuid, "000000000000", sizeof(packet.uuid));
+    }
+
     packet.is_root = is_root ? 1 : 0;
 
     strncpy(rm->uuid, packet.uuid, UUID_LENGTH);
