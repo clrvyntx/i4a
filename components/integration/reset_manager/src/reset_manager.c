@@ -111,7 +111,13 @@ bool rm_broadcast_startup_info(bool is_root) {
     strncpy(rm->uuid, packet.uuid, UUID_LENGTH);
     rm->is_root = is_root;
 
-    return rs_broadcast(rm->rs, RS_RESET_MANAGER, (uint8_t *)&packet, sizeof(packet));
+    bool broadcast = rs_broadcast(rm->rs, RS_RESET_MANAGER, (uint8_t *)&packet, sizeof(packet));
+
+    if(broadcast) {
+        ESP_LOGI(TAG, "Startup message broadcasted: UUID=%s, is_root=%d", rm->uuid, rm->is_root);
+    }
+
+    return broadcast;
 }
 
 bool rm_should_device_reset(void){
