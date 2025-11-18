@@ -30,11 +30,13 @@ static void rm_on_sibling_message(void *ctx, const uint8_t *msg, uint16_t len) {
     switch (msg[0]) {
         case RM_OPCODE_RESET:
             if (!rm->is_up) {
-                rm->last_reset_time = 0;
+                rm->last_reset_time = esp_timer_get_time();
                 return;
+            } else {
+                ESP_LOGI(TAG, "RESET signal received: resetting device");
+                esp_restart();
             }
-            ESP_LOGI(TAG, "RESET signal received: resetting device");
-            esp_restart();
+
             break;
 
         case RM_OPCODE_STARTUP:
