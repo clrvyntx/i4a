@@ -105,11 +105,7 @@ static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_
     switch (event_id) {
       case WIFI_EVENT_STA_CONNECTED:
         if (!stationPtr->is_apsta) {
-          int retry = 0;
-          while(!cm_provide_to_siblings(stationPtr->wifi_ap_found.primary) && retry < MAX_RETRIES){
-            retry++;
-            vTaskDelay(pdMS_TO_TICKS(100));
-          }
+          cm_provide_to_siblings(stationPtr->wifi_ap_found.primary);
         }
 
         if(!stationPtr->is_fully_connected){
