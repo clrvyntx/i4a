@@ -19,6 +19,7 @@ typedef enum component_id {
     RS_ROUTING = 1,
     RS_SHARED_STATE = 2,
     RS_CHANNEL_MANAGER = 3,
+    RS_RESET_MANAGER = 4,
 
     /* Keep this variant last */
     RS_LAST_COMPONENT_ID,
@@ -51,5 +52,6 @@ void rs_shutdown(ring_share_t *self);
 #ifdef __cplusplus
 }
 #endif
+
 
 #endif  // _I4A_RING_SHARE_
