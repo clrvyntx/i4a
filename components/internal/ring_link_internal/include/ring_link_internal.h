@@ -11,7 +11,7 @@
 #include "broadcast.h"
 
 #define RING_LINK_INTERNAL_MEM_TASK 4096
-#define RING_LINK_INTERNAL_QUEUE_SIZE 5
+#define RING_LINK_INTERNAL_QUEUE_SIZE 10
 
 #ifdef __cplusplus
 extern "C" {
@@ -23,5 +23,6 @@ esp_err_t ring_link_internal_process(ring_link_payload_t *p);
 #ifdef __cplusplus
 }
 #endif
+
 
 
