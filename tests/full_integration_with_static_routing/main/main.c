@@ -100,13 +100,11 @@ void routing_task(void *pvParameters) {
 void app_main(void) {
     node_setup();
 
-    siblings_t *sb = node_get_siblings_instance();
     wireless_t *wl = node_get_wireless_instance();
     ring_share_t *rs = node_get_rs_instance();
     node_device_orientation_t orientation = node_get_device_orientation();
     bool is_center_root = node_is_device_center_root();
 
-    rs_init(rs, sb);
     sync_init(&_sync, rs, orientation);
     ss_init(&ss, &_sync, rs, orientation);
     rt_create(&rt, rs, wl, &_sync, &ss, orientation);
@@ -147,6 +145,7 @@ void app_main(void) {
     // After initialization, switch to static routing hook
     selected_routing_hook = routing_hook_static;
 }
+
 
 
 
