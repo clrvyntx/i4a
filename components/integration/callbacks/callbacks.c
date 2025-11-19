@@ -62,6 +62,7 @@ static void peer_event_task(void *arg) {
     while (1) {
         if (xQueueReceive(peer_event_queue, &event, portMAX_DELAY)) {
             vTaskDelay(pdMS_TO_TICKS(PEER_DELAY_SECONDS * 1000));
+            ESP_LOGD(TAG, "Peer event received: type=%s", (event.type == PEER_EVENT_CONNECTED ? "CONNECTED" : "LOST"));
             if (event.type == PEER_EVENT_CONNECTED) {
                 wl->callbacks.on_peer_connected(wl->context, event.net, event.mask);
             } else {
@@ -75,6 +76,7 @@ static void peer_message_task(void *arg) {
     message_t m;
     while (1) {
         if (xQueueReceive(peer_message_queue, &m, portMAX_DELAY)) {
+            ESP_LOGD(TAG, "Peer message received (%u bytes)", m.length);
             wl->callbacks.on_peer_message(wl->context, m.data, m.length);
         }
     }
@@ -84,6 +86,7 @@ static void sibling_message_task(void *arg) {
     message_t m;
     while (1) {
         if (xQueueReceive(sibling_message_queue, &m, portMAX_DELAY)) {
+            ESP_LOGD(TAG, "Sibling message received (%u bytes)", m.length);
             sb->callback(sb->context, m.data, m.length);
         }
     }
@@ -179,3 +182,4 @@ wireless_t *node_get_wireless_instance(void){
 siblings_t *node_get_siblings_instance(void){
     return sb;
 }
+
