@@ -1,9 +1,11 @@
-#include "reset_manager/reset_manager.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "esp_timer.h"
 #include "esp_log.h"
 #include "esp_mac.h"
 #include "esp_system.h"
 #include <string.h>
+#include "reset_manager/reset_manager.h"
 
 static const char *TAG = "reset_manager";
 
