@@ -10,6 +10,7 @@
 #include "routing_config/routing_config.h"
 #include "routing/routing.h"
 #include "internal_messages.h"
+#include "routing_hooks.h"
 #include "callbacks.h"
 #include "node.h"
 
@@ -98,30 +99,32 @@ void routing_task(void *pvParameters) {
 
 // ---------------- Main ----------------
 void app_main(void) {
+
     node_setup();
 
     wireless_t *wl = node_get_wireless_instance();
     ring_share_t *rs = node_get_rs_instance();
+    routing_t *rt = node_get_rt_instance();
     node_device_orientation_t orientation = node_get_device_orientation();
     bool is_center_root = node_is_device_center_root();
 
     sync_init(&_sync, rs, orientation);
     ss_init(&ss, &_sync, rs, orientation);
-    rt_create(&rt, rs, wl, &_sync, &ss, orientation);
+    rt_create(rt, rs, wl, &_sync, &ss, orientation);
 
     // Initialize routing tables
     if (orientation == NODE_DEVICE_ORIENTATION_CENTER) {
         if (is_center_root) {
-            rt_init_root(&rt, r_subnet, r_mask);
+            rt_init_root(rt, r_subnet, r_mask);
         } else {
-            rt_init_home(&rt);
+            rt_init_home(rt);
         }
     } else {
-        rt_init_forwarder(&rt);
+        rt_init_forwarder(rt);
     }
 
-    rt_on_start(&rt);
-    rt_on_tick(&rt, 1);
+    rt_on_start(rt);
+    rt_on_tick(rt, 1);
 
     // Set AP/STA as needed
     if (orientation == NODE_DEVICE_ORIENTATION_CENTER && is_center_root) {
@@ -136,7 +139,7 @@ void app_main(void) {
         routing_task,
         "routing_task",
         4096,
-        &rt,
+        rt,
         tskIDLE_PRIORITY + 2,
         NULL,
         0
