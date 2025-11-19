@@ -11,8 +11,10 @@ static void tx_rx_event_handler(void *arg, esp_event_base_t event_base, int32_t 
     ip_event_tx_rx_t *ev = (ip_event_tx_rx_t *)event_data;
     if (ev->dir == ESP_NETIF_TX) {
         tx_bytes += ev->len;
+        ESP_LOGD(TAG, "TX +%u bytes (total: %llu)", ev->len, tx_bytes);
     } else if (ev->dir == ESP_NETIF_RX) {
         rx_bytes += ev->len;
+        ESP_LOGD(TAG, "RX +%u bytes (total: %llu)", ev->len, rx_bytes);
     }
 }
 
