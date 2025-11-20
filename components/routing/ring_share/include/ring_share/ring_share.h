@@ -12,7 +12,7 @@ extern "C" {
 #include "siblings/siblings.h"
 
 #define RS_MAX_BROADCAST_LEN 512
-#define RS_MAX_COMPONENTS 5
+#define RS_MAX_COMPONENTS 10
 
 typedef enum component_id {
     RS_SYNC = 0,
@@ -20,6 +20,7 @@ typedef enum component_id {
     RS_SHARED_STATE = 2,
     RS_CHANNEL_MANAGER = 3,
     RS_RESET_MANAGER = 4,
+    RS_INFO_MANAGER = 5,
 
     /* Keep this variant last */
     RS_LAST_COMPONENT_ID,
@@ -55,3 +56,4 @@ void rs_shutdown(ring_share_t *self);
 
 
 #endif  // _I4A_RING_SHARE_
+
