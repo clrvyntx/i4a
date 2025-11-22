@@ -270,6 +270,51 @@ bool device_send_wireless_message(DevicePtr device_ptr, const uint8_t *msg, uint
   return false;
 }
 
+// Device RSSI
+int8_t device_get_rssi(DevicePtr device_ptr) {
+    if (device_ptr->mode == AP) {
+        wifi_sta_list_t list;
+        esp_err_t err = esp_wifi_ap_get_sta_list(&list);
 
+        if (err == ESP_OK && list.num > 0) {
+            return list.sta[0].rssi;
+        } else {
+          return -127;
+        }
+    }
 
+    if (device_ptr->mode == STATION) {
+        wifi_ap_record_t ap_info = {};
+        esp_err_t err = esp_wifi_sta_get_ap_info(&ap_info);
 
+        if (err == ESP_OK) {
+            return ap_info.rssi;
+        }  else {
+          return -127;
+        }
+    }
+
+    if (device_ptr->mode == AP_STATION) {
+        if (device_ptr->station_ptr->ap_found) {
+          wifi_ap_record_t ap_info = {};
+          esp_err_t err = esp_wifi_sta_get_ap_info(&ap_info);
+  
+          if (err == ESP_OK) {
+              return ap_info.rssi;
+          }  else {
+            return -127;
+          }
+        } else {
+          wifi_sta_list_t list;
+          esp_err_t err = esp_wifi_ap_get_sta_list(&list);
+  
+          if (err == ESP_OK && list.num > 0) {
+              return list.sta[0].rssi;
+          } else {
+            return -127;
+          }
+        }
+    }
+
+    return -127;
+}
