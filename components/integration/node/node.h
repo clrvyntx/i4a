@@ -33,6 +33,7 @@ bool node_is_device_center_root(void); // Tells the device if they're center roo
 int8_t node_get_device_rssi(void); // RSSI of node's current wireless link
 uint32_t node_get_device_subnet(void); // Returns the device subnet
 uint32_t node_get_device_mask(void);   // Returns the device mask
+char *node_get_uuid(void); // Returns the device UUID string
 
 // Node communication functions
 bool node_send_wireless_message(const uint8_t *msg, uint16_t len); // Send a wireless message to the other side of the wireless link between two devices of different nodes
@@ -47,5 +48,6 @@ esp_netif_t *node_get_spi_netif(void); // Returns network interface for local co
 #endif
 
 #endif // _NODE_H_
+
 
 
