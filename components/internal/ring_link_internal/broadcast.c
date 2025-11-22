@@ -26,7 +26,7 @@ static esp_err_t send_broadcast(const void *buffer, uint16_t len){
         .buffer_type = RING_LINK_PAYLOAD_TYPE_INTERNAL,
         .len = len,
     };
-    if (len > RING_LINK_PAYLOAD_BUFFER_SIZE) {
+    if (len > RING_LINK_NETIF_MTU) {
         ESP_LOGE(TAG, "Buffer length exceeds maximum allowed size.");
         return ESP_ERR_INVALID_SIZE;
     }
