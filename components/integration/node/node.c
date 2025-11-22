@@ -232,3 +232,7 @@ esp_netif_t *node_get_wifi_netif(void) {
 esp_netif_t *node_get_spi_netif(void) {
   return get_ring_link_tx_netif();
 }
+
+int8_t node_get_device_rssi(void) {
+  return device_get_rssi(node_ptr->node_device_ptr);
+}
