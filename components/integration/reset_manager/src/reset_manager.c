@@ -93,7 +93,14 @@ bool rm_broadcast_reset(void) {
 
     rm->last_reset_time = esp_timer_get_time();
     uint8_t opcode = RM_OPCODE_RESET;
-    return rs_broadcast(rm->rs, RS_RESET_MANAGER, &opcode, 1);
+
+    bool result = rs_broadcast(rm->rs, RS_RESET_MANAGER, &opcode, 1);
+
+    if(result) {
+        ESP_LOGI(TAG, "Reset broadcast successfully sent to all devices");
+    }
+
+    return result;
 }
 
 bool rm_broadcast_startup_info(bool is_root) {
