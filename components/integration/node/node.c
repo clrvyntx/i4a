@@ -217,7 +217,7 @@ bool node_send_wireless_message(const uint8_t *msg, uint16_t len) {
   return false;
 }
 
-bool node_is_point_to_point_message(uint32_t dst){
+bool node_is_point_to_point_message(uint32_t dst) {
   return ((dst & BRIDGE_MASK) == BRIDGE_NETWORK);
 }
 
@@ -235,4 +235,12 @@ esp_netif_t *node_get_spi_netif(void) {
 
 int8_t node_get_device_rssi(void) {
   return device_get_rssi(node_ptr->node_device_ptr);
+}
+
+uint32_t node_get_device_subnet(void) {
+    return node_ptr->node_device_subnet;
+}
+
+uint32_t node_get_device_mask(void) {
+    return node_ptr->node_device_mask;
 }
