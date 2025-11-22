@@ -244,3 +244,7 @@ uint32_t node_get_device_subnet(void) {
 uint32_t node_get_device_mask(void) {
     return node_ptr->node_device_mask;
 }
+
+char *node_get_uuid(void) {
+    return node_ptr->node_device_uuid;
+}
