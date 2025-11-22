@@ -7,7 +7,7 @@
 #include "server.h"
 
 #define SERVER_TASK_CORE 1
-#define SERVER_TASK_MEM 1
+#define SERVER_TASK_MEM 4096
 
 #define PORT 3999
 #define KEEPALIVE_IDLE 60
@@ -200,6 +200,7 @@ bool server_send_message(const uint8_t *msg, uint16_t len) {
   }
 
 }
+
 
 
 
