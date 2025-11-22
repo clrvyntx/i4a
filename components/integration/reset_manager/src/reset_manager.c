@@ -37,7 +37,6 @@ static void rm_on_sibling_message(void *ctx, const uint8_t *msg, uint16_t len) {
                 return;
             } else {
                 ESP_LOGW(TAG, "Reset signal received: resetting device");
-                vTaskDelay(pdMS_TO_TICKS(500)); // Wait for the broadcast to be fully passed on
                 esp_restart();
             }
 
