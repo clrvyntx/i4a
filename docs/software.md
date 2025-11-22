@@ -37,7 +37,7 @@ typedef struct {
     uint8_t ttl;                      // Time To Live to prevent infinite message loops
     config_id_t src_id;               // Source node identifier (North, South, etc.)
     config_id_t dst_id;               // Destination node identifier
-    char buffer[RING_LINK_PAYLOAD_BUFFER_SIZE];
+    char buffer[RING_LINK_NETIF_MTU];
 } ring_link_payload_t;
 ```
 

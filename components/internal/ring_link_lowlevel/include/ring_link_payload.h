@@ -12,8 +12,7 @@ extern "C" {
 #endif
 
 
-#define PADDING_SIZE(x) (4 - ((x) % 4))
-#define RING_LINK_PAYLOAD_BUFFER_SIZE (RING_LINK_LOWLEVEL_BUFFER_SIZE + PADDING_SIZE(RING_LINK_LOWLEVEL_BUFFER_SIZE))
+#define RING_LINK_NETIF_MTU (SPI_BUFFER_SIZE - 100)
 #define RING_LINK_PAYLOAD_TTL 4
 
 /**
@@ -46,7 +45,7 @@ typedef struct
     uint8_t ttl;
     config_id_t src_id;
     config_id_t dst_id;
-    char buffer[RING_LINK_PAYLOAD_BUFFER_SIZE];
+    char buffer[RING_LINK_NETIF_MTU];
 } ring_link_payload_t;
 
 bool ring_link_payload_is_for_device(ring_link_payload_t *p);
