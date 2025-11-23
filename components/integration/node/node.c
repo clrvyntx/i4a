@@ -6,6 +6,7 @@
 #include "internal_messages.h"
 #include "channel_manager/channel_manager.h"
 #include "reset_manager/reset_manager.h"
+#include "info_manager/info_manager.h"
 #include "traffic.h"
 #include "node.h"
 
@@ -105,6 +106,7 @@ void node_setup(void){
   node_ptr->node_device_uuid = rm_get_uuid();
   node_ptr->node_device_is_center_root = rm_is_root();
   node_traffic_init();
+  im_scheduler_start();
 }
 
 void node_set_as_sta(){
@@ -187,6 +189,10 @@ void node_set_as_ap(uint32_t network, uint32_t mask){
     device_start_station(node_ptr->node_device_ptr);
     device_connect_station(node_ptr->node_device_ptr);
   }
+
+  if (node_ptr->node_device_orientation == NODE_DEVICE_ORIENTATION_CENTER) {
+    im_http_client_start();
+  }
 }
 
 node_device_orientation_t node_get_device_orientation(void){
@@ -248,3 +254,4 @@ uint32_t node_get_device_mask(void) {
 char *node_get_uuid(void) {
     return node_ptr->node_device_uuid;
 }
+
