@@ -64,6 +64,8 @@ static node_device_orientation_t node_get_config_orientation(void){
 }
 
 void node_setup(void){
+  ESP_ERROR_CHECK(esp_netif_init());
+  ESP_ERROR_CHECK(esp_event_loop_create_default());
   ESP_ERROR_CHECK(node_init_event_queues());
   ESP_ERROR_CHECK(node_start_event_tasks());
 

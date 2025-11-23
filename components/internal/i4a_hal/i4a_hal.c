@@ -1,6 +1,7 @@
 #include "i4a_hal.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
+#include "virtual_nic.h"
 
 #include "uart.h"
 
@@ -91,4 +92,28 @@ esp_err_t hal_spi_recv(void *p, size_t *len) {
     esp_err_t ret = _hal_spi_recv(p, len);
     xSemaphoreGive(s_uart_lock);
     return ret;
+}
+
+static struct wlan_vnic {
+    vnic_t ap_tx, ap_rx;
+    vnic_t sta_tx, sta_rx;
+    esp_netif_t *ap_netif, *sta_netif;
+} wlan;
+
+/** Creates netifs for AP & STA */
+void hal_wifi_init() {
+    assert(vnic_create(&wlan.ap_tx) == VNIC_OK);
+    assert(vnic_create(&wlan.ap_rx) == VNIC_OK);
+    assert(vnic_create(&wlan.sta_tx) == VNIC_OK);
+    assert(vnic_create(&wlan.sta_rx) == VNIC_OK);
+
+    assert(vnic_bind_receiver(&wlan.ap_tx, &wlan.ap_rx) == VNIC_OK);
+    assert(vnic_bind_receiver(&wlan.sta_tx, &wlan.sta_rx) == VNIC_OK);
+
+    assert(vnic_register_esp_netif(&wlan.ap_tx, "WIFI_AP_DEF", (esp_netif_ip_info_t){0}) == VNIC_OK);
+    assert(vnic_register_esp_netif(&wlan.sta_tx, "WIFI_STA_DEF", (esp_netif_ip_info_t){0}) == VNIC_OK);
+}
+
+esp_err_t hal_wifi_set_mode(wifi_mode_t mode) {
+    return ESP_OK;
 }
