@@ -1,6 +1,7 @@
 #include "ring_share/ring_share.h"
 #include "channel_manager/channel_manager.h"
 #include "reset_manager/reset_manager.h"
+#include "info_manager/info_manager.h"
 #include "callbacks.h"
 #include "internal_messages.h"
 
