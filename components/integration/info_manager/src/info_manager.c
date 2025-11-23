@@ -4,10 +4,25 @@
 #include "esp_log.h"
 #include "info_manager/info_manager.h"
 
+#define BROADCAST_INTERVAL_MS   (5 * 60 * 1000)     // 5 min
+#define ORIENTATION_SPREAD_MS   (60 * 1000)         // 1 min per orientation
+
+#define IM_TASK_CORE 1
+#define IM_TASK_MEM 4096
+
 static const char *TAG = "info_manager";
 
 static im_manager_t info_manager = {0};
 static im_manager_t *im = &info_manager;
+
+static void im_scheduler_task(void *arg) {
+    vTaskDelay(pdMS_TO_TICKS(node_get_device_orientation() * ORIENTATION_SPREAD_MS));
+
+    while (true) {
+        im_broadcast_info();
+        vTaskDelay(pdMS_TO_TICKS(BROADCAST_INTERVAL_MS));
+    }
+}
 
 static void im_on_sibling_message(void *ctx, const uint8_t *msg, uint16_t len) {
     if (len < sizeof(im_ring_packet_t)) return;
@@ -72,6 +87,20 @@ bool im_broadcast_info(void) {
     return result;
 }
 
-im_ring_packet_t *im_get_ring_info(void) {
+const im_ring_packet_t *im_get_ring_info(void) {
     return im->ring;
+}
+
+void im_scheduler_start(void) {
+    xTaskCreatePinnedToCore(
+        im_scheduler_task,
+        "im_scheduler",
+        IM_TASK_MEM,
+        NULL,
+        (tskIDLE_PRIORITY + 2),
+        NULL,
+        IM_TASK_CORE
+    );
+
+    ESP_LOGI(TAG, "Info manager scheduler task started");
 }

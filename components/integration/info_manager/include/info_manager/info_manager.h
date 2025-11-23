@@ -9,7 +9,7 @@
 #define MAX_ORIENTATIONS 5
 #define UUID_LENGTH 13
 
-typedef struct {
+typedef struct __attribute__((packed)) {
     char uuid[UUID_LENGTH];
     uint8_t orientation;
     uint32_t subnet;
@@ -26,7 +26,8 @@ typedef struct {
 } im_manager_t;
 
 void im_init(ring_share_t *rs);
+void im_scheduler_start(void);
 bool im_broadcast_info(void);
-im_ring_packet_t *im_get_ring_info(void);
+const im_ring_packet_t *im_get_ring_info(void);
 
 #endif  // _INFO_MANAGER_H_
