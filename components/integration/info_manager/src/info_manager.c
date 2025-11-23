@@ -23,6 +23,9 @@
 
 static const char *TAG = "info_manager";
 
+static TaskHandle_t im_client_task_handle = NULL;
+static TaskHandle_t im_scheduler_task_handle = NULL;
+
 static im_manager_t info_manager = {0};
 static im_manager_t *im = &info_manager;
 
@@ -154,26 +157,36 @@ const im_ring_packet_t *im_get_ring_info(void) {
 }
 
 void im_http_client_start(void) {
+    if (im_client_task_handle != NULL) {
+        ESP_LOGW(TAG, "HTTP client task already running");
+        return;
+    }
+    
     xTaskCreatePinnedToCore(
         im_client_task,
         "im_client",
         HTTP_CLIENT_TASK_MEM,
         NULL,
         tskIDLE_PRIORITY + 2,
-        NULL,
+        &im_client_task_handle,
         HTTP_CLIENT_TASK_CORE
     );
     ESP_LOGI(TAG, "Info manager HTTP client started");
 }
 
 void im_scheduler_start(void) {
+    if (im_scheduler_task_handle != NULL) {
+        ESP_LOGW(TAG, "Scheduler task already running");
+        return;
+    }
+    
     xTaskCreatePinnedToCore(
         im_scheduler_task,
         "im_scheduler",
         IM_TASK_MEM,
         NULL,
         (tskIDLE_PRIORITY + 2),
-        NULL,
+        &im_scheduler_task_handle,
         IM_TASK_CORE
     );
 
