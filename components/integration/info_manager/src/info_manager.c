@@ -7,7 +7,7 @@
 #define BROADCAST_INTERVAL_MS   (5 * 60 * 1000)     // 5 min
 #define ORIENTATION_SPREAD_MS   (60 * 1000)         // 1 min per orientation
 
-#define IM_TASK_CORE 1
+#define IM_TASK_CORE 0
 #define IM_TASK_MEM 4096
 
 static const char *TAG = "info_manager";
