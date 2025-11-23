@@ -4,10 +4,17 @@
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "esp_http_client.h"
 #include "info_manager/info_manager.h"
 
+#define MAX_HTTP_OUTPUT_BUFFER 2048
+
+#define CLIENT_POST_INTERVAL_MS (5 * 60 * 1000)        // 5 min
 #define BROADCAST_INTERVAL_MS   (5 * 60 * 1000)     // 5 min
 #define ORIENTATION_SPREAD_MS   (60 * 1000)         // 1 min per orientation
+
+#define HTTP_CLIENT_TASK_CORE 1
+#define HTTP_CLIENT_TASK_MEM 4096
 
 #define IM_TASK_CORE 0
 #define IM_TASK_MEM 4096
@@ -16,6 +23,53 @@ static const char *TAG = "info_manager";
 
 static im_manager_t info_manager = {0};
 static im_manager_t *im = &info_manager;
+
+static void im_client_task(void *arg) {
+    esp_http_client_config_t config = {
+        .url = "http://" CONFIG_EXAMPLE_HTTP_ENDPOINT "/ring",
+        .method = HTTP_METHOD_POST,
+    };
+
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+
+    while (true) {
+        char payload[MAX_HTTP_OUTPUT_BUFFER];
+        const im_ring_packet_t *ring = im_get_ring_info();
+        int offset = 0;
+
+        offset += snprintf(payload + offset, sizeof(payload) - offset, "[");
+        for (int i = 0; i < MAX_ORIENTATIONS; i++) {
+            if (i > 0) offset += snprintf(payload + offset, sizeof(payload) - offset, ",");
+            offset += snprintf(payload + offset, sizeof(payload) - offset,
+                "{\"orientation\":%d,\"uuid\":\"%s\",\"subnet\":%u,\"mask\":%u,"
+                "\"is_root\":%u,\"rssi\":%d,\"rx_bytes\":%llu,\"tx_bytes\":%llu}",
+                ring[i].orientation,
+                ring[i].uuid,
+                ring[i].subnet,
+                ring[i].mask,
+                ring[i].is_root,
+                ring[i].rssi,
+                ring[i].rx_bytes,
+                ring[i].tx_bytes);
+        }
+        snprintf(payload + offset, sizeof(payload) - offset, "]");
+
+        esp_http_client_set_post_field(client, payload, strlen(payload));
+        esp_http_client_set_header(client, "Content-Type", "application/json");
+
+        esp_err_t err = esp_http_client_perform(client);
+        if (err == ESP_OK) {
+            int status = esp_http_client_get_status_code(client);
+            ESP_LOGI(TAG, "HTTP POST successful, status=%d", status);
+        } else {
+            ESP_LOGE(TAG, "HTTP POST failed: %s", esp_err_to_name(err));
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(CLIENT_POST_INTERVAL_MS));
+    }
+
+    esp_http_client_cleanup(client);
+}
 
 static void im_scheduler_task(void *arg) {
     vTaskDelay(pdMS_TO_TICKS(node_get_device_orientation() * ORIENTATION_SPREAD_MS));
@@ -93,6 +147,19 @@ const im_ring_packet_t *im_get_ring_info(void) {
     return im->ring;
 }
 
+void im_http_client_start(void) {
+    xTaskCreatePinnedToCore(
+        im_client_task,
+        "im_client",
+        HTTP_CLIENT_TASK_MEM,
+        NULL,
+        tskIDLE_PRIORITY + 2,
+        NULL,
+        HTTP_CLIENT_TASK_CORE
+    );
+    ESP_LOGI(TAG, "Info manager HTTP client started");
+}
+
 void im_scheduler_start(void) {
     xTaskCreatePinnedToCore(
         im_scheduler_task,
@@ -104,5 +171,5 @@ void im_scheduler_start(void) {
         IM_TASK_CORE
     );
 
-    ESP_LOGI(TAG, "Info manager scheduler task started");
+    ESP_LOGI(TAG, "Info manager scheduler started");
 }
