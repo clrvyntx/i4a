@@ -59,7 +59,7 @@ bool im_broadcast_info(void) {
     pkt.rssi = node_get_device_rssi();
     pkt.rx_bytes = node_traffic_get_rx_count();
     pkt.tx_bytes = node_traffic_get_tx_count();
-    snprintf(pkt.uuid, sizeof(pkt.uuid), "%s", node_get_device_uuid());
+    snprintf(pkt.uuid, sizeof(pkt.uuid), "%s", node_get_uuid());
 
     im->ring[pkt.orientation] = pkt;
 
