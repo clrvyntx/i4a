@@ -40,6 +40,7 @@ void routing_task(void *pvParameters) {
 void app_main(void) {
     node_setup();
 
+    ESP_LOGI(TAG, "starting system");
     wireless_t *wl = node_get_wireless_instance();
     ring_share_t *rs = node_get_rs_instance();
     routing_t *rt = node_get_rt_instance();
@@ -47,8 +48,11 @@ void app_main(void) {
     bool is_center_root = node_is_device_center_root();
 
     sync_init(&_sync, rs, orientation);
+    ESP_LOGI(TAG, "sync started");
     ss_init(&ss, &_sync, rs, orientation);
+    ESP_LOGI(TAG, "ss started");
     rt_create(rt, rs, wl, &_sync, &ss, orientation);
+    ESP_LOGI(TAG, "rt created");
 
     if(orientation == NODE_DEVICE_ORIENTATION_CENTER){
         if(is_center_root){
@@ -70,13 +74,15 @@ void app_main(void) {
     rt_on_start(rt);
     rt_on_tick(rt, 1);
 
-    if(orientation == NODE_DEVICE_ORIENTATION_CENTER && is_center_root){
-        node_set_as_ap(ROOT_NETWORK, ROOT_MASK);
-    }
+    ESP_LOGI(TAG, "all good");
 
-    if(orientation == NODE_DEVICE_ORIENTATION_NORTH && !is_center_root){ // For testing, have a single one, in reality all non centers should be stations
-        node_set_as_sta();
-    }
+    // if(orientation == NODE_DEVICE_ORIENTATION_CENTER && is_center_root){
+    //     node_set_as_ap(ROOT_NETWORK, ROOT_MASK);
+    // }
+    // 
+    // if(orientation != NODE_DEVICE_ORIENTATION_CENTER && !is_center_root){
+    //     node_set_as_sta();
+    // }
     
     xTaskCreatePinnedToCore(
         routing_task,

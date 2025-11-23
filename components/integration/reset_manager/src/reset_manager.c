@@ -86,17 +86,24 @@ void rm_init(ring_share_t *rs) {
 }
 
 bool rm_broadcast_reset(void) {
+    ESP_LOGI(TAG, "rm_broadcast_reset()");
+
     if (!rm->rs) {
         ESP_LOGW(TAG, "RESET broadcast skipped: manager not initialized");
         return false;
     }
 
     rm->last_reset_time = esp_timer_get_time();
+    ESP_LOGI(TAG, "rm_broadcast_reset: got time");
     uint8_t opcode = RM_OPCODE_RESET;
-    return rs_broadcast(rm->rs, RS_RESET_MANAGER, &opcode, 1);
+    bool is_ok = rs_broadcast(rm->rs, RS_RESET_MANAGER, &opcode, 1);
+    ESP_LOGI(TAG, "rm_broadcast_reset: broadcasted with result: %s", is_ok ? "true" : "false");
+    return is_ok;
 }
 
 bool rm_broadcast_startup_info(bool is_root) {
+    ESP_LOGI(TAG, "rm_broadcast_startup_info(is_root=%s)", is_root ? "true" : "false");
+    
     if (!rm->rs) {
         ESP_LOGW(TAG, "STARTUP broadcast skipped: manager not initialized");
         return false;

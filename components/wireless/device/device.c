@@ -38,8 +38,8 @@ esp_err_t device_wifi_init() {
   ESP_ERROR_CHECK(esp_event_loop_create_default());
 
   // Initialize Wi-Fi configuration structure
-  wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-  ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+  // wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+  // ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
   return ESP_OK;
 }

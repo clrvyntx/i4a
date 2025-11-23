@@ -6,7 +6,7 @@
 extern "C" {
 #endif
 
-#define BROADCAST_TIMEOUT_MS 500
+#define BROADCAST_TIMEOUT_MS 5000
 
 
 esp_err_t broadcast_init( void );

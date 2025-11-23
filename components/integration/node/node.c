@@ -75,14 +75,17 @@ void node_setup(void){
   node_setup_internal_messages(node_ptr->node_device_orientation);
 
   // Wait in sequence to avoid current peaks while node calibrates
-  vTaskDelay(pdMS_TO_TICKS(node_ptr->node_device_orientation * CALIBRATION_DELAY_SECONDS * 1000));
+  // vTaskDelay(pdMS_TO_TICKS(node_ptr->node_device_orientation * CALIBRATION_DELAY_SECONDS * 1000));
 
+  ESP_LOGI(TAG, "internal messages initialized");
   ESP_ERROR_CHECK(device_wifi_init());
   ESP_ERROR_CHECK(ring_link_init());
 
+  ESP_LOGI(TAG, "wifi and ring link inited");
+
   if(node_ptr->node_device_orientation == NODE_DEVICE_ORIENTATION_CENTER) {
     while (!rm_broadcast_reset()) {
-      vTaskDelay(pdMS_TO_TICKS(100));
+      vTaskDelay(pdMS_TO_TICKS(2500));
     }
 
     vTaskDelay(pdMS_TO_TICKS(10000)); // Wait 10 seconds so all the devices come back up in case this was an actual node reset
