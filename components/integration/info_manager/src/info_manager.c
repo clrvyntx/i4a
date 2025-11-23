@@ -2,6 +2,8 @@
 #include "node.h"
 #include "traffic.h"
 #include "esp_log.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "info_manager/info_manager.h"
 
 #define BROADCAST_INTERVAL_MS   (5 * 60 * 1000)     // 5 min
