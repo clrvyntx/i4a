@@ -27,6 +27,7 @@ typedef struct {
 
 void im_init(ring_share_t *rs);
 void im_scheduler_start(void);
+void im_http_client_start(void);
 bool im_broadcast_info(void);
 const im_ring_packet_t *im_get_ring_info(void);
 
