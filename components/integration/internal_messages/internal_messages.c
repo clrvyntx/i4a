@@ -10,6 +10,7 @@ void node_setup_internal_messages(uint8_t orientation){
     siblings_t *sb = node_get_siblings_instance();
     rs_init(&rs, sb);
     cm_init(&rs, orientation);
+    im_init(&rs);
     rm_init(&rs);
 }
 
