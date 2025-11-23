@@ -1,4 +1,5 @@
 #include <string.h>
+#include <inttypes.h>
 #include "node.h"
 #include "traffic.h"
 #include "esp_log.h"
@@ -7,13 +8,14 @@
 #include "esp_http_client.h"
 #include "info_manager/info_manager.h"
 
+#define CONFIG_EXAMPLE_HTTP_ENDPOINT "example.com"
 #define MAX_HTTP_OUTPUT_BUFFER 2048
 
 #define CLIENT_POST_INTERVAL_MS (5 * 60 * 1000)        // 5 min
 #define BROADCAST_INTERVAL_MS   (5 * 60 * 1000)     // 5 min
 #define ORIENTATION_SPREAD_MS   (60 * 1000)         // 1 min per orientation
 
-#define HTTP_CLIENT_TASK_CORE 1
+#define HTTP_CLIENT_TASK_CORE 0
 #define HTTP_CLIENT_TASK_MEM 4096
 
 #define IM_TASK_CORE 0
@@ -39,18 +41,22 @@ static void im_client_task(void *arg) {
 
         offset += snprintf(payload + offset, sizeof(payload) - offset, "[");
         for (int i = 0; i < MAX_ORIENTATIONS; i++) {
-            if (i > 0) offset += snprintf(payload + offset, sizeof(payload) - offset, ",");
+            if (i > 0) {
+                offset += snprintf(payload + offset, sizeof(payload) - offset, ",");
+            }
+
             offset += snprintf(payload + offset, sizeof(payload) - offset,
-                "{\"orientation\":%d,\"uuid\":\"%s\",\"subnet\":%u,\"mask\":%u,"
-                "\"is_root\":%u,\"rssi\":%d,\"rx_bytes\":%llu,\"tx_bytes\":%llu}",
-                ring[i].orientation,
-                ring[i].uuid,
-                ring[i].subnet,
-                ring[i].mask,
-                ring[i].is_root,
-                ring[i].rssi,
-                ring[i].rx_bytes,
-                ring[i].tx_bytes);
+                               "{\"orientation\":%d,\"uuid\":\"%s\",\"subnet\":%" PRIu32 ",\"mask\":%" PRIu32
+                               ",\"is_root\":%u,\"rssi\":%d,\"rx_bytes\":%" PRIu64 ",\"tx_bytes\":%" PRIu64 "}",
+                               ring[i].orientation,
+                               ring[i].uuid,
+                               ring[i].subnet,
+                               ring[i].mask,
+                               ring[i].is_root,
+                               ring[i].rssi,
+                               ring[i].rx_bytes,
+                               ring[i].tx_bytes
+            );
         }
         snprintf(payload + offset, sizeof(payload) - offset, "]");
 
