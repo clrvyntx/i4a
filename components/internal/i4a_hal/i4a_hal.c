@@ -1,5 +1,6 @@
 #include "i4a_hal.h"
 #include "esp_log.h"
+#include "esp_random.h"
 #include "freertos/FreeRTOS.h"
 #include "virtual_nic.h"
 
@@ -110,10 +111,43 @@ void hal_wifi_init() {
     assert(vnic_bind_receiver(&wlan.ap_tx, &wlan.ap_rx) == VNIC_OK);
     assert(vnic_bind_receiver(&wlan.sta_tx, &wlan.sta_rx) == VNIC_OK);
 
-    assert(vnic_register_esp_netif(&wlan.ap_tx, "WIFI_AP_DEF", (esp_netif_ip_info_t){0}) == VNIC_OK);
-    assert(vnic_register_esp_netif(&wlan.sta_tx, "WIFI_STA_DEF", (esp_netif_ip_info_t){0}) == VNIC_OK);
+    esp_netif_ip_info_t null_ip = {0};
+    uint32_t mac = esp_random();
+   
+    extern const esp_netif_ip_info_t _g_esp_netif_soft_ap_ip;
+
+    esp_netif_inherent_config_t ap_config = {
+        .flags = ESP_NETIF_DHCP_SERVER | ESP_NETIF_FLAG_AUTOUP,
+        .mac = {0xaa, 0xaa, (mac >> 24) & 0xFF, (mac >> 16) & 0xFF, (mac >> 8) & 0xFF, mac & 0xFF},
+        .ip_info = &_g_esp_netif_soft_ap_ip,
+        .get_ip_event = 0,
+        .lost_ip_event = 0,
+        .if_key = "WIFI_AP_DEF",
+        .if_desc = "Virtual WiFi AP",
+        .route_prio = 10};
+
+    esp_netif_inherent_config_t sta_config = {
+        .flags =ESP_NETIF_DHCP_CLIENT | ESP_NETIF_FLAG_GARP | ESP_NETIF_FLAG_EVENT_IP_MODIFIED,
+        .mac = {0xaa, 0xaa, (mac >> 24) & 0xFF, (mac >> 16) & 0xFF, (mac >> 8) & 0xFF, mac & 0xFF},
+        ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_EMPTY(ip_info)
+        .get_ip_event = IP_EVENT_STA_GOT_IP,
+        .lost_ip_event = IP_EVENT_STA_LOST_IP,
+        .if_key = "WIFI_STA_DEF",
+        .if_desc = "Virtual WiFi STA",
+        .route_prio = 100};
+
+    assert(vnic_register_esp_netif(&wlan.ap_tx, ap_config) == VNIC_OK);
+    assert(vnic_register_esp_netif(&wlan.sta_tx, sta_config) == VNIC_OK);
 }
 
 esp_err_t hal_wifi_set_mode(wifi_mode_t mode) {
     return ESP_OK;
+}
+
+esp_netif_t* hal_netif_create_default_wifi_ap() {
+    return esp_netif_get_handle_from_ifkey("WIFI_AP_DEF");
+}
+
+esp_netif_t* hal_netif_create_default_wifi_sta() {
+    return esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
 }

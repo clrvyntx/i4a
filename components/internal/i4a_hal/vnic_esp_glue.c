@@ -100,7 +100,7 @@ static esp_err_t cb_post_attach(esp_netif_t *esp_netif, void *args)
     return ESP_OK;
 }
 
-vnic_result_t vnic_register_esp_netif(vnic_t *self, const char *if_key, const esp_netif_ip_info_t ip_config)
+vnic_result_t vnic_register_esp_netif(vnic_t *self, esp_netif_inherent_config_t base_config)
 {
     ESP_ERROR_CHECK(esp_netif_init());
     vnic_driver_t *driver = calloc(1, sizeof(vnic_driver_t));
@@ -115,17 +115,6 @@ vnic_result_t vnic_register_esp_netif(vnic_t *self, const char *if_key, const es
         .lwip = {
             .init_fn = cb_lwip_init,
             .input_fn = (input_fn_t)cb_lwip_input}};
-
-    esp_netif_inherent_config_t base_config = {
-        .flags = ESP_NETIF_FLAG_AUTOUP,
-        .mac = VNIC_MAC_ADDR,
-        .ip_info = &ip_config,
-        .get_ip_event = 0,
-        .lost_ip_event = 0,
-        .if_key = if_key,
-        .if_desc = "Virtual NIC",
-        .route_prio = 15,
-        .bridge_info = NULL};
 
     esp_netif_config_t netif_config = {
         .base = &base_config,

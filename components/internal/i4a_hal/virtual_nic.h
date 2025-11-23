@@ -68,6 +68,7 @@ vnic_result_t vnic_receive(vnic_t *self, uint8_t *buffer, size_t buffer_sz, size
 void vnic_destroy(vnic_t *self);
 
 // Register virtual nic within the ESP Netif subsystem so it can be used with lwIP.
-vnic_result_t vnic_register_esp_netif(vnic_t *self, const char *if_key, const esp_netif_ip_info_t ip_config);
+// vnic_result_t vnic_register_esp_netif(vnic_t *self, const char *if_key, const esp_netif_ip_info_t ip_config);
+vnic_result_t vnic_register_esp_netif(vnic_t *self, esp_netif_inherent_config_t base_config);
 
 #endif // _VIRTUAL_NIC_H_

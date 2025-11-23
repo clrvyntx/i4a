@@ -22,6 +22,8 @@ esp_err_t hal_spi_recv(void *p, size_t *len);
 /** -- wifi -- */
 void hal_wifi_init();
 esp_err_t hal_wifi_set_mode(wifi_mode_t mode);
+esp_netif_t* hal_netif_create_default_wifi_ap();
+esp_netif_t* hal_netif_create_default_wifi_sta();
 /** -- wifi -- */
 
 #endif // _I4A_HAL_

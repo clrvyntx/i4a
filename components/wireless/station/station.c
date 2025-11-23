@@ -1,12 +1,13 @@
 #include <string.h>
 #include "esp_log.h"
 #include "esp_event.h"
-#include "esp_wifi.h"
+#include "i4a_hal.h"
 #include "lwip/ip_addr.h"
 #include "client.h"
 #include "channel_manager/channel_manager.h"
 #include "traffic.h"
 #include "station.h"
+
 
 #define STA_BRIDGE_NETWORK  0xC0A80300  // 192.168.3.0
 #define STA_BRIDGE_MASK 0xFFFFFFFC  // /30
@@ -54,7 +55,7 @@ void station_init(StationPtr stationPtr, const char* wifi_ssid_like, uint16_t or
   stationPtr->is_fully_connected = false;
   stationPtr->is_apsta = is_apsta;
 
-  esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta();
+  esp_netif_t *sta_netif = hal_netif_create_default_wifi_sta();
   assert(sta_netif);
   stationPtr->netif = sta_netif;
 
