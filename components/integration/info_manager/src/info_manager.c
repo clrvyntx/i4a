@@ -9,7 +9,7 @@
 #include "lwip/inet.h"
 #include "info_manager/info_manager.h"
 
-#define CONFIG_EXAMPLE_HTTP_ENDPOINT "example.com"
+#define SERVER_ADDRESS "example.com"
 #define MAX_HTTP_OUTPUT_BUFFER 2048
 
 #define CLIENT_POST_INTERVAL_MS (5 * 60 * 1000)     // 5 min
@@ -32,7 +32,7 @@ static im_manager_t *im = &info_manager;
 
 static void im_client_task(void *arg) {
     esp_http_client_config_t config = {
-        .url = "http://" CONFIG_EXAMPLE_HTTP_ENDPOINT,
+        .url = "http://" SERVER_ADDRESS,
         .method = HTTP_METHOD_POST,
     };
 
