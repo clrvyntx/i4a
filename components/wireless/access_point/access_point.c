@@ -8,6 +8,7 @@
 #include "traffic.h"
 #include "dhcpserver/dhcpserver.h"
 #include "dhcpserver/dhcpserver_options.h"
+#include "info_manager/info_manager.h"
 #include "access_point.h"
 
 #define DEFAULT_DNS "8.8.8.8"
@@ -152,13 +153,22 @@ void ap_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, 
   if (event_base == WIFI_EVENT) {
     switch (event_id) {
 
+      case WIFI_EVENT_AP_START:
+        if (ap->is_center) {
+          im_http_client_start();
+        }
+        break;
+
       case WIFI_EVENT_AP_STACONNECTED:
         if(ap->is_locked) {
           esp_wifi_deauth_sta(0);
-        } else if (!ap->is_center && !ap->server_is_up) {
+        }
+
+        if (!ap->is_center && !ap->server_is_up) {
           server_create();
           ap->server_is_up = true;
         }
+
         break;
 
       case WIFI_EVENT_AP_STADISCONNECTED:
