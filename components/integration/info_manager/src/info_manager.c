@@ -32,7 +32,7 @@ static im_manager_t *im = &info_manager;
 
 static void im_client_task(void *arg) {
     esp_http_client_config_t config = {
-        .url = "http://" CONFIG_EXAMPLE_HTTP_ENDPOINT "/ring",
+        .url = "http://" CONFIG_EXAMPLE_HTTP_ENDPOINT,
         .method = HTTP_METHOD_POST,
     };
 
