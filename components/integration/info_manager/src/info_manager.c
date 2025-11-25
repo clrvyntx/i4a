@@ -62,7 +62,7 @@ static void im_client_task(void *arg) {
             snprintf(mask_str, sizeof(mask_str), "%s", inet_ntoa(addr));
 
             offset += snprintf(payload + offset, sizeof(payload) - offset,
-                               "{\"orientation\":%d,\"mac\":\"%s\",\"subnet\":\"%s\",\"mask\":\"%s\""
+                               "{\"orientation\":%d,\"uuid\":\"%s\",\"subnet\":\"%s\",\"mask\":\"%s\""
                                ",\"is_root\":%u,\"rssi\":%d,\"rx_bytes\":%" PRIu64 ",\"tx_bytes\":%" PRIu64 "}",
                                ring[i].orientation,
                                ring[i].uuid,
