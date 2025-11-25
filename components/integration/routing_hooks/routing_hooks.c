@@ -95,8 +95,16 @@ static struct netif *routing_hook_home(uint32_t src_ip, uint32_t dst_ip) {
 }
 
 static struct netif *routing_hook_default(uint32_t src_ip, uint32_t dst_ip) {
-    ESP_LOGD(TAG, "Routing Hook: DEFAULT called -> returning NULL");
-    return NULL;
+    ESP_LOGD(TAG, "Routing Hook: DEFAULT called");
+
+    esp_netif_t *spi = node_get_spi_netif();
+    if (!spi) {
+        ESP_LOGD(TAG, "DEFAULT: SPI netif not ready -> returning NULL");
+        return NULL;
+    } else {
+        ESP_LOGD(TAG, "DEFAULT: SPI netif ready -> returning SPI");
+        return (struct netif *)esp_netif_get_netif_impl(spi);
+    }
 }
 
 void node_set_routing_hook(routing_hook_type_t hook) {
