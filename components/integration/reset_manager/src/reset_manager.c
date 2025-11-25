@@ -69,6 +69,7 @@ void rm_init(ring_share_t *rs) {
     rm->rs = rs;
     rm->is_up = false;
     rm->is_root = false;
+    rm->last_reset_time = esp_timer_get_time();
     rm_generate_uuid_from_mac(rm->mac, sizeof(rm->mac));
     memset(rm->uuid, 0, sizeof(rm->uuid));
 
