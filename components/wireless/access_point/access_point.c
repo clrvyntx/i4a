@@ -12,7 +12,6 @@
 #include "access_point.h"
 
 #define DEFAULT_DNS "8.8.8.8"
-#define BACKUP_DNS "9.9.9.9"
 
 static const char *LOGGING_TAG = "AP";
 
@@ -107,11 +106,6 @@ void ap_set_network(AccessPointPtr ap, const char *network_cidr, const char *net
   dns_main.ip.type = ESP_IPADDR_TYPE_V4;
   ESP_ERROR_CHECK(esp_netif_set_dns_info(ap->netif, ESP_NETIF_DNS_MAIN, &dns_main));
 
-  esp_netif_dns_info_t dns_fallback;
-  dns_fallback.ip.u_addr.ip4.addr = ipaddr_addr(BACKUP_DNS);
-  dns_fallback.ip.type = ESP_IPADDR_TYPE_V4;
-  ESP_ERROR_CHECK(esp_netif_set_dns_info(ap->netif, ESP_NETIF_DNS_BACKUP, &dns_fallback));
-
   esp_netif_dhcps_start(ap->netif);
 };
 
@@ -185,3 +179,4 @@ void ap_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, 
     }
   }
 }
+
