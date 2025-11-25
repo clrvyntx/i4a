@@ -69,7 +69,7 @@ void rm_init(ring_share_t *rs) {
     rm->rs = rs;
     rm->is_up = false;
     rm->is_root = false;
-    rm->last_reset_time = esp_timer_get_time();
+    rm_generate_uuid_from_mac(rm->mac, sizeof(rm->mac));
     memset(rm->uuid, 0, sizeof(rm->uuid));
 
     rs_register_component(
@@ -111,7 +111,7 @@ bool rm_broadcast_startup_info(bool is_root) {
     rm_startup_packet_t packet;
     packet.opcode = RM_OPCODE_STARTUP;
     if(!is_root){
-        rm_generate_uuid_from_mac(packet.uuid, sizeof(packet.uuid));
+        strncpy(packet.uuid, rm->mac, sizeof(packet.uuid));
     } else {
         strncpy(packet.uuid, "000000000000", sizeof(packet.uuid));
     }
@@ -144,6 +144,10 @@ bool rm_is_root(void){
     return rm->is_root;
 }
 
-char *rm_get_uuid(void) {
+const char *rm_get_uuid(void) {
     return rm->uuid;
+}
+
+const char *rm_get_mac(void){
+    return rm->mac;
 }
