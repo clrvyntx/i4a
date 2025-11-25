@@ -37,7 +37,8 @@ static const char *TAG = "node";
 
 typedef struct node {
   DevicePtr node_device_ptr;
-  char *node_device_uuid;
+  const char *node_device_uuid;
+  const char *node_device_mac;
   node_device_orientation_t node_device_orientation;
   bool node_device_is_center_root;
   uint32_t node_device_subnet;
@@ -103,6 +104,7 @@ void node_setup(void){
     }
   }
 
+  node_ptr->node_device_mac = rm_get_mac();
   node_ptr->node_device_uuid = rm_get_uuid();
   node_ptr->node_device_is_center_root = rm_is_root();
   node_traffic_init();
@@ -247,8 +249,10 @@ uint32_t node_get_device_mask(void) {
     return node_ptr->node_device_mask;
 }
 
-char *node_get_uuid(void) {
+const char *node_get_uuid(void) {
     return node_ptr->node_device_uuid;
 }
 
-
+const char *node_get_device_mac(void) {
+    return node_ptr->node_device_mac;
+}
