@@ -54,13 +54,16 @@ static void im_client_task(void *arg) {
                 offset += snprintf(payload + offset, sizeof(payload) - offset, ",");
             }
 
+            char subnet_str[16];
+            char mask_str[16];
+
             struct in_addr addr;
 
             addr.s_addr = htonl(ring[i].subnet);
-            char *subnet_str = inet_ntoa(addr);
+            inet_ntoa_r(addr, subnet_str, sizeof(subnet_str));
 
             addr.s_addr = htonl(ring[i].mask);
-            char *mask_str = inet_ntoa(addr);
+            inet_ntoa_r(addr, mask_str, sizeof(mask_str));
 
             offset += snprintf(payload + offset, sizeof(payload) - offset,
                                "{\"orientation\":%d,\"mac\":\"%s\",\"subnet\":\"%s\",\"mask\":\"%s\""
@@ -92,10 +95,7 @@ static void im_client_task(void *arg) {
         while (true) {
             esp_err_t err = esp_http_client_perform(client);
 
-            if (err == ESP_ERR_HTTP_EAGAIN ||
-                err == ESP_ERR_HTTP_EWOULDBLOCK ||
-                err == ESP_ERR_HTTP_EINPROGRESS)
-            {
+            if (err == ESP_ERR_HTTP_EAGAIN) {
                 // Let Wi-Fi run
                 vTaskDelay(1);
                 continue;
@@ -192,15 +192,15 @@ void im_http_client_start(void) {
         ESP_LOGW(TAG, "HTTP client task already running");
         return;
     }
-    
+
     xTaskCreatePinnedToCore(
         im_client_task,
         "im_client",
         HTTP_CLIENT_TASK_MEM,
         NULL,
         (tskIDLE_PRIORITY + 2),
-        &im_client_task_handle,
-        HTTP_CLIENT_TASK_CORE
+                            &im_client_task_handle,
+                            HTTP_CLIENT_TASK_CORE
     );
 
     ESP_LOGI(TAG, "Info manager HTTP client started");
@@ -211,15 +211,15 @@ void im_scheduler_start(void) {
         ESP_LOGW(TAG, "Scheduler task already running");
         return;
     }
-    
+
     xTaskCreatePinnedToCore(
         im_scheduler_task,
         "im_scheduler",
         IM_TASK_MEM,
         NULL,
         (tskIDLE_PRIORITY + 2),
-        &im_scheduler_task_handle,
-        IM_TASK_CORE
+                            &im_scheduler_task_handle,
+                            IM_TASK_CORE
     );
 
     ESP_LOGI(TAG, "Info manager scheduler started");
