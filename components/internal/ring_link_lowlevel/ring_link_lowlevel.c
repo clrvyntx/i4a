@@ -22,6 +22,7 @@ esp_err_t ring_link_lowlevel_transmit_payload(ring_link_payload_t *p)
     ESP_LOGD(TAG, "  len: %d", p->len);
     ESP_LOGD(TAG, "  src_id: %d", p->src_id);
     ESP_LOGD(TAG, "  dst_id: %d\n", p->dst_id);
+    p->crc32 = ring_link_compute_crc32(p);
     if( xSemaphoreTake( s_tx_semaphore_handle, ( TickType_t ) 10 ) == pdTRUE )
     {
         rc = RING_LINK_LOWLEVEL_IMPL_TRANSMIT(p, sizeof(ring_link_payload_t));

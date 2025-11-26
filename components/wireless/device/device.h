@@ -69,9 +69,11 @@ void device_stop_ap_station(DevicePtr device_ptr);
 void device_restart_ap_station(DevicePtr device_ptr);
 esp_netif_t *device_get_netif(DevicePtr device_ptr);
 bool device_send_wireless_message(DevicePtr device_ptr, const uint8_t *msg, uint16_t len);
+int8_t device_get_rssi(DevicePtr device_ptr);
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif //_DEVICE_H_
+

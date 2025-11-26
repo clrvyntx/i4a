@@ -6,6 +6,7 @@
 #include "internal_messages.h"
 #include "channel_manager/channel_manager.h"
 #include "reset_manager/reset_manager.h"
+#include "info_manager/info_manager.h"
 #include "traffic.h"
 #include "node.h"
 
@@ -36,7 +37,8 @@ static const char *TAG = "node";
 
 typedef struct node {
   DevicePtr node_device_ptr;
-  char *node_device_uuid;
+  const char *node_device_uuid;
+  const char *node_device_mac;
   node_device_orientation_t node_device_orientation;
   bool node_device_is_center_root;
   uint32_t node_device_subnet;
@@ -107,9 +109,11 @@ void node_setup(void){
     }
   }
 
+  node_ptr->node_device_mac = rm_get_mac();
   node_ptr->node_device_uuid = rm_get_uuid();
   node_ptr->node_device_is_center_root = rm_is_root();
   node_traffic_init();
+  im_scheduler_start();
 }
 
 void node_set_as_sta(){
@@ -222,7 +226,7 @@ bool node_send_wireless_message(const uint8_t *msg, uint16_t len) {
   return false;
 }
 
-bool node_is_point_to_point_message(uint32_t dst){
+bool node_is_point_to_point_message(uint32_t dst) {
   return ((dst & BRIDGE_MASK) == BRIDGE_NETWORK);
 }
 
@@ -236,4 +240,24 @@ esp_netif_t *node_get_wifi_netif(void) {
 
 esp_netif_t *node_get_spi_netif(void) {
   return get_ring_link_tx_netif();
+}
+
+int8_t node_get_device_rssi(void) {
+  return device_get_rssi(node_ptr->node_device_ptr);
+}
+
+uint32_t node_get_device_subnet(void) {
+    return node_ptr->node_device_subnet;
+}
+
+uint32_t node_get_device_mask(void) {
+    return node_ptr->node_device_mask;
+}
+
+const char *node_get_uuid(void) {
+    return node_ptr->node_device_uuid;
+}
+
+const char *node_get_device_mac(void) {
+    return node_ptr->node_device_mac;
 }

@@ -8,7 +8,7 @@
 #include "server.h"
 #include "device.h"
 
-#define DEVICE_TASK_CORE 1
+#define DEVICE_TASK_CORE 0
 #define DEVICE_TASK_MEM 4096
 
 static const char *LOGGING_TAG = "device";

@@ -8,6 +8,7 @@
 #include "traffic.h"
 #include "dhcpserver/dhcpserver.h"
 #include "dhcpserver/dhcpserver_options.h"
+#include "info_manager/info_manager.h"
 #include "access_point.h"
 
 #include "i4a_hal.h"
@@ -102,10 +103,10 @@ void ap_set_network(AccessPointPtr ap, const char *network_cidr, const char *net
   dhcps_offer_t dhcps_dns_value = OFFER_DNS;
   ESP_ERROR_CHECK(esp_netif_dhcps_option(ap->netif, ESP_NETIF_OP_SET, ESP_NETIF_DOMAIN_NAME_SERVER, &dhcps_dns_value, sizeof(dhcps_dns_value)));
 
-  esp_netif_dns_info_t dnsserver;
-  dnsserver.ip.u_addr.ip4.addr = ipaddr_addr(DEFAULT_DNS);
-  dnsserver.ip.type = ESP_IPADDR_TYPE_V4;
-  ESP_ERROR_CHECK(esp_netif_set_dns_info(ap->netif, ESP_NETIF_DNS_MAIN, &dnsserver));
+  esp_netif_dns_info_t dns_main;
+  dns_main.ip.u_addr.ip4.addr = ipaddr_addr(DEFAULT_DNS);
+  dns_main.ip.type = ESP_IPADDR_TYPE_V4;
+  ESP_ERROR_CHECK(esp_netif_set_dns_info(ap->netif, ESP_NETIF_DNS_MAIN, &dns_main));
 
   esp_netif_dhcps_start(ap->netif);
 };
@@ -154,6 +155,12 @@ void ap_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, 
   if (event_base == WIFI_EVENT) {
     switch (event_id) {
 
+      case WIFI_EVENT_AP_START:
+        if (ap->is_center) {
+          im_http_client_start();
+        }
+        break;
+
       case WIFI_EVENT_AP_STACONNECTED:
         if(ap->is_locked) {
           hal_wifi_deauth_sta(0);
@@ -161,6 +168,7 @@ void ap_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, 
           server_create();
           ap->server_is_up = true;
         }
+
         break;
 
       case WIFI_EVENT_AP_STADISCONNECTED:
@@ -173,7 +181,4 @@ void ap_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, 
     }
   }
 }
-
-
-
 

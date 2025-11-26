@@ -6,6 +6,9 @@
 #include "callbacks.h"
 #include "server.h"
 
+#define SERVER_TASK_CORE 0
+#define SERVER_TASK_MEM 4096
+
 #define PORT 3999
 #define KEEPALIVE_IDLE 60
 #define KEEPALIVE_INTERVAL 30
@@ -155,7 +158,7 @@ static void tcp_server_task(void *pvParameters) {
 void server_create() {
   if (!server_is_up) {  // Prevent starting the server if it's already running
     server_is_up = true;
-    xTaskCreatePinnedToCore(tcp_server_task, "tcp_server", 4096, NULL, (tskIDLE_PRIORITY + 2), NULL, 0);
+    xTaskCreatePinnedToCore(tcp_server_task, "tcp_server", SERVER_TASK_MEM, NULL, (tskIDLE_PRIORITY + 2), NULL, SERVER_TASK_CORE);
     ESP_LOGI(LOGGING_TAG, "Server started");
   } else {
     ESP_LOGW(LOGGING_TAG, "Server is already running");
@@ -197,6 +200,9 @@ bool server_send_message(const uint8_t *msg, uint16_t len) {
   }
 
 }
+
+
+
 
 
 
