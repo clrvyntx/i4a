@@ -32,7 +32,17 @@ static bool is_center_root;
 
 // ---------------- Default routing hook ----------------
 struct netif *routing_hook_default(uint32_t src_ip, uint32_t dst_ip) {
-    return NULL;
+    esp_netif_t *spi = node_get_spi_netif();
+    if (!spi) {
+        return NULL;
+    }
+    
+    struct netif *lwip_netif = esp_netif_get_netif_impl(spi);
+    if (!lwip_netif) {
+        return NULL;
+    }
+    
+    return lwip_netif;
 }
 
 // ---------------- Static routing hook ----------------
@@ -148,6 +158,7 @@ void app_main(void) {
     // After initialization, switch to static routing hook
     selected_routing_hook = routing_hook_static;
 }
+
 
 
 
