@@ -11,7 +11,7 @@
 extern "C" {
 #endif
 
-
+#define RING_LINK_PAYLOAD_CRC_LEN  (sizeof(ring_link_payload_t) - sizeof(((ring_link_payload_t *)0)->crc32))
 #define RING_LINK_NETIF_MTU (SPI_BUFFER_SIZE - 100)
 #define RING_LINK_PAYLOAD_TTL 4
 
@@ -37,8 +37,7 @@ typedef enum __attribute__((__packed__)) {
 
 typedef uint8_t ring_link_payload_id_t;
 
-typedef struct
-{
+typedef struct {
     ring_link_payload_id_t id;
     ring_link_payload_buffer_type_t buffer_type;
     uint16_t len;
@@ -46,6 +45,7 @@ typedef struct
     config_id_t src_id;
     config_id_t dst_id;
     char buffer[RING_LINK_NETIF_MTU];
+    uint32_t crc32;
 } ring_link_payload_t;
 
 bool ring_link_payload_is_for_device(ring_link_payload_t *p);
@@ -58,6 +58,7 @@ bool ring_link_payload_is_internal(ring_link_payload_t *p);
 
 bool ring_link_payload_is_esp_netif(ring_link_payload_t *p);
 
+uint32_t ring_link_compute_crc32(const ring_link_payload_t *p);
 
 #ifdef __cplusplus
 }
