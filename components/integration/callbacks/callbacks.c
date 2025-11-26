@@ -7,7 +7,7 @@
 #include "esp_log.h"
 #include "callbacks.h"
 
-#define CALLBACKS_TASK_CORE 1
+#define CALLBACKS_TASK_CORE 0
 #define CALLBACKS_TASK_MEM 4096
 
 #define MAX_MESSAGE_SIZE 512
@@ -185,5 +185,6 @@ wireless_t *node_get_wireless_instance(void){
 siblings_t *node_get_siblings_instance(void){
     return sb;
 }
+
 
 
