@@ -16,10 +16,10 @@
 #define BROADCAST_INTERVAL_MS   (5 * 60 * 1000)     // 5 min
 #define ORIENTATION_SPREAD_MS   (60 * 1000)         // 1 min per orientation
 
-#define HTTP_CLIENT_TASK_CORE 0
+#define HTTP_CLIENT_TASK_CORE 1
 #define HTTP_CLIENT_TASK_MEM 8092
 
-#define IM_TASK_CORE 0
+#define IM_TASK_CORE 1
 #define IM_TASK_MEM 4096
 
 static const char *TAG = "info_manager";
@@ -31,13 +31,16 @@ static im_manager_t info_manager = {0};
 static im_manager_t *im = &info_manager;
 
 static void im_client_task(void *arg) {
+    vTaskDelay(pdMS_TO_TICKS(CLIENT_POST_INTERVAL_MS));
+
     esp_http_client_config_t config = {
         .url = "http://" SERVER_ADDRESS,
         .method = HTTP_METHOD_POST,
+        .is_async = true,
+        .timeout_ms = 2000,
     };
 
     esp_http_client_handle_t client = esp_http_client_init(&config);
-    vTaskDelay(pdMS_TO_TICKS(CLIENT_POST_INTERVAL_MS));
 
     while (true) {
         char payload[MAX_HTTP_OUTPUT_BUFFER];
@@ -45,25 +48,24 @@ static void im_client_task(void *arg) {
         int offset = 0;
 
         offset += snprintf(payload + offset, sizeof(payload) - offset, "[");
+
         for (int i = 0; i < MAX_ORIENTATIONS; i++) {
             if (i > 0) {
                 offset += snprintf(payload + offset, sizeof(payload) - offset, ",");
             }
 
-            char subnet_str[16];
-            char mask_str[16];
-
             struct in_addr addr;
 
             addr.s_addr = htonl(ring[i].subnet);
-            snprintf(subnet_str, sizeof(subnet_str), "%s", inet_ntoa(addr));
+            char *subnet_str = inet_ntoa(addr);
 
             addr.s_addr = htonl(ring[i].mask);
-            snprintf(mask_str, sizeof(mask_str), "%s", inet_ntoa(addr));
+            char *mask_str = inet_ntoa(addr);
 
             offset += snprintf(payload + offset, sizeof(payload) - offset,
                                "{\"orientation\":%d,\"mac\":\"%s\",\"subnet\":\"%s\",\"mask\":\"%s\""
-                               ",\"is_root\":%u,\"rssi\":%d,\"rx_bytes\":%" PRIu64 ",\"tx_bytes\":%" PRIu64 "}",
+                               ",\"is_root\":%u,\"rssi\":%d,"
+                               "\"rx_bytes\":%" PRIu64 ",\"tx_bytes\":%" PRIu64 "}",
                                ring[i].orientation,
                                ring[i].uuid,
                                subnet_str,
@@ -74,26 +76,39 @@ static void im_client_task(void *arg) {
                                ring[i].tx_bytes
             );
 
-
-            // Safety: stop if we risk overflowing
             if (offset >= MAX_HTTP_OUTPUT_BUFFER - 50) {
-                ESP_LOGD(TAG, "Payload too long, truncating JSON array");
+                ESP_LOGW(TAG, "Payload truncated");
                 break;
             }
         }
+
         snprintf(payload + offset, sizeof(payload) - offset, "]");
 
-        ESP_LOGD(TAG, "HTTP POST payload (%d bytes): %s", offset, payload);
+        ESP_LOGD(TAG, "Payload (%d): %s", offset, payload);
 
         esp_http_client_set_post_field(client, payload, strlen(payload));
         esp_http_client_set_header(client, "Content-Type", "application/json");
 
-        esp_err_t err = esp_http_client_perform(client);
-        if (err == ESP_OK) {
-            int status = esp_http_client_get_status_code(client);
-            ESP_LOGD(TAG, "HTTP POST successful, status=%d", status);
-        } else {
-            ESP_LOGD(TAG, "HTTP POST failed: %s", esp_err_to_name(err));
+        while (true) {
+            esp_err_t err = esp_http_client_perform(client);
+
+            if (err == ESP_ERR_HTTP_EAGAIN ||
+                err == ESP_ERR_HTTP_EWOULDBLOCK ||
+                err == ESP_ERR_HTTP_EINPROGRESS)
+            {
+                // Let Wi-Fi run
+                vTaskDelay(1);
+                continue;
+            }
+
+            if (err == ESP_OK) {
+                int status = esp_http_client_get_status_code(client);
+                ESP_LOGI(TAG, "HTTP POST done, status=%d", status);
+            } else {
+                ESP_LOGW(TAG, "HTTP POST error: %s", esp_err_to_name(err));
+            }
+
+            break;
         }
 
         vTaskDelay(pdMS_TO_TICKS(CLIENT_POST_INTERVAL_MS));
@@ -183,7 +198,7 @@ void im_http_client_start(void) {
         "im_client",
         HTTP_CLIENT_TASK_MEM,
         NULL,
-        tskIDLE_PRIORITY + 2,
+        (tskIDLE_PRIORITY + 2),
         &im_client_task_handle,
         HTTP_CLIENT_TASK_CORE
     );
