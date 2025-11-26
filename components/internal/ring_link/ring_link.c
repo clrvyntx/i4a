@@ -1,6 +1,5 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
-
 #include "ring_link.h"
 
 static const char *TAG = "==> ring_link";
@@ -12,6 +11,16 @@ static QueueHandle_t *esp_netif_queue;
 static esp_err_t process_payload(ring_link_payload_t *p)
 {
     QueueHandle_t *specific_queue;
+
+    uint32_t expected = ring_link_compute_crc32(p);
+    if (expected != p->crc32) {
+        ESP_LOGE(TAG,
+                 "CRC32 mismatch: expected=0x%08x got=0x%08x. Dropping.",
+                 expected, p->crc32
+        );
+        ring_link_lowlevel_free_rx_buffer(p);
+        return ESP_FAIL;
+    }
 
     ESP_LOGD(TAG, "Received payload:");
     ESP_LOGD(TAG, "  buffer_type: 0x%02x", p->buffer_type);
