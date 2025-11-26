@@ -67,10 +67,10 @@ void station_find_ap(StationPtr stationPtr) {
   uint16_t ap_count = 0;
   memset(ap_info, 0, sizeof(ap_info));
 
-  esp_wifi_scan_start(NULL, true);
+  hal_wifi_scan_start(NULL, true);
   ESP_LOGI(LOGGING_TAG, "Max AP number ap_info can hold = %u", number);
-  ESP_ERROR_CHECK(esp_wifi_scan_get_ap_num(&ap_count));
-  ESP_ERROR_CHECK(esp_wifi_scan_get_ap_records(&number, ap_info));
+  ESP_ERROR_CHECK(hal_wifi_scan_get_ap_num(&ap_count));
+  ESP_ERROR_CHECK(hal_wifi_scan_get_ap_records(&number, ap_info));
   ESP_LOGI(LOGGING_TAG, "Total APs scanned = %u, actual AP number ap_info holds = %u", ap_count, number);
 
   uint16_t networks_to_scan = (ap_count > number) ? number : ap_count;
@@ -123,7 +123,7 @@ static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_
           stationPtr->is_fully_connected = false;
         }
         if (s_retry_num < MAX_RETRIES) {
-          esp_wifi_connect();
+          hal_wifi_connect();
           s_retry_num++;
           ESP_LOGI(LOGGING_TAG, "Connection failed, retrying to connect to the AP");
         } else {
@@ -139,8 +139,8 @@ static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_
 }
 
 void station_start(StationPtr stationPtr) {
-  ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &(wifi_config_t){ 0 }));
-  ESP_ERROR_CHECK(esp_wifi_start());
+  ESP_ERROR_CHECK(hal_wifi_set_config(WIFI_IF_STA, &(wifi_config_t){ 0 }));
+  ESP_ERROR_CHECK(hal_wifi_start());
 }
 
 void station_connect(StationPtr stationPtr) {
@@ -153,20 +153,20 @@ void station_connect(StationPtr stationPtr) {
   ESP_LOGI(LOGGING_TAG, "Connecting to %s...", stationPtr->wifi_config.sta.ssid);
   esp_netif_dhcpc_stop(stationPtr->netif);
   ESP_ERROR_CHECK(esp_netif_set_ip_info(stationPtr->netif, &static_ip));
-  ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &stationPtr->wifi_config));
+  ESP_ERROR_CHECK(hal_wifi_set_config(WIFI_IF_STA, &stationPtr->wifi_config));
   ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, stationPtr));
   ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, stationPtr));
   node_traffic_start(stationPtr->netif);
-  ESP_ERROR_CHECK(esp_wifi_connect());
+  ESP_ERROR_CHECK(hal_wifi_connect());
 }
 
 void station_disconnect(StationPtr stationPtr) {
   s_retry_num = MAX_RETRIES;
-  ESP_ERROR_CHECK(esp_wifi_disconnect());
+  ESP_ERROR_CHECK(hal_wifi_disconnect());
 }
 
 void station_stop(StationPtr stationPtr) {
-  ESP_ERROR_CHECK(esp_wifi_stop());
+  ESP_ERROR_CHECK(hal_wifi_stop());
 }
 
 void station_restart(StationPtr stationPtr) {

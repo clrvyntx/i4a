@@ -40,15 +40,12 @@ bool broadcast_to_siblings(const void *msg, uint16_t len)
     {
         bool result = false;
         s_broadcast_task = xTaskGetCurrentTaskHandle();
-        ESP_LOGI(TAG, "sending broadcast from task s_broadcast_task=%p", s_broadcast_task);
         if (send_broadcast(msg, len) == ESP_OK)
         {   
-            ESP_LOGI(TAG, "ulTaskNotifyTake");
             result = ulTaskNotifyTake( pdTRUE, BROADCAST_TIMEOUT_MS / portTICK_PERIOD_MS ) == pdTRUE ? true : false;
         } else {
-            ESP_LOGI(TAG, "send_broadcast failed");
+            ESP_LOGE(TAG, "send_broadcast failed");
         }
-        ESP_LOGI(TAG, "clearing s_broadcast_task=%p", s_broadcast_task);
         s_broadcast_task = NULL;
         xSemaphoreGive( s_broadcast_mutex );
         return result;
@@ -59,7 +56,6 @@ bool broadcast_to_siblings(const void *msg, uint16_t len)
 
 esp_err_t broadcast_handler(ring_link_payload_t *p)
 {
-    ESP_LOGI(TAG, "broadcast_handler called with s_broadcast_task=%p", s_broadcast_task);
     // broadcast origin
     if (ring_link_payload_is_from_device(p))
     {
@@ -76,7 +72,7 @@ esp_err_t broadcast_handler(ring_link_payload_t *p)
     }
     else
     {
-        ESP_LOGI(TAG, "Forwarding broadcast");
+        ESP_LOGD(TAG, "Forwarding broadcast");
         ESP_ERROR_CHECK(ring_link_internal_process(p));
         return ring_link_lowlevel_forward_payload(p);
     }

@@ -158,7 +158,6 @@ void node_on_peer_message(void *msg, uint16_t len) {
 }
 
 void node_on_sibling_message(void *msg, uint16_t len) {
-    ESP_LOGI(TAG, "node_on_sibling_message");
     message_t m;
     memcpy(m.data, msg, len);
     m.length = len;

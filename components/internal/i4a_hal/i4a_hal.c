@@ -12,7 +12,7 @@ static SemaphoreHandle_t s_uart_lock = NULL;
 static SemaphoreHandle_t s_uart_read_lock = NULL;
 static SemaphoreHandle_t s_uart_write_lock = NULL;
 
-static inline void uart_execute(uint32_t cmd, uint32_t payload_size, const void *payload) {
+static void uart_execute(uint32_t cmd, uint32_t payload_size, const void *payload) {
     while (!xSemaphoreTake(s_uart_write_lock, portMAX_DELAY));
     write_all(&cmd, sizeof(uint32_t));
     write_all(&payload_size, sizeof(uint32_t));
@@ -22,7 +22,24 @@ static inline void uart_execute(uint32_t cmd, uint32_t payload_size, const void 
     xSemaphoreGive(s_uart_write_lock);
 }
 
-static inline uint32_t uart_query(uint32_t cmd) {
+static uint32_t uart_execute_ret(uint32_t cmd, uint32_t payload_size, const void *payload) {
+    while (!xSemaphoreTake(s_uart_write_lock, portMAX_DELAY));
+    write_all(&cmd, sizeof(uint32_t));
+    write_all(&payload_size, sizeof(uint32_t));
+    if (payload_size > 0) {
+        write_all(payload, payload_size);
+    }
+    xSemaphoreGive(s_uart_write_lock);
+    
+    while (!xSemaphoreTake(s_uart_read_lock, portMAX_DELAY));
+    uint32_t result = 0;
+    read_exact(&result, sizeof(uint32_t));
+    xSemaphoreGive(s_uart_read_lock);
+    
+    return result;
+}
+
+static uint32_t uart_query(uint32_t cmd) {
     uart_execute(cmd, 0, NULL);
 
     while (!xSemaphoreTake(s_uart_read_lock, portMAX_DELAY));
@@ -102,7 +119,7 @@ static struct wlan_vnic {
 } wlan;
 
 /** Creates netifs for AP & STA */
-void hal_wifi_init() {
+esp_err_t hal_wifi_init(const wifi_init_config_t *config) {
     assert(vnic_create(&wlan.ap_tx) == VNIC_OK);
     assert(vnic_create(&wlan.ap_rx) == VNIC_OK);
     assert(vnic_create(&wlan.sta_tx) == VNIC_OK);
@@ -111,7 +128,6 @@ void hal_wifi_init() {
     assert(vnic_bind_receiver(&wlan.ap_tx, &wlan.ap_rx) == VNIC_OK);
     assert(vnic_bind_receiver(&wlan.sta_tx, &wlan.sta_rx) == VNIC_OK);
 
-    esp_netif_ip_info_t null_ip = {0};
     uint32_t mac = esp_random();
    
     extern const esp_netif_ip_info_t _g_esp_netif_soft_ap_ip;
@@ -127,7 +143,7 @@ void hal_wifi_init() {
         .route_prio = 10};
 
     esp_netif_inherent_config_t sta_config = {
-        .flags =ESP_NETIF_DHCP_CLIENT | ESP_NETIF_FLAG_GARP | ESP_NETIF_FLAG_EVENT_IP_MODIFIED,
+        .flags = ESP_NETIF_DHCP_CLIENT | ESP_NETIF_FLAG_GARP | ESP_NETIF_FLAG_EVENT_IP_MODIFIED,
         .mac = {0xaa, 0xaa, (mac >> 24) & 0xFF, (mac >> 16) & 0xFF, (mac >> 8) & 0xFF, mac & 0xFF},
         ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_EMPTY(ip_info)
         .get_ip_event = IP_EVENT_STA_GOT_IP,
@@ -138,10 +154,87 @@ void hal_wifi_init() {
 
     assert(vnic_register_esp_netif(&wlan.ap_tx, ap_config) == VNIC_OK);
     assert(vnic_register_esp_netif(&wlan.sta_tx, sta_config) == VNIC_OK);
+    
+    return ESP_OK;
+}
+
+esp_err_t hal_wifi_start(void) {
+    ESP_LOGI(TAG, "hal_wifi_start()");
+    uart_query(0x0B);
+    return ESP_OK;
+}
+
+esp_err_t hal_wifi_stop(void) {
+    ESP_LOGI(TAG, "hal_wifi_stop()");
+    uart_query(0x0C);
+    return ESP_OK;
+}
+
+esp_err_t hal_wifi_set_config(wifi_interface_t interface, wifi_config_t *conf) {
+    if (interface == WIFI_IF_AP) {
+        ESP_LOGI(
+            TAG, 
+            "hal_wifi_set_config(ap, ssid=%s, password=%s, channel=%u)", 
+            conf->ap.ssid, conf->ap.password, conf->ap.channel
+        );
+        struct {
+            char ssid[32];
+            char password[64];
+            uint32_t channel;
+        } payload = {0};
+        strcpy(payload.ssid, (char *)conf->ap.ssid);
+        strcpy(payload.password, (char *)conf->ap.password);
+        payload.channel = conf->ap.channel;
+        uart_execute_ret(0x06, sizeof(payload), &payload);
+        return ESP_OK;
+    }
+
+    return ESP_ERR_WIFI_NOT_INIT;
 }
 
 esp_err_t hal_wifi_set_mode(wifi_mode_t mode) {
+    ESP_LOGI(TAG, "hal_wifi_set_mode(%u)", mode);
+    uint32_t mode_u32 =(uint32_t)mode;
+    uart_execute_ret(0x05, sizeof(mode_u32), &mode_u32);
     return ESP_OK;
+}
+
+esp_err_t hal_wifi_connect(void) {
+    ESP_LOGI(TAG, "hal_wifi_connect()");
+    uart_query(0x08);  // result == connected?
+    return ESP_OK;
+}
+
+esp_err_t hal_wifi_disconnect(void) {
+    ESP_LOGI(TAG, "hal_wifi_disconnect()");
+    uart_query(0x09);
+    return ESP_OK;
+}
+
+esp_err_t hal_wifi_deauth_sta(uint16_t aid) {
+    ESP_LOGI(TAG, "hal_wifi_deauth_sta(%u)", aid);
+    uart_execute_ret(0x0A, sizeof(aid), &aid);
+    return ESP_OK;
+}
+
+esp_err_t hal_wifi_scan_start(const wifi_scan_config_t *config, bool block) {
+    return ESP_ERR_WIFI_NOT_INIT;
+}
+
+esp_err_t hal_wifi_scan_get_ap_num(uint16_t *number) {
+    return ESP_ERR_WIFI_NOT_INIT;
+}
+
+esp_err_t hal_wifi_scan_get_ap_records(uint16_t *number, wifi_ap_record_t *ap_records) {
+    return ESP_ERR_WIFI_NOT_INIT;
+}
+
+esp_err_t hal_wifi_ap_get_sta_list(wifi_sta_list_t *sta) {
+    return ESP_ERR_WIFI_NOT_INIT;
+}
+
+esp_err_t hal_wifi_sta_get_ap_info(wifi_ap_record_t *ap_info) {
+    return ESP_ERR_WIFI_NOT_INIT;
 }
 
 esp_netif_t* hal_netif_create_default_wifi_ap() {

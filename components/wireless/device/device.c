@@ -1,18 +1,20 @@
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
-#include "esp_wifi.h"
-// #include "nvs_flash.h"
+#include "i4a_hal.h"
+#include "nvs_flash.h"
 #include "esp_log.h"
 #include "client.h"
 #include "server.h"
 #include "device.h"
-#include "i4a_hal.h"
+
+#define DEVICE_TASK_CORE 1
+#define DEVICE_TASK_MEM 4096
 
 static const char *LOGGING_TAG = "device";
 static const char *dev_orientation[5] = {"_N_", "_S_", "_E_", "_W_", "_C_"};
 static bool is_on_connect_loop = false;
-/*
+
 // Function to initialize NVS (non-volatile storage)
 static esp_err_t init_nvs() {
   esp_err_t ret = nvs_flash_init();
@@ -21,11 +23,10 @@ static esp_err_t init_nvs() {
     ret = nvs_flash_init();
   }
   return ret;
-}*/
+}
 
 // Function to initialize the Wi-Fi interface
 esp_err_t device_wifi_init() {
-  /*
   // Initialize NVS
   esp_err_t ret = init_nvs();
   if (ret != ESP_OK) {
@@ -34,10 +35,9 @@ esp_err_t device_wifi_init() {
   }
 
   // Initialize Wi-Fi configuration structure
-  // wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-  // ESP_ERROR_CHECK(esp_wifi_init(&cfg));
-*/
-  hal_wifi_init();
+  wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+  ESP_ERROR_CHECK(hal_wifi_init(&cfg));
+
   return ESP_OK;
 }
 
@@ -99,25 +99,25 @@ void device_set_network_ap(DevicePtr device_ptr, const char *network_cidr, const
 };
 
 void device_reset(DevicePtr device_ptr) {
-  // if (device_ptr->state == d_active) {
-  //   if (device_ptr->mode == AP) {
-  //     device_stop_ap(device_ptr);
-  //   } 
-  //   if (device_ptr->mode == STATION) {
-  //     device_disconnect_station(device_ptr);
-  //     device_stop_station(device_ptr);
-  //   } 
-  //   if (device_ptr->mode == AP_STATION) {
-  //     device_stop_ap(device_ptr);
-  //     device_disconnect_station(device_ptr);
-  //     device_stop_station(device_ptr);
-  //   }
-  //   device_ptr->state = d_inactive;
-  // }
-  // device_destroy_netif(device_ptr);
-  // device_ptr->mode = NAN;
+  if (device_ptr->state == d_active) {
+    if (device_ptr->mode == AP) {
+      device_stop_ap(device_ptr);
+    } 
+    if (device_ptr->mode == STATION) {
+      device_disconnect_station(device_ptr);
+      device_stop_station(device_ptr);
+    } 
+    if (device_ptr->mode == AP_STATION) {
+      device_stop_ap(device_ptr);
+      device_disconnect_station(device_ptr);
+      device_stop_station(device_ptr);
+    }
+    device_ptr->state = d_inactive;
+  }
+  device_destroy_netif(device_ptr);
+  device_ptr->mode = NAN;
 }
-/*
+
 void device_destroy_netif(DevicePtr device_ptr){
   if (device_ptr->mode == AP) {
     ap_destroy_netif(device_ptr->access_point_ptr);
@@ -134,16 +134,16 @@ void device_destroy_netif(DevicePtr device_ptr){
 }
 
 // AP
-*/
+
 void device_start_ap(DevicePtr device_ptr) {
-  // if (ap_is_initialized(device_ptr->access_point_ptr)) {
-  //   ap_start(device_ptr->access_point_ptr);
-  //   device_ptr->state = d_active;
-  // } else {
-  //   ESP_LOGE(LOGGING_TAG, "Access Point is not initialized");
-  // }
+  if (ap_is_initialized(device_ptr->access_point_ptr)) {
+    ap_start(device_ptr->access_point_ptr);
+    device_ptr->state = d_active;
+  } else {
+    ESP_LOGE(LOGGING_TAG, "Access Point is not initialized");
+  }
 };
-/*
+
 void device_stop_ap(DevicePtr device_ptr) {
   ap_stop(device_ptr->access_point_ptr);
 };
@@ -153,16 +153,16 @@ void device_restart_ap(DevicePtr device_ptr) {
 };
 
 // Station
-*/
+
 void device_start_station(DevicePtr device_ptr) {
-  // if (station_is_initialized(device_ptr->station_ptr)) {
-  //   station_start(device_ptr->station_ptr);
-  //   device_ptr->state = d_active;
-  // } else {
-  //   ESP_LOGE(LOGGING_TAG, "Station is not initialized");
-  // }
+  if (station_is_initialized(device_ptr->station_ptr)) {
+    station_start(device_ptr->station_ptr);
+    device_ptr->state = d_active;
+  } else {
+    ESP_LOGE(LOGGING_TAG, "Station is not initialized");
+  }
 };
-/*
+
 static void device_connect_station_task(void* arg) {
   DevicePtr device_ptr = (DevicePtr)arg;  // Get the device pointer from the task argument
 
@@ -174,23 +174,23 @@ static void device_connect_station_task(void* arg) {
     if(!skip_station_connect){
     // If station is disconnected, start scanning for APs
       if (!station_is_active(device_ptr->station_ptr)) {
-        ESP_LOGI(LOGGING_TAG, "Wi-Fi not connected. Scanning for available networks...");
-
-        if(device_ptr->mode == AP_STATION && device_ptr->access_point_ptr->is_locked) {
-          ap_unlock(device_ptr->access_point_ptr);
+        // Lock AP before scanning on AP+STA mode
+        if(device_ptr->mode == AP_STATION && !device_ptr->access_point_ptr->is_locked) {
+          ap_lock(device_ptr->access_point_ptr);
         }
+        
+        ESP_LOGI(LOGGING_TAG, "Wi-Fi not connected. Scanning for available networks...");
         
         station_find_ap(device_ptr->station_ptr);
         if (station_found_ap(device_ptr->station_ptr)) {
           ESP_LOGI(LOGGING_TAG, "Wi-Fi found! Attempting to connect.");
-  
-          if(device_ptr->mode == AP_STATION && !device_ptr->access_point_ptr->is_locked) {
-            ap_lock(device_ptr->access_point_ptr);
-          }
-          
           station_connect(device_ptr->station_ptr);
         } else {
           ESP_LOGE(LOGGING_TAG, "No Wi-Fi found. Re-scanning in 10 seconds.");
+          // Unlock AP before next scan loop on AP+STA mode
+          if(device_ptr->mode == AP_STATION && device_ptr->access_point_ptr->is_locked) {
+            ap_unlock(device_ptr->access_point_ptr);
+          }
         }
       } 
     }
@@ -202,12 +202,12 @@ static void device_connect_station_task(void* arg) {
   vTaskDelete(NULL);  // Delete the task
 
 }
-*/
+
 void device_connect_station(DevicePtr device_ptr) {
-  // is_on_connect_loop = true;
-  // xTaskCreatePinnedToCore(device_connect_station_task, "device_connect_station_task", 4096, device_ptr, (tskIDLE_PRIORITY + 2), NULL, 0);
+  is_on_connect_loop = true;
+  xTaskCreatePinnedToCore(device_connect_station_task, "device_connect_station_task", DEVICE_TASK_MEM, device_ptr, (tskIDLE_PRIORITY + 2), NULL, DEVICE_TASK_CORE);
 }
-/*
+
 void device_disconnect_station(DevicePtr device_ptr) {
   is_on_connect_loop = false;
   station_disconnect(device_ptr->station_ptr);
@@ -220,13 +220,11 @@ void device_restart_station(DevicePtr device_ptr) {
 void device_stop_station(DevicePtr device_ptr) {
   station_stop(device_ptr->station_ptr);
 };
-*/
+
 // Network interfaces
 
 esp_netif_t *device_get_netif(DevicePtr device_ptr){
-  return NULL;
-
-  /*if (device_ptr->mode == AP) {
+  if (device_ptr->mode == AP) {
     return device_ptr->access_point_ptr->netif;
   }
 
@@ -240,14 +238,14 @@ esp_netif_t *device_get_netif(DevicePtr device_ptr){
     } else {
       return device_ptr->access_point_ptr->netif;
     }
-  }*/
+  }
+
+  return NULL;
 }
 
 // Wireless messages
 bool device_send_wireless_message(DevicePtr device_ptr, const uint8_t *msg, uint16_t len) {
-  return true;
-
-  /*if(device_ptr->mode == AP){
+  if(device_ptr->mode == AP){
     return server_send_message(msg, len);
   }
 
@@ -263,6 +261,54 @@ bool device_send_wireless_message(DevicePtr device_ptr, const uint8_t *msg, uint
     }
   }
 
-  return false; */
+  return false;
 }
 
+// Device RSSI
+int8_t device_get_rssi(DevicePtr device_ptr) {
+    if (device_ptr->mode == AP) {
+        wifi_sta_list_t list;
+        esp_err_t err = hal_wifi_ap_get_sta_list(&list);
+
+        if (err == ESP_OK && list.num > 0) {
+            return list.sta[0].rssi;
+        } else {
+          return -127;
+        }
+    }
+
+    if (device_ptr->mode == STATION) {
+        wifi_ap_record_t ap_info = {};
+        esp_err_t err = hal_wifi_sta_get_ap_info(&ap_info);
+
+        if (err == ESP_OK) {
+            return ap_info.rssi;
+        }  else {
+          return -127;
+        }
+    }
+
+    if (device_ptr->mode == AP_STATION) {
+        if (device_ptr->station_ptr->ap_found) {
+          wifi_ap_record_t ap_info = {};
+          esp_err_t err = hal_wifi_sta_get_ap_info(&ap_info);
+  
+          if (err == ESP_OK) {
+              return ap_info.rssi;
+          }  else {
+            return -127;
+          }
+        } else {
+          wifi_sta_list_t list;
+          esp_err_t err = hal_wifi_ap_get_sta_list(&list);
+  
+          if (err == ESP_OK && list.num > 0) {
+              return list.sta[0].rssi;
+          } else {
+            return -127;
+          }
+        }
+    }
+
+    return -127;
+}
