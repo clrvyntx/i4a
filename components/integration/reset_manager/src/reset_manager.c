@@ -104,8 +104,6 @@ bool rm_broadcast_reset(void) {
 }
 
 bool rm_broadcast_startup_info(bool is_root) {
-    ESP_LOGI(TAG, "rm_broadcast_startup_info(is_root=%s)", is_root ? "true" : "false");
-    
     if (!rm->rs) {
         ESP_LOGW(TAG, "STARTUP broadcast skipped: manager not initialized");
         return false;

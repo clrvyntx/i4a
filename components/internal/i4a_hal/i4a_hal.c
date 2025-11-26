@@ -62,6 +62,8 @@ void i4a_hal_init() {
 }
 
 uint32_t hal_get_config_bits() {
+    ESP_LOGI(TAG, "Querying board config through UART...");
+
     while (!xSemaphoreTake(s_uart_lock, portMAX_DELAY));
     uint32_t ret = uart_query(0x03);
     xSemaphoreGive(s_uart_lock);

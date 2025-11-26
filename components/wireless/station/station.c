@@ -8,7 +8,6 @@
 #include "traffic.h"
 #include "station.h"
 
-
 #define STA_BRIDGE_NETWORK  0xC0A80300  // 192.168.3.0
 #define STA_BRIDGE_MASK 0xFFFFFFFC  // /30
 

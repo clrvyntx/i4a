@@ -72,7 +72,6 @@ esp_err_t broadcast_handler(ring_link_payload_t *p)
     }
     else
     {
-        ESP_LOGD(TAG, "Forwarding broadcast");
         ESP_ERROR_CHECK(ring_link_internal_process(p));
         return ring_link_lowlevel_forward_payload(p);
     }

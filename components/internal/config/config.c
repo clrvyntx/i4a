@@ -16,7 +16,7 @@ static config_t s_config = {
 // Set the corresponding bits in config_bits based on GPIO pin values
 static uint8_t read_config_bits(void)
 {
-    ESP_LOGI(TAG, "Querying board config through UART...");
+    // Initialize config_bits with all zeros
     uint8_t config_bits = hal_get_config_bits();
 
     ESP_LOGI(TAG, "Raw pin values: %d %d %d", 

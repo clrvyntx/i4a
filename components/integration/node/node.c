@@ -66,8 +66,6 @@ static node_device_orientation_t node_get_config_orientation(void){
 }
 
 void node_setup(void){
-  ESP_ERROR_CHECK(esp_netif_init());
-  ESP_ERROR_CHECK(esp_event_loop_create_default());
   ESP_ERROR_CHECK(node_init_event_queues());
   ESP_ERROR_CHECK(node_start_event_tasks());
 
@@ -81,11 +79,8 @@ void node_setup(void){
   // Wait in sequence to avoid current peaks while node calibrates
   // vTaskDelay(pdMS_TO_TICKS(node_ptr->node_device_orientation * CALIBRATION_DELAY_SECONDS * 1000));
 
-  ESP_LOGI(TAG, "internal messages initialized");
   ESP_ERROR_CHECK(device_wifi_init());
   ESP_ERROR_CHECK(ring_link_init());
-
-  ESP_LOGI(TAG, "wifi and ring link inited");
 
   if(node_ptr->node_device_orientation == NODE_DEVICE_ORIENTATION_CENTER) {
     while (!rm_broadcast_reset()) {

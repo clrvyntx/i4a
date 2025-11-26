@@ -34,6 +34,12 @@ esp_err_t device_wifi_init() {
     return ret;
   }
 
+  // Initialize the ESP-NETIF library (for network interface management)
+  ESP_ERROR_CHECK(esp_netif_init());
+
+  // Create default event loop
+  ESP_ERROR_CHECK(esp_event_loop_create_default());
+
   // Initialize Wi-Fi configuration structure
   wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
   ESP_ERROR_CHECK(hal_wifi_init(&cfg));
