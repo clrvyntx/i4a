@@ -6,7 +6,7 @@
 #include "callbacks.h"
 #include "client.h"
 
-#define CLIENT_CORE_TASK 0
+#define CLIENT_CORE_TASK 1
 #define CLIENT_TASK_MEM 4096
 
 #define SERVER_PORT 3999
@@ -166,6 +166,7 @@ bool client_send_message(const uint8_t *msg, uint16_t len) {
         return false;
     }
 }
+
 
 
 
