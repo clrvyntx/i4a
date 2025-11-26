@@ -97,7 +97,7 @@ static void im_client_task(void *arg) {
 
             if (err == ESP_ERR_HTTP_EAGAIN) {
                 // Let Wi-Fi run
-                vTaskDelay(pdMS_TO_TICKS(100));
+                vTaskDelay(pdMS_TO_TICKS(500));
                 continue;
             }
 
