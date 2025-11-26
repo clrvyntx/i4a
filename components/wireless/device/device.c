@@ -8,7 +8,7 @@
 #include "server.h"
 #include "device.h"
 
-#define DEVICE_TASK_CORE 0
+#define DEVICE_TASK_CORE 1
 #define DEVICE_TASK_MEM 4096
 
 static const char *LOGGING_TAG = "device";
@@ -318,5 +318,6 @@ int8_t device_get_rssi(DevicePtr device_ptr) {
 
     return -127;
 }
+
 
 
