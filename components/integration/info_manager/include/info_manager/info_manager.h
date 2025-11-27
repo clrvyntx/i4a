@@ -8,9 +8,11 @@
 
 #define MAX_ORIENTATIONS 5
 #define UUID_LENGTH 13
+#define LINK_SSID_LENGTH 32
 
 typedef struct __attribute__((packed)) {
     char uuid[UUID_LENGTH];
+    char link[LINK_SSID_LENGTH];
     uint8_t orientation;
     uint32_t subnet;
     uint32_t mask;
