@@ -6,10 +6,8 @@
 #include "esp_log.h"
 #include "client.h"
 #include "server.h"
+#include "task_config.h"
 #include "device.h"
-
-#define DEVICE_TASK_CORE 1
-#define DEVICE_TASK_MEM 4096
 
 static const char *LOGGING_TAG = "device";
 static const char *dev_orientation[5] = {"_N_", "_S_", "_E_", "_W_", "_C_"};
@@ -211,7 +209,9 @@ static void device_connect_station_task(void* arg) {
 
 void device_connect_station(DevicePtr device_ptr) {
   is_on_connect_loop = true;
-  xTaskCreatePinnedToCore(device_connect_station_task, "device_connect_station_task", DEVICE_TASK_MEM, device_ptr, (tskIDLE_PRIORITY + 2), NULL, DEVICE_TASK_CORE);
+  xTaskCreatePinnedToCore(device_connect_station_task, "device_connect_station_task",
+                          TASK_DEVICE_STACK, device_ptr, TASK_DEVICE_PRIORITY,
+                          NULL, TASK_DEVICE_CORE);
 }
 
 void device_disconnect_station(DevicePtr device_ptr) {
