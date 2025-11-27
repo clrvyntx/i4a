@@ -33,7 +33,7 @@
 // Info Manager tasks
 
 #define TASK_HTTP_CLIENT_CORE       1
-#define TASK_HTTP_CLIENT_STACK      8092
+#define TASK_HTTP_CLIENT_STACK      8192
 #define TASK_HTTP_CLIENT_PRIORITY   LOW_PRIORITY
 
 #define TASK_IM_SCHEDULER_CORE      1
