@@ -116,8 +116,8 @@ void app_main(void) {
     wireless_t *wl = node_get_wireless_instance();
     ring_share_t *rs = node_get_rs_instance();
     routing_t *rt = node_get_rt_instance();
-    node_device_orientation_t orientation = node_get_device_orientation();
-    bool is_center_root = node_is_device_center_root();
+    orientation = node_get_device_orientation();
+    is_center_root = node_is_device_center_root();
 
     sync_init(&_sync, rs, orientation);
     ss_init(&ss, &_sync, rs, orientation);
@@ -159,6 +159,7 @@ void app_main(void) {
     // After initialization, switch to static routing hook
     selected_routing_hook = routing_hook_static;
 }
+
 
 
 
