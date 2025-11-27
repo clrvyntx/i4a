@@ -7,7 +7,6 @@
 extern "C" {
 #endif
 
-#define RING_LINK_NETIF_MEM_TASK 4096
 #define RING_LINK_NETIF_QUEUE_SIZE 40
 
 

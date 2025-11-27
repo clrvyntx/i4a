@@ -1,5 +1,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
+#include "task_config.h"
 #include "ring_link.h"
 
 static const char *TAG = "==> ring_link";
@@ -101,11 +102,11 @@ esp_err_t ring_link_init(void)
     BaseType_t ret = xTaskCreatePinnedToCore(
         ring_link_process_task,
         "ring_link_process",
-        RING_LINK_NETIF_MEM_TASK,
+        TASK_RING_LINK_STACK,
         NULL,
-        (tskIDLE_PRIORITY + 4),
+        TASK_RING_LINK_PRIORITY,
         NULL,
-        1
+        TASK_RING_LINK_CORE
     );
     if (ret != pdTRUE) {
         ESP_LOGE(TAG, "Failed to create process task");

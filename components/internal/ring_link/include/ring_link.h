@@ -8,8 +8,6 @@
 extern "C" {
 #endif
 
-#define RING_LINK_MEM_TASK 4096
-
 esp_err_t ring_link_init(void);
 
 

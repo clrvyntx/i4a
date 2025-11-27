@@ -1,6 +1,7 @@
 #include "spi.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
+#include "task_config.h"
 
 #include "ring_link_payload.h"
 
@@ -123,7 +124,7 @@ esp_err_t spi_init(QueueHandle_t **rx_queue) {
         xQueueSend(free_buf_queue, &ptr, 0);
     }
     // inicializo tarea de polling
-    xTaskCreatePinnedToCore(spi_polling_task, "spi_polling_task", 4096, NULL, 10, NULL, 1);
+    xTaskCreatePinnedToCore(spi_polling_task, "spi_polling_task", TASK_SPI_STACK, NULL, TASK_SPI_PRIORITY, NULL, TASK_SPI_CORE);
 
     return ESP_OK;
 }
