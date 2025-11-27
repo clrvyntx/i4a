@@ -73,18 +73,18 @@ static void im_client_task(void *arg) {
             offset += snprintf(payload + offset, sizeof(payload) - offset,
                                "{\"orientation\":%d,"
                                "\"mac\":\"%s\","
+                               "\"link\":\"%s\","
                                "\"subnet\":\"%s\","
                                "\"mask\":\"%s\","
-                               "\"is_root\":%u,"
                                "\"rssi\":%d,"
                                "\"rx_bytes\":%" PRIu64 ","
                                "\"tx_bytes\":%" PRIu64 "}",
 
                                ring[i].orientation,
                                ring[i].uuid,
+                               ring[i].link,
                                subnet_str,
                                mask_str,
-                               ring[i].is_root,
                                ring[i].rssi,
                                ring[i].rx_bytes,
                                ring[i].tx_bytes
@@ -176,7 +176,6 @@ bool im_broadcast_info(void) {
     pkt.orientation = node_get_device_orientation();
     pkt.subnet = node_get_device_subnet();
     pkt.mask = node_get_device_mask();
-    pkt.is_root = node_is_device_center_root();
     pkt.rssi = node_get_device_rssi();
     pkt.rx_bytes = node_traffic_get_rx_count();
     pkt.tx_bytes = node_traffic_get_tx_count();
