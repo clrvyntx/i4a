@@ -181,6 +181,7 @@ bool im_broadcast_info(void) {
     pkt.rx_bytes = node_traffic_get_rx_count();
     pkt.tx_bytes = node_traffic_get_tx_count();
     snprintf(pkt.uuid, sizeof(pkt.uuid), "%s", node_get_device_mac());
+    snprintf(pkt.link, sizeof(pkt.link), "%s", node_get_link_name());
 
     im->ring[pkt.orientation] = pkt;
 
