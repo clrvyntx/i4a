@@ -12,6 +12,7 @@
 #include "internal_messages.h"
 #include "routing_hooks.h"
 #include "callbacks.h"
+#include "task_config.h"
 #include "node.h"
 
 #define ROOT_NETWORK 0x0A000000  // 10.0.0.0
@@ -148,11 +149,11 @@ void app_main(void) {
     xTaskCreatePinnedToCore(
         routing_task,
         "routing_task",
-        4096,
+        TASK_ROUTING_STACK,
         rt,
-        tskIDLE_PRIORITY + 2,
+        TASK_ROUTING_PRIORITY,
         NULL,
-        0
+        TASK_ROUTING_CORE
     );
 
     // After initialization, switch to static routing hook
