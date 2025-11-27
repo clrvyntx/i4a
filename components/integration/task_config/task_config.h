@@ -48,11 +48,11 @@
 
 // Wireless tasks
 
-#define TASK_CLIENT_CORE            1
+#define TASK_CLIENT_CORE            0
 #define TASK_CLIENT_STACK           4096
 #define TASK_CLIENT_PRIORITY        LOW_PRIORITY
 
-#define TASK_SERVER_CORE            1
+#define TASK_SERVER_CORE            0
 #define TASK_SERVER_STACK           4096
 #define TASK_SERVER_PRIORITY        LOW_PRIORITY
 
@@ -62,7 +62,7 @@
 
 // Routing tasks
 
-#define TASK_ROUTING_CORE           0
+#define TASK_ROUTING_CORE           1
 #define TASK_ROUTING_STACK          4096
 #define TASK_ROUTING_PRIORITY       LOW_PRIORITY
 
