@@ -319,5 +319,19 @@ int8_t device_get_rssi(DevicePtr device_ptr) {
     return -127;
 }
 
+const char *device_get_link_name(DevicePtr device_ptr) {
+  if (device_ptr->mode == STATION || device_ptr->mode == AP_STATION)
+    if (device_ptr->station_ptr->ap_found) {
 
+      wifi_ap_record_t ap_info = {};
+      esp_err_t err = esp_wifi_sta_get_ap_info(&ap_info);
 
+      if (err == ESP_OK) {
+          return (const char*)device_ptr->station_ptr->wifi_ap_found.ssid;
+      }  else {
+        return "N/A";
+      }
+    }
+
+  return "N/A";
+}
