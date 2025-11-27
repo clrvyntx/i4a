@@ -18,7 +18,6 @@ typedef struct __attribute__((packed)) {
     uint32_t mask;
     uint64_t rx_bytes;
     uint64_t tx_bytes;
-    uint8_t is_root;
     int8_t rssi;
 } im_ring_packet_t;
 
