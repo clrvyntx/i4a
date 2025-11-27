@@ -56,7 +56,7 @@
 #define TASK_SERVER_STACK           4096
 #define TASK_SERVER_PRIORITY        LOW_PRIORITY
 
-#define TASK_DEVICE_CORE            1
+#define TASK_DEVICE_CORE            0
 #define TASK_DEVICE_STACK           4096
 #define TASK_DEVICE_PRIORITY        LOW_PRIORITY
 
