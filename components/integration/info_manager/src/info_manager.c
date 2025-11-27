@@ -72,7 +72,7 @@ static void im_client_task(void *arg) {
 
             offset += snprintf(payload + offset, sizeof(payload) - offset,
                                "{\"orientation\":%d,"
-                               "\"mac\":\"%s\","
+                               "\"uuid\":\"%s\","
                                "\"link\":\"%s\","
                                "\"subnet\":\"%s\","
                                "\"mask\":\"%s\","
