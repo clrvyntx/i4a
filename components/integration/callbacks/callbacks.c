@@ -5,10 +5,8 @@
 #include "freertos/queue.h"
 #include "freertos/task.h"
 #include "esp_log.h"
+#include "task_config.h"
 #include "callbacks.h"
-
-#define CALLBACKS_TASK_CORE 1
-#define CALLBACKS_TASK_MEM 4096
 
 #define MAX_MESSAGE_SIZE 512
 #define SIBLING_QUEUE_LENGTH 10
@@ -112,19 +110,19 @@ esp_err_t node_init_event_queues(void) {
 esp_err_t node_start_event_tasks(void) {
     BaseType_t res;
 
-    res = xTaskCreatePinnedToCore(peer_event_task, "peer_event_task", CALLBACKS_TASK_MEM, NULL, (tskIDLE_PRIORITY + 2), NULL, CALLBACKS_TASK_CORE);
+    res = xTaskCreatePinnedToCore(peer_event_task, "peer_event_task", TASK_CALLBACK_STACK, NULL, TASK_CALLBACK_PRIORITY, NULL, TASK_CALLBACK_CORE);
     if (res != pdPASS) {
         ESP_LOGE(TAG, "Failed to create peer_event_task");
         return ESP_FAIL;
     }
 
-    res = xTaskCreatePinnedToCore(peer_message_task, "peer_msg_task", CALLBACKS_TASK_MEM, NULL, (tskIDLE_PRIORITY + 2), NULL, CALLBACKS_TASK_CORE);
+    res = xTaskCreatePinnedToCore(peer_message_task, "peer_msg_task", TASK_CALLBACK_STACK, NULL, TASK_CALLBACK_PRIORITY, NULL, TASK_CALLBACK_CORE);
     if (res != pdPASS) {
         ESP_LOGE(TAG, "Failed to create peer_message_task");
         return ESP_FAIL;
     }
 
-    res = xTaskCreatePinnedToCore(sibling_message_task, "sib_msg_task", CALLBACKS_TASK_MEM, NULL, (tskIDLE_PRIORITY + 2), NULL, CALLBACKS_TASK_CORE);
+    res = xTaskCreatePinnedToCore(sibling_message_task, "sib_msg_task", TASK_CALLBACK_STACK, NULL, TASK_CALLBACK_PRIORITY, NULL, TASK_CALLBACK_CORE);
     if (res != pdPASS) {
         ESP_LOGE(TAG, "Failed to create sibling_message_task");
         return ESP_FAIL;

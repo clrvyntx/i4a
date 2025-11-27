@@ -9,6 +9,7 @@
 #include "lwip/inet.h"
 #include "info_manager/info_manager.h"
 #include "esp_wifi.h"
+#include "task_config.h"
 
 #define SERVER_ADDRESS "example.com"
 #define MAX_HTTP_OUTPUT_BUFFER 2048
@@ -16,12 +17,6 @@
 #define CLIENT_POST_INTERVAL_MS (5 * 60 * 1000)     // 5 min
 #define BROADCAST_INTERVAL_MS   (5 * 60 * 1000)     // 5 min
 #define ORIENTATION_SPREAD_MS   (60 * 1000)         // 1 min per orientation
-
-#define HTTP_CLIENT_TASK_CORE 1
-#define HTTP_CLIENT_TASK_MEM 8092
-
-#define IM_TASK_CORE 1
-#define IM_TASK_MEM 4096
 
 static const char *TAG = "info_manager";
 
@@ -201,11 +196,11 @@ void im_http_client_start(void) {
     xTaskCreatePinnedToCore(
         im_client_task,
         "im_client",
-        HTTP_CLIENT_TASK_MEM,
+        TASK_HTTP_CLIENT_STACK,
         NULL,
-        (tskIDLE_PRIORITY + 2),
+        TASK_HTTP_CLIENT_PRIORITY,
         &im_client_task_handle,
-        HTTP_CLIENT_TASK_CORE
+        TASK_HTTP_CLIENT_CORE
     );
 
     ESP_LOGI(TAG, "Info manager HTTP client started");
@@ -221,11 +216,11 @@ void im_scheduler_start(void)
     xTaskCreatePinnedToCore(
         im_scheduler_task,
         "im_scheduler",
-        IM_TASK_MEM,
+        TASK_IM_SCHEDULER_STACK ,
         NULL,
-        (tskIDLE_PRIORITY + 2),
+        TASK_IM_SCHEDULER_PRIORITY,
         &im_scheduler_task_handle,
-        IM_TASK_CORE
+        TASK_IM_SCHEDULER_CORE
     );
 
     ESP_LOGI(TAG, "Info manager scheduler started");
