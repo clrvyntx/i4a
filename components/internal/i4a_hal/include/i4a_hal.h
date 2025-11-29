@@ -10,7 +10,7 @@
 void i4a_hal_init();
 
 /** -- config -- */
-uint32_t hal_get_config_bits();
+uint8_t hal_get_config_bits();
 /** -- config -- */
 
 /** -- spi -- */
