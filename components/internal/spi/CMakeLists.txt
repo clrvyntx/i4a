@@ -1,5 +1,5 @@
 idf_component_register(SRCS 
     "spi.c"
     INCLUDE_DIRS "include"
-    REQUIRES driver config ring_link_lowlevel i4a_hal
+    REQUIRES driver config ring_link_lowlevel i4a_hal task_config
 )

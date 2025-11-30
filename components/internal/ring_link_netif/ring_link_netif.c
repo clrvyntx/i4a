@@ -1,3 +1,4 @@
+#include "task_config.h"
 #include "ring_link_netif.h"
 
 static const char* TAG = "==> ring_link_netif";
@@ -48,11 +49,11 @@ esp_err_t ring_link_netif_init(QueueHandle_t **queue)
     BaseType_t ret = xTaskCreatePinnedToCore(
         ring_link_netif_process_task,
         "ring_link_netif_process",
-        RING_LINK_NETIF_MEM_TASK,
+        TASK_RING_LINK_NETIF_STACK,
         NULL,
-        (tskIDLE_PRIORITY + 4),
+        TASK_RING_LINK_NETIF_PRIORITY,
         NULL,
-        1
+        TASK_RING_LINK_NETIF_CORE
     );
     if (ret != pdTRUE) {
         ESP_LOGE(TAG, "Failed to create netif process task");

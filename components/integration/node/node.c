@@ -256,3 +256,7 @@ const char *node_get_uuid(void) {
 const char *node_get_device_mac(void) {
     return node_ptr->node_device_mac;
 }
+
+const char *node_get_link_name(void) {
+  return device_get_link_name(node_ptr->node_device_ptr);
+}

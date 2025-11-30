@@ -4,10 +4,8 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "callbacks.h"
+#include "task_config.h"
 #include "client.h"
-
-#define CLIENT_CORE_TASK 0
-#define CLIENT_TASK_MEM 4096
 
 #define SERVER_PORT 3999
 #define BUFFER_SIZE 512
@@ -131,7 +129,9 @@ static void tcp_client_task(void *pvParameters) {
 void client_open() {
     if (!sta_is_up) {
         sta_is_up = true;
-        xTaskCreatePinnedToCore(tcp_client_task, "tcp_client", CLIENT_TASK_MEM, NULL, (tskIDLE_PRIORITY + 2), NULL, CLIENT_CORE_TASK);
+        xTaskCreatePinnedToCore(tcp_client_task, "tcp_client",
+                                TASK_CLIENT_STACK, NULL, TASK_CLIENT_PRIORITY,
+                                NULL, TASK_CLIENT_CORE);
         ESP_LOGI(LOGGING_TAG, "Client started");
     } else {
         ESP_LOGW(LOGGING_TAG, "Client is already running");
@@ -166,6 +166,7 @@ bool client_send_message(const uint8_t *msg, uint16_t len) {
         return false;
     }
 }
+
 
 
 

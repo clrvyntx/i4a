@@ -12,6 +12,7 @@
 #include "internal_messages.h"
 #include "routing_hooks.h"
 #include "callbacks.h"
+#include "task_config.h"
 #include "node.h"
 #include "lwip/inet.h"
 #include "lwip/netdb.h"
@@ -86,11 +87,11 @@ void app_main(void) {
     xTaskCreatePinnedToCore(
         routing_task,
         "routing_task",
-        4096,
+        TASK_ROUTING_STACK,
         rt,
-        tskIDLE_PRIORITY + 2,
+        TASK_ROUTING_PRIORITY,
         NULL,
-        0
+        TASK_ROUTING_CORE
     );
 }
 

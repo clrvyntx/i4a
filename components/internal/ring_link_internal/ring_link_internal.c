@@ -1,4 +1,5 @@
 #include "ring_link_internal.h"
+#include "task_config.h"
 #include "callbacks.h"
 
 static const char* TAG = "==> ring_link_internal";
@@ -51,11 +52,11 @@ esp_err_t ring_link_internal_init(QueueHandle_t **queue)
     BaseType_t ret = xTaskCreatePinnedToCore(
         ring_link_internal_process_task,
         "ring_link_internal_process",
-        RING_LINK_INTERNAL_MEM_TASK,
+        TASK_RING_LINK_INTERNAL_STACK,
         NULL,
-        (tskIDLE_PRIORITY + 2),
+        TASK_RING_LINK_INTERNAL_PRIORITY,
         NULL,
-        1
+        TASK_RING_LINK_INTERNAL_CORE
     );
     if (ret != pdTRUE) {
         ESP_LOGE(TAG, "Failed to create internal process task");

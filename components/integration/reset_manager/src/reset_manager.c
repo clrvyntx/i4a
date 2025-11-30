@@ -111,15 +111,14 @@ bool rm_broadcast_startup_info(bool is_root) {
 
     rm_startup_packet_t packet;
     packet.opcode = RM_OPCODE_STARTUP;
-    if(!is_root){
-        strncpy(packet.uuid, rm->mac, sizeof(packet.uuid));
-    } else {
-        strncpy(packet.uuid, "000000000000", sizeof(packet.uuid));
+
+    if(is_root){
+        strncpy(rm->mac, "000000000000", sizeof(rm->mac));
     }
-
-    packet.is_root = is_root ? 1 : 0;
-
+ 
+    strncpy(packet.uuid, rm->mac, sizeof(packet.uuid));
     strncpy(rm->uuid, packet.uuid, UUID_LENGTH);
+    packet.is_root = is_root ? 1 : 0;
     rm->is_root = is_root;
 
     bool broadcast = rs_broadcast(rm->rs, RS_RESET_MANAGER, (uint8_t *)&packet, sizeof(packet));

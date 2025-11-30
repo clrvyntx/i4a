@@ -12,6 +12,7 @@
 #include "internal_messages.h"
 #include "routing_hooks.h"
 #include "callbacks.h"
+#include "task_config.h"
 #include "node.h"
 
 #define ROOT_NETWORK 0x0A000000  // 10.0.0.0
@@ -32,7 +33,17 @@ static bool is_center_root;
 
 // ---------------- Default routing hook ----------------
 struct netif *routing_hook_default(uint32_t src_ip, uint32_t dst_ip) {
-    return NULL;
+    esp_netif_t *spi = node_get_spi_netif();
+    if (!spi) {
+        return NULL;
+    }
+    
+    struct netif *lwip_netif = esp_netif_get_netif_impl(spi);
+    if (!lwip_netif) {
+        return NULL;
+    }
+    
+    return lwip_netif;
 }
 
 // ---------------- Static routing hook ----------------
@@ -105,8 +116,8 @@ void app_main(void) {
     wireless_t *wl = node_get_wireless_instance();
     ring_share_t *rs = node_get_rs_instance();
     routing_t *rt = node_get_rt_instance();
-    node_device_orientation_t orientation = node_get_device_orientation();
-    bool is_center_root = node_is_device_center_root();
+    orientation = node_get_device_orientation();
+    is_center_root = node_is_device_center_root();
 
     sync_init(&_sync, rs, orientation);
     ss_init(&ss, &_sync, rs, orientation);
@@ -138,16 +149,18 @@ void app_main(void) {
     xTaskCreatePinnedToCore(
         routing_task,
         "routing_task",
-        4096,
+        TASK_ROUTING_STACK,
         rt,
-        tskIDLE_PRIORITY + 2,
+        TASK_ROUTING_PRIORITY,
         NULL,
-        0
+        TASK_ROUTING_CORE
     );
 
     // After initialization, switch to static routing hook
     selected_routing_hook = routing_hook_static;
 }
+
+
 
 
 
