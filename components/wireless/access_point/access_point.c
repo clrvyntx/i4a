@@ -93,7 +93,7 @@ void ap_set_network(AccessPointPtr ap, const char *network_cidr, const char *net
   ip.netmask.addr = ipaddr_addr(network_mask);
   ip.gw.addr = ipaddr_addr(network_gateway);
   esp_err_t result = esp_netif_set_ip_info(ap->netif, &ip);
-  ESP_LOGI(LOGGING_TAG, "Setting ip info");
+  ESP_LOGI(LOGGING_TAG, "Setting ip info (network=%s, mask=%s, gw=%s)", network_cidr, network_mask, network_gateway);
   ESP_ERROR_CHECK(result);
   if (result != ESP_OK) {
       ESP_LOGE(LOGGING_TAG, "Failed to set ip info");

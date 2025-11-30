@@ -35,6 +35,8 @@ esp_err_t hal_wifi_ap_get_sta_list(wifi_sta_list_t *sta);
 esp_err_t hal_wifi_sta_get_ap_info(wifi_ap_record_t *ap_info);
 esp_netif_t* hal_netif_create_default_wifi_ap();
 esp_netif_t* hal_netif_create_default_wifi_sta();
+esp_err_t hal_netif_destroy_default_wifi(esp_netif_t*);
+esp_err_t hal_netif_destroy_default_wifi(esp_netif_t*);
 /** -- wifi -- */
 
 #endif // _I4A_HAL_

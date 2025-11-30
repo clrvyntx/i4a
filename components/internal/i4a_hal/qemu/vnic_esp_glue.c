@@ -100,7 +100,7 @@ static esp_err_t cb_post_attach(esp_netif_t *esp_netif, void *args)
     return ESP_OK;
 }
 
-vnic_result_t vnic_register_esp_netif(vnic_t *self, esp_netif_inherent_config_t base_config)
+vnic_result_t vnic_register_esp_netif(vnic_t *self, esp_netif_config_t config)
 {
     ESP_ERROR_CHECK(esp_netif_init());
     vnic_driver_t *driver = calloc(1, sizeof(vnic_driver_t));
@@ -116,13 +116,10 @@ vnic_result_t vnic_register_esp_netif(vnic_t *self, esp_netif_inherent_config_t 
             .init_fn = cb_lwip_init,
             .input_fn = (input_fn_t)cb_lwip_input}};
 
-    esp_netif_config_t netif_config = {
-        .base = &base_config,
-        .stack = &netstack_config,
-        .driver = NULL};
+    config.stack = &netstack_config;
 
     driver->base.post_attach = cb_post_attach;
-    driver->vnic_netif = esp_netif_new(&netif_config);
+    driver->vnic_netif = esp_netif_new(&config);
     if (driver->vnic_netif == NULL)
     {
         ESP_LOGE(TAG, "esp_netif_new failed!");
@@ -159,7 +156,8 @@ vnic_result_t vnic_register_esp_netif(vnic_t *self, esp_netif_inherent_config_t 
 /// Sets up the internal lwIP netif structure callbacks.
 static err_t cb_lwip_init(struct netif *lwip_netif)
 {
-    lwip_netif->output = cb_lwip_output;
+    lwip_netif->input = ethernet_input;
+    lwip_netif->output = etharp_output;
     lwip_netif->linkoutput = cb_lwip_linkoutput;
 
     lwip_netif->name[0] = 'v';
@@ -171,7 +169,7 @@ static err_t cb_lwip_init(struct netif *lwip_netif)
     lwip_netif->mtu = 1600;
 
     netif_set_flags(lwip_netif,
-                    NETIF_FLAG_BROADCAST | NETIF_FLAG_LINK_UP);
+                    NETIF_FLAG_BROADCAST | NETIF_FLAG_LINK_UP | NETIF_FLAG_ETHARP);
 
     ESP_LOGI(IF_NAME(lwip_netif), "initialized");
     return ERR_OK;
@@ -230,31 +228,8 @@ static esp_netif_recv_ret_t cb_lwip_input(struct netif *lwip_netif, void *buffer
     return ESP_NETIF_OPTIONAL_RETURN_CODE(ESP_OK);
 }
 
-static err_t cb_lwip_output(struct netif *netif, struct pbuf *p, const ip4_addr_t *ipaddr)
-{
-    if (p->len >= 8)
-    {
-        uint8_t *b = p->payload;
-        ESP_LOGI(IF_NAME(netif),
-                 "output([0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X%s], len=%zu, ipaddr=%08lX)",
-                 b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7],
-                 (p->len > 8) ? " ..." : "",
-                 p->len,
-                 ipaddr->addr);
-    }
-    else
-    {
-        ESP_LOGI(IF_NAME(netif),
-                 "output(buffer=%p, len=%zu, ipaddr=%08lX)", p->payload, p->len, ipaddr->addr);
-    }
-
-    return netif->linkoutput(netif, p);
-}
-
 static err_t cb_lwip_linkoutput(struct netif *lwip_netif, struct pbuf *p)
 {
-    // `cb_lwip_output` already printed this information.
-    /*
     if (p->len >= 8)
     {
         uint8_t *b = p->payload;
@@ -267,7 +242,7 @@ static err_t cb_lwip_linkoutput(struct netif *lwip_netif, struct pbuf *p)
     else
     {
         ESP_LOGI(TAG_LWIP, "linkoutput(buffer=%p, len=%zu)", p->payload, p->len);
-    }*/
+    }
 
     esp_netif_t *esp_netif = esp_netif_get_handle_from_netif_impl(lwip_netif);
     vnic_driver_t *driver = esp_netif_get_io_driver(esp_netif);

@@ -1,6 +1,7 @@
 #include "i4a_hal.h"
 #include "esp_log.h"
 #include "esp_random.h"
+#include "esp_netif.h"
 #include "freertos/FreeRTOS.h"
 #include "virtual_nic.h"
 
@@ -133,8 +134,8 @@ static uint8_t uart_do_long_poll() {
 }
 
 static void uart_polling_task() {
-    static uint8_t wlan_buffer[1600];
-    size_t wlan_received = 1600;
+    static uint8_t event_buffer[1600];
+    size_t event_buffer_sz = 1600;
 
     while (1) {
         uint8_t ret = uart_do_long_poll();
@@ -142,17 +143,18 @@ static void uart_polling_task() {
             // Nothing happened - wake up from another cmd
             continue;
         }
+
+        // There are pending events
+        event_buffer_sz = sizeof(event_buffer);
+        ret = uart_execute(0xF5, 0, NULL, &event_buffer_sz, event_buffer);
         
         switch (ret) {
             case 1:  // data at SPI interface
             {
                 spi_packet_t* buffer = calloc(1, sizeof(spi_packet_t));
                 buffer->len = sizeof(buffer->data);
-                if (uart_execute(0x02, 0, NULL, &buffer->len, &buffer->data) == 1) {
-                    xQueueSend(hal.spi_queue, &buffer, portMAX_DELAY);
-                } else {
-                    ESP_LOGE(TAG, "Got notified of spi packet but nothing came");
-                }
+                memcpy(buffer->data, event_buffer, event_buffer_sz);
+                xQueueSend(hal.spi_queue, &buffer, portMAX_DELAY);
             }
                 break;
             case 2:  // STA arrived
@@ -162,29 +164,25 @@ static void uart_polling_task() {
                 esp_event_post(WIFI_EVENT, WIFI_EVENT_AP_STADISCONNECTED, NULL, 0, portMAX_DELAY);
                 break;
             case 4:  // Connected to AP
+                esp_netif_action_connected(
+                    esp_netif_get_handle_from_ifkey("WIFI_STA_DEF"),
+                    WIFI_EVENT,
+                    WIFI_EVENT_STA_CONNECTED,
+                    NULL
+                );
                 esp_event_post(WIFI_EVENT, WIFI_EVENT_STA_CONNECTED, NULL, 0, portMAX_DELAY);
                 break;
             case 5:  // Connection to AP lost
                 esp_event_post(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, NULL, 0, portMAX_DELAY);
                 break;
             case 6:  // data at AP interface
-                wlan_received = sizeof(wlan_buffer);
-                if (uart_execute(0x16, 0, NULL, &wlan_received, wlan_buffer) == 1) {
-                    if (vnic_transmit(&hal.wlan.ap_tx, wlan_buffer, wlan_received) != ESP_OK) {
-                        ESP_LOGE(TAG, "sta vnic transmit failed");
-                    }
-                } else {
-                    ESP_LOGE(TAG, "wlan sta read failed");
+                if (vnic_transmit(&hal.wlan.ap_rx, event_buffer, event_buffer_sz) != VNIC_OK) {
+                    ESP_LOGE(TAG, "sta vnic transmit failed");
                 }
                 break;
             case 7:  // data at STA interface
-                wlan_received = sizeof(wlan_buffer);
-                if (uart_execute(0x15, 0, NULL, &wlan_received, wlan_buffer) == 1) {
-                    if (vnic_transmit(&hal.wlan.sta_tx, wlan_buffer, wlan_received) != ESP_OK) {
-                        ESP_LOGE(TAG, "sta vnic transmit failed");
-                    }
-                } else {
-                    ESP_LOGE(TAG, "wlan sta read failed");
+                if (vnic_transmit(&hal.wlan.sta_rx, event_buffer, event_buffer_sz) != VNIC_OK) {
+                    ESP_LOGE(TAG, "sta vnic transmit failed");
                 }
                 break;
             default:
@@ -236,6 +234,34 @@ static void nic_task_ap()
     vTaskDelete(NULL);
 }
 
+static esp_err_t _hal_wifi_init() {
+    assert(vnic_create(&hal.wlan.ap_tx) == VNIC_OK);
+    assert(vnic_create(&hal.wlan.ap_rx) == VNIC_OK);
+    assert(vnic_create(&hal.wlan.sta_tx) == VNIC_OK);
+    assert(vnic_create(&hal.wlan.sta_rx) == VNIC_OK);
+
+    assert(vnic_bind_receiver(&hal.wlan.ap_tx, &hal.wlan.ap_rx) == VNIC_OK);
+    assert(vnic_bind_receiver(&hal.wlan.sta_tx, &hal.wlan.sta_rx) == VNIC_OK);
+    assert(vnic_bind_receiver(&hal.wlan.ap_rx, &hal.wlan.ap_tx) == VNIC_OK);
+    assert(vnic_bind_receiver(&hal.wlan.sta_rx, &hal.wlan.sta_tx) == VNIC_OK);
+
+    esp_netif_config_t ap_config = ESP_NETIF_DEFAULT_WIFI_AP();
+    esp_netif_config_t sta_config = ESP_NETIF_DEFAULT_WIFI_STA();
+
+    assert(vnic_register_esp_netif(&hal.wlan.ap_tx, ap_config) == VNIC_OK);
+    assert(vnic_register_esp_netif(&hal.wlan.sta_tx, sta_config) == VNIC_OK);
+    xTaskCreate(nic_task_ap, "nic_task_ap", 4096, NULL, tskIDLE_PRIORITY + 1, NULL);
+    xTaskCreate(nic_task_sta, "nic_task_sta", 4096, NULL, tskIDLE_PRIORITY + 1, NULL);
+
+    uint32_t mac = esp_random();
+    uint8_t wl_mac[6] = {0xaa, 0xaa, (mac >> 24) & 0xFF, (mac >> 16) & 0xFF, (mac >> 8) & 0xFF, mac & 0xFF};
+    esp_netif_t *ap = hal_netif_create_default_wifi_ap();
+    esp_netif_set_mac(ap, wl_mac);
+    esp_netif_t *sta = hal_netif_create_default_wifi_sta();
+    esp_netif_set_mac(sta, wl_mac);
+    return ESP_OK;
+}
+
 void i4a_hal_init() {
     if (hal.initialized) {
         ESP_LOGW(TAG, "Trying to reinitialize HAL -- skipping.");
@@ -246,7 +272,7 @@ void i4a_hal_init() {
     hal.write_lock = xSemaphoreCreateMutexStatic(&hal._st_write_lock);
     hal.spi_queue = xQueueCreate(1, sizeof(spi_packet_t*));
     setup_uart();
-
+    _hal_wifi_init();
     xTaskCreatePinnedToCore(uart_polling_task, "uart_polling_task", 4096, NULL, 10, NULL, 1);
 }
 
@@ -281,42 +307,6 @@ esp_err_t hal_spi_recv(void *p, size_t *len) {
 
 /** Creates netifs for AP & STA */
 esp_err_t hal_wifi_init(const wifi_init_config_t *config) {
-    assert(vnic_create(&hal.wlan.ap_tx) == VNIC_OK);
-    assert(vnic_create(&hal.wlan.ap_rx) == VNIC_OK);
-    assert(vnic_create(&hal.wlan.sta_tx) == VNIC_OK);
-    assert(vnic_create(&hal.wlan.sta_rx) == VNIC_OK);
-
-    assert(vnic_bind_receiver(&hal.wlan.ap_tx, &hal.wlan.ap_rx) == VNIC_OK);
-    assert(vnic_bind_receiver(&hal.wlan.sta_tx, &hal.wlan.sta_rx) == VNIC_OK);
-
-    uint32_t mac = esp_random();
-   
-    extern const esp_netif_ip_info_t _g_esp_netif_soft_ap_ip;
-
-    esp_netif_inherent_config_t ap_config = {
-        .flags = ESP_NETIF_DHCP_SERVER | ESP_NETIF_FLAG_AUTOUP,
-        .mac = {0xaa, 0xaa, (mac >> 24) & 0xFF, (mac >> 16) & 0xFF, (mac >> 8) & 0xFF, mac & 0xFF},
-        .ip_info = &_g_esp_netif_soft_ap_ip,
-        .get_ip_event = 0,
-        .lost_ip_event = 0,
-        .if_key = "WIFI_AP_DEF",
-        .if_desc = "Virtual WiFi AP",
-        .route_prio = 10};
-
-    esp_netif_inherent_config_t sta_config = {
-        .flags = ESP_NETIF_DHCP_CLIENT | ESP_NETIF_FLAG_GARP | ESP_NETIF_FLAG_EVENT_IP_MODIFIED,
-        .mac = {0xaa, 0xaa, (mac >> 24) & 0xFF, (mac >> 16) & 0xFF, (mac >> 8) & 0xFF, mac & 0xFF},
-        ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_EMPTY(ip_info)
-        .get_ip_event = IP_EVENT_STA_GOT_IP,
-        .lost_ip_event = IP_EVENT_STA_LOST_IP,
-        .if_key = "WIFI_STA_DEF",
-        .if_desc = "Virtual WiFi STA",
-        .route_prio = 100};
-
-    assert(vnic_register_esp_netif(&hal.wlan.ap_tx, ap_config) == VNIC_OK);
-    assert(vnic_register_esp_netif(&hal.wlan.sta_tx, sta_config) == VNIC_OK);
-    xTaskCreate(nic_task_ap, "nic_task_ap", 4096, NULL, tskIDLE_PRIORITY + 1, NULL);
-    xTaskCreate(nic_task_sta, "nic_task_sta", 4096, NULL, tskIDLE_PRIORITY + 1, NULL);
     return ESP_OK;
 }
 
@@ -325,6 +315,11 @@ esp_err_t hal_wifi_start(void) {
     uart_query(0x0B);
     if (hal.wlan.mode == WIFI_MODE_AP) {
         esp_event_post(WIFI_EVENT, WIFI_EVENT_AP_START, NULL, 0, portMAX_DELAY);
+    } else if (hal.wlan.mode == WIFI_MODE_STA) {
+        esp_event_post(WIFI_EVENT, WIFI_EVENT_STA_START, NULL, 0, portMAX_DELAY);
+    } else if (hal.wlan.mode == WIFI_MODE_APSTA) {
+        esp_event_post(WIFI_EVENT, WIFI_EVENT_AP_START, NULL, 0, portMAX_DELAY);
+        esp_event_post(WIFI_EVENT, WIFI_EVENT_STA_START, NULL, 0, portMAX_DELAY);
     }
     return ESP_OK;
 }
@@ -373,6 +368,9 @@ esp_err_t hal_wifi_set_config(wifi_interface_t interface, wifi_config_t *conf) {
 
 esp_err_t hal_wifi_set_mode(wifi_mode_t mode) {
     ESP_LOGI(TAG, "hal_wifi_set_mode(%u)", mode);
+    if (mode == WIFI_MODE_APSTA)
+        mode = WIFI_MODE_AP;  // Simulation limit
+    
     if ((mode != WIFI_MODE_AP) && (mode != WIFI_MODE_STA)) {
         ESP_LOGE(TAG, "WiFi mode %u not supported by emulator", mode);
         return ESP_FAIL;
@@ -516,4 +514,8 @@ esp_netif_t* hal_netif_create_default_wifi_ap() {
 
 esp_netif_t* hal_netif_create_default_wifi_sta() {
     return esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
+}
+
+esp_err_t hal_netif_destroy_default_wifi(esp_netif_t*) {
+    return ESP_OK;
 }

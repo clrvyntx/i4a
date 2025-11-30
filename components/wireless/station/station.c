@@ -180,7 +180,7 @@ void station_destroy_netif(StationPtr stationPtr) {
     node_traffic_stop(stationPtr->netif);
     esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler);
     esp_event_handler_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler);
-    esp_netif_destroy_default_wifi(stationPtr->netif);
+    hal_netif_destroy_default_wifi(stationPtr->netif);
     stationPtr->netif = NULL;  // Prevent reuse or double free
   } else {
     ESP_LOGI(LOGGING_TAG, "AP netif already destroyed or not initialized.");

@@ -65,7 +65,7 @@ esp_err_t broadcast_handler(ring_link_payload_t *p)
                 p->src_id, p->dst_id, p->id, p->ttl
             );
         } else {
-            ESP_LOGI(TAG, "Broadcast complete (src=%i,dest=%i,id=%i,ttl=%i).", p->src_id, p->dst_id, p->id, p->ttl);
+            ESP_LOGD(TAG, "Broadcast complete (src=%i,dest=%i,id=%i,ttl=%i).", p->src_id, p->dst_id, p->id, p->ttl);
             xTaskNotifyGive( s_broadcast_task );
         }
         return ESP_OK;

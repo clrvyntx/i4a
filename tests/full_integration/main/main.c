@@ -13,6 +13,9 @@
 #include "routing_hooks.h"
 #include "callbacks.h"
 #include "node.h"
+#include "lwip/inet.h"
+#include "lwip/netdb.h"
+#include "lwip/sockets.h"
 
 #define ROOT_NETWORK 0x0A000000  // 10.0.0.0
 #define ROOT_MASK 0xFF000000 // 255.0.0.0
@@ -42,7 +45,6 @@ static TaskStatus_t st[30];
 void app_main(void) {
     node_setup();
 
-    ESP_LOGI(TAG, "starting system");
     wireless_t *wl = node_get_wireless_instance();
     ring_share_t *rs = node_get_rs_instance();
     routing_t *rt = node_get_rt_instance();
@@ -50,11 +52,8 @@ void app_main(void) {
     bool is_center_root = node_is_device_center_root();
 
     sync_init(&_sync, rs, orientation);
-    ESP_LOGI(TAG, "sync started");
     ss_init(&ss, &_sync, rs, orientation);
-    ESP_LOGI(TAG, "ss started");
     rt_create(rt, rs, wl, &_sync, &ss, orientation);
-    ESP_LOGI(TAG, "rt created");
 
     if(orientation == NODE_DEVICE_ORIENTATION_CENTER){
         if(is_center_root){
@@ -76,8 +75,6 @@ void app_main(void) {
     rt_on_start(rt);
     rt_on_tick(rt, 1);
 
-    ESP_LOGI(TAG, "all good");
-
     if(orientation == NODE_DEVICE_ORIENTATION_CENTER && is_center_root){
         node_set_as_ap(ROOT_NETWORK, ROOT_MASK);
     }
@@ -85,7 +82,7 @@ void app_main(void) {
     if(orientation != NODE_DEVICE_ORIENTATION_CENTER && !is_center_root){
         node_set_as_sta();
     }
-    
+
     xTaskCreatePinnedToCore(
         routing_task,
         "routing_task",
@@ -95,46 +92,6 @@ void app_main(void) {
         NULL,
         0
     );
-
-    
-    unsigned long rtt = 0;
-
-    while (1) {
-        uint32_t tasks = uxTaskGetNumberOfTasks();
-        ESP_LOGI(TAG, "Current number of tasks: %lu", tasks);
-        size_t n_tasks = uxTaskGetSystemState(st, 30, &rtt);
-        if (rtt == 0) {
-            rtt = 1;
-        }
-        ESP_LOGI(TAG, "Total runtime: %lu", rtt);
-        for (size_t i = 0; i < n_tasks; i++) {
-            const char *state = "unknown";
-            switch (st[i].eCurrentState) {
-                case eReady:
-                    state = "ready";
-                    break;
-                case eRunning:
-                    state = "running";
-                    break;
-                case eBlocked:
-                    state = "blocked";
-                    break;
-                case eSuspended:
-                    state = "suspended";
-                    break;
-                case eDeleted:
-                    state = "deleted";
-                    break;
-                default:
-                    break;
-            }
-            uint64_t percent = (uint64_t) 100 * (uint64_t) st[i].ulRunTimeCounter / (uint64_t) rtt;
-            ESP_LOGI(TAG, "- %s: state=%s, rt=%lu (%lu %%)", 
-                st[i].pcTaskName, state, st[i].ulRunTimeCounter, percent);
-        }
-        vTaskDelay(pdMS_TO_TICKS(30000));
-    }
-
 }
 
 
