@@ -12,7 +12,7 @@ extern "C" {
 #endif
 
 #define RING_LINK_PAYLOAD_CRC_LEN  (sizeof(ring_link_payload_t) - sizeof(((ring_link_payload_t *)0)->crc32))
-#define RING_LINK_NETIF_MTU (SPI_BUFFER_SIZE - 100)
+#define RING_LINK_NETIF_MTU (SPI_BUFFER_SIZE - 12)
 #define RING_LINK_PAYLOAD_TTL 4
 
 /**
@@ -63,4 +63,5 @@ uint32_t ring_link_compute_crc32(const ring_link_payload_t *p);
 #ifdef __cplusplus
 }
 #endif
+
 
