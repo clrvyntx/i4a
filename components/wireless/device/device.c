@@ -324,6 +324,13 @@ const char *device_get_link_name(DevicePtr device_ptr) {
     if (device_ptr->station_ptr->ap_found) {
           return (const char*)device_ptr->station_ptr->wifi_ap_found.ssid;
     }
+
+  if (device_ptr->mode == AP || device_ptr->mode == AP_STATION) {
+      if (device_ptr->access_point_ptr->initialized) {
+          return device_ptr->access_point_ptr->ssid;
+      }
+  }
+
   return "N/A";
 }
 
@@ -352,3 +359,4 @@ void device_set_max_tx_power(DevicePtr device_ptr, int8_t power) {
     float real_dbm = power * 0.25f;
     ESP_LOGI(LOGGING_TAG, "Wi-Fi max TX power set to %.2f dBm", real_dbm);
 }
+
