@@ -2,6 +2,7 @@
 #include "config.h"
 #include "ring_link.h"
 #include "esp_check.h"
+#include "esp_timer.h"
 #include "callbacks.h"
 #include "internal_messages.h"
 #include "channel_manager/channel_manager.h"
@@ -265,3 +266,4 @@ int64_t node_get_device_uptime_minutes(void) {
     int64_t uptime_us = esp_timer_get_time() - rm_get_last_reset_time();
     return uptime_us / 60000000;
 }
+
