@@ -26,6 +26,7 @@ static TaskHandle_t im_scheduler_task_handle = NULL;
 static im_manager_t info_manager = {0};
 static im_manager_t *im = &info_manager;
 
+static const char *orientation_names[MAX_ORIENTATIONS] = {"N","S","E","W","C"};
 
 static void im_client_task(void *arg) {
     vTaskDelay(pdMS_TO_TICKS(CLIENT_POST_INTERVAL_MS));
@@ -43,15 +44,14 @@ static void im_client_task(void *arg) {
     char payload[MAX_HTTP_OUTPUT_BUFFER];
 
     while (true) {
-
-
         const im_ring_packet_t *ring = im_get_ring_info();
         int offset = 0;
 
-        offset += snprintf(payload + offset, sizeof(payload) - offset, "[");
+        // Start of JSON with fields
+        offset += snprintf(payload + offset, sizeof(payload) - offset,
+                           "{\"fields\":[\"orientation\",\"uuid\",\"link\",\"subnet\",\"mask\",\"rssi\",\"rx_bytes\",\"tx_bytes\"],\"data\":[");
 
         for (int i = 0; i < MAX_ORIENTATIONS; i++) {
-
             if (i > 0)
                 offset += snprintf(payload + offset, sizeof(payload) - offset, ",");
 
@@ -66,16 +66,8 @@ static void im_client_task(void *arg) {
             inet_ntoa_r(addr, mask_str, sizeof(mask_str));
 
             offset += snprintf(payload + offset, sizeof(payload) - offset,
-                               "{\"orientation\":%d,"
-                               "\"uuid\":\"%s\","
-                               "\"link\":\"%s\","
-                               "\"subnet\":\"%s\","
-                               "\"mask\":\"%s\","
-                               "\"rssi\":%d,"
-                               "\"rx_bytes\":%" PRIu64 ","
-                               "\"tx_bytes\":%" PRIu64 "}",
-
-                               ring[i].orientation,
+                               "[%s,\"%s\",\"%s\",\"%s\",\"%s\",%d,%" PRIu64 ",%" PRIu64 "]",
+                               orientation_names[ring[i].orientation % MAX_ORIENTATIONS],
                                ring[i].uuid,
                                ring[i].link,
                                subnet_str,
@@ -91,10 +83,10 @@ static void im_client_task(void *arg) {
             }
         }
 
-        offset += snprintf(payload + offset, sizeof(payload) - offset, "]");
+        // Close JSON
+        offset += snprintf(payload + offset, sizeof(payload) - offset, "]}");
 
         ESP_LOGD(TAG, "Payload (%d): %s", offset, payload);
-
 
         esp_http_client_set_post_field(client, payload, strlen(payload));
         esp_http_client_set_header(client, "Content-Type", "application/json");
