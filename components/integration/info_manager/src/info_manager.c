@@ -49,7 +49,7 @@ static void im_client_task(void *arg) {
 
         // Start of JSON with fields
         offset += snprintf(payload + offset, sizeof(payload) - offset,
-                           "{\"fields\":[\"orientation\",\"uuid\",\"link\",\"subnet\",\"mask\",\"rssi\",\"rx_bytes\",\"tx_bytes\"],\"data\":[");
+                           "{\"fields\":[\"orientation\",\"uuid\",\"link\",\"subnet\",\"mask\",\"channel\",\"rssi\",\"rx_bytes\",\"tx_bytes\"],\"data\":[");
 
         for (int i = 0; i < MAX_ORIENTATIONS; i++) {
             if (i > 0)
@@ -66,12 +66,13 @@ static void im_client_task(void *arg) {
             inet_ntoa_r(addr, mask_str, sizeof(mask_str));
 
             offset += snprintf(payload + offset, sizeof(payload) - offset,
-                               "[%s,\"%s\",\"%s\",\"%s\",\"%s\",%d,%" PRIu64 ",%" PRIu64 "]",
+                               "[%s,\"%s\",\"%s\",\"%s\",\"%s\",%d,%d,%" PRIu64 ",%" PRIu64 "]",
                                orientation_names[ring[i].orientation % MAX_ORIENTATIONS],
                                ring[i].uuid,
                                ring[i].link,
                                subnet_str,
                                mask_str,
+                               ring[i].channel,
                                ring[i].rssi,
                                ring[i].rx_bytes,
                                ring[i].tx_bytes
@@ -161,6 +162,7 @@ bool im_broadcast_info(void) {
 
     im_ring_packet_t pkt = {0};
     pkt.orientation = node_get_device_orientation();
+    pkt.channel = node_get_device_channel();
     pkt.subnet = node_get_device_subnet();
     pkt.mask = node_get_device_mask();
     pkt.rssi = node_get_device_rssi();
