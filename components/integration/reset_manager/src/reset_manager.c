@@ -151,3 +151,7 @@ const char *rm_get_uuid(void) {
 const char *rm_get_mac(void){
     return rm->mac;
 }
+
+int64_t rm_get_last_reset_time(void) {
+    return rm->last_reset_time;
+}
