@@ -37,6 +37,7 @@ const char *node_get_uuid(void); // Returns the node's UUID string
 const char *node_get_device_mac(void); // Returns the device's MAC string
 const char *node_get_link_name(void); // Returns the name of device's current wireless link
 int64_t node_get_device_uptime_minutes(void); // Returns the amount of time (in minutes) that the device has been initialized
+uint8_t node_get_device_channel(void); // Returns the device's currently assigned channel
 
 // Node communication functions
 bool node_send_wireless_message(const uint8_t *msg, uint16_t len); // Send a wireless message to the other side of the wireless link between two devices of different nodes
@@ -51,6 +52,7 @@ esp_netif_t *node_get_spi_netif(void); // Returns network interface for local co
 #endif
 
 #endif // _NODE_H_
+
 
 
 
