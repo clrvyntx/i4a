@@ -72,12 +72,14 @@ bool device_send_wireless_message(DevicePtr device_ptr, const uint8_t *msg, uint
 int8_t device_get_rssi(DevicePtr device_ptr);
 const char *device_get_link_name(DevicePtr device_ptr);
 uint8_t device_get_sta_channel(DevicePtr device_ptr);
+void device_set_max_tx_power(DevicePtr device_ptr, int8_t power);
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif //_DEVICE_H_
+
 
 
 
