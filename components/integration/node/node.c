@@ -31,6 +31,9 @@
 #define BRIDGE_NETWORK  0xC0A80300  // 192.168.3.0
 #define BRIDGE_MASK 0xFFFFFFFC  // /30
 
+#define NAT_NETWORK 0x0AA00000  // 10.160.0.0
+#define NAT_MASK    0xFFFFFFFC  // /30
+
 #define DEFAULT_SUBNET 0x00000000
 #define DEFAULT_MASK 0xFFFFFFFF
 
@@ -266,4 +269,5 @@ int64_t node_get_device_uptime_minutes(void) {
     int64_t uptime_us = esp_timer_get_time() - rm_get_last_reset_time();
     return uptime_us / 60000000;
 }
+
 
