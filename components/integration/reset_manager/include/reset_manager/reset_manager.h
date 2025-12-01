@@ -20,7 +20,7 @@ typedef struct reset_manager {
     bool is_root;
     char uuid[UUID_LENGTH];
     char mac[UUID_LENGTH];
-    uint64_t last_reset_time;
+    int64_t last_reset_time;
 } reset_manager_t;
 
 void rm_init(ring_share_t *rs);
@@ -31,5 +31,6 @@ bool rm_is_root(void);
 bool rm_should_device_reset(void);
 const char *rm_get_uuid(void);
 const char *rm_get_mac(void);
+int64_t rm_get_last_reset_time(void);
 
 #endif  // _RESET_MANAGER_H_
