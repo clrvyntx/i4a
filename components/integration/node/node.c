@@ -270,4 +270,12 @@ int64_t node_get_device_uptime_minutes(void) {
     return uptime_us / 60000000;
 }
 
+uint8_t node_get_device_channel(void) {
+  uint8_t channel = device_get_sta_channel(node_ptr->node_device_ptr);
+  if(channel){
+    return channel;
+  } else {
+    return cm_get_suggested_channel();
+  }
+}
 
