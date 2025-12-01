@@ -71,11 +71,13 @@ esp_netif_t *device_get_netif(DevicePtr device_ptr);
 bool device_send_wireless_message(DevicePtr device_ptr, const uint8_t *msg, uint16_t len);
 int8_t device_get_rssi(DevicePtr device_ptr);
 const char *device_get_link_name(DevicePtr device_ptr);
+uint8_t device_get_sta_channel(DevicePtr device_ptr);
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif //_DEVICE_H_
+
 
 
