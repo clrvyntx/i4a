@@ -260,3 +260,8 @@ const char *node_get_device_mac(void) {
 const char *node_get_link_name(void) {
   return device_get_link_name(node_ptr->node_device_ptr);
 }
+
+int64_t node_get_device_uptime_minutes(void) {
+    int64_t uptime_us = esp_timer_get_time() - rm_get_last_reset_time();
+    return uptime_us / 60000000;
+}
