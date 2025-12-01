@@ -14,6 +14,7 @@ typedef struct __attribute__((packed)) {
     char uuid[UUID_LENGTH];
     char link[LINK_SSID_LENGTH];
     uint8_t orientation;
+    uint8_t channel;
     uint32_t subnet;
     uint32_t mask;
     uint64_t rx_bytes;
