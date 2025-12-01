@@ -335,3 +335,20 @@ uint8_t device_get_sta_channel(DevicePtr device_ptr) {
     }
     return 0;
 }
+
+void device_set_max_tx_power(DevicePtr device_ptr, int8_t power) {
+    if (device_ptr->mode == NAN) {
+        ESP_LOGW(LOGGING_TAG, "Cannot set TX power: device not initialized");
+        return;
+    }
+
+    // Clamp to valid range
+    if (power < 8) power = 8;
+    if (power > 84) power = 84;
+
+    ESP_ERROR_CHECK(esp_wifi_set_max_tx_power(power));
+
+    // Convert to real dBm
+    float real_dbm = power * 0.25f;
+    ESP_LOGI(LOGGING_TAG, "Wi-Fi max TX power set to %.2f dBm", real_dbm);
+}
