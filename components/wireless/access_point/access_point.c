@@ -37,6 +37,8 @@ void ap_init(AccessPointPtr ap, uint8_t wifi_channel, const char *wifi_ssid, con
   ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &ap_event_handler, ap));
   // Start traffic monitoring
   node_traffic_start(ap->netif);
+  strcpy(ap->ssid, wifi_ssid);
+  strcpy(ap->password, wifi_password);
   ap->channel = wifi_channel;
   ap->initialized = true;
   ap->is_center = is_center;
@@ -180,4 +182,5 @@ void ap_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, 
     }
   }
 }
+
 
