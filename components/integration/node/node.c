@@ -268,18 +268,11 @@ const char *node_get_link_name(void) {
   return device_get_link_name(node_ptr->node_device_ptr);
 }
 
+uint8_t node_get_device_channel(void) {
+  return device_get_channel(node_ptr->node_device_ptr);
+}
+
 int64_t node_get_device_uptime_minutes(void) {
     int64_t uptime_us = esp_timer_get_time() - rm_get_last_reset_time();
     return uptime_us / 60000000;
 }
-
-uint8_t node_get_device_channel(void) {
-  uint8_t channel = device_get_sta_channel(node_ptr->node_device_ptr);
-  if(channel){
-    return channel;
-  } else {
-    return cm_get_suggested_channel();
-  }
-}
-
-
