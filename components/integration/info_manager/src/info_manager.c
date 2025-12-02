@@ -84,8 +84,9 @@ static void im_client_task(void *arg) {
             }
         }
 
-        // Close JSON
-        offset += snprintf(payload + offset, sizeof(payload) - offset, "]}");
+        // Close data array and add uptime as heartbeat
+        offset += snprintf(payload + offset, sizeof(payload) - offset,
+       "],\"uptime_mins\":%" PRId64 "}", node_get_device_uptime_minutes());
 
         ESP_LOGD(TAG, "Payload (%d): %s", offset, payload);
 
