@@ -2,6 +2,7 @@
 
 #include <string.h>
 
+#include "node.h"
 #include "../utils.h"
 #include "os/os.h"
 
@@ -35,6 +36,9 @@ static void on_handshake(routing_t *self, const rt_peer_handshake_t *event) {
         state->node_network = event->provided_network;
         state->global_state = GLOBAL_STATE_WITH_NETWORK;
         state->is_local_root = true;
+
+        // Update my own subnet/mask
+        node_set_network_settings(state->device_network.addr, state->device_network.mask);
 
         // Update routing table
         add_global_route(self, &NETWORK(0, 0), self->orientation);
@@ -164,4 +168,5 @@ void rt_fwd_peer_set_required_callbacks(rt_role_impl_t *impl) {
     impl->on_peer_new_gateway_request = on_new_gateway_request;
     impl->on_peer_new_gateway_response = on_new_gateway_response;
     impl->on_peer_lost = on_peer_lost;
+
 }
