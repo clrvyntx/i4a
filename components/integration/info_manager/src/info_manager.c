@@ -88,7 +88,7 @@ static void im_client_task(void *arg) {
         offset += snprintf(payload + offset, sizeof(payload) - offset,
        "],\"uptime_mins\":%" PRId64 "}", node_get_device_uptime_minutes());
 
-        ESP_LOGI(TAG, "Payload (%d): %s", offset, payload);
+        ESP_LOGD(TAG, "Payload (%d): %s", offset, payload);
 
         esp_http_client_set_post_field(client, payload, strlen(payload));
         esp_http_client_set_header(client, "Content-Type", "application/json");
