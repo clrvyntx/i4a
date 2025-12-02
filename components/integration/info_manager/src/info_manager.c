@@ -66,7 +66,7 @@ static void im_client_task(void *arg) {
             inet_ntoa_r(addr, mask_str, sizeof(mask_str));
 
             offset += snprintf(payload + offset, sizeof(payload) - offset,
-                               "[%s,\"%s\",\"%s\",\"%s\",\"%s\",%d,%d,%" PRIu64 ",%" PRIu64 "]",
+                               "[\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",%d,%d,%" PRIu64 ",%" PRIu64 "]",
                                orientation_names[ring[i].orientation % MAX_ORIENTATIONS],
                                ring[i].uuid,
                                ring[i].link,
@@ -88,7 +88,7 @@ static void im_client_task(void *arg) {
         offset += snprintf(payload + offset, sizeof(payload) - offset,
        "],\"uptime_mins\":%" PRId64 "}", node_get_device_uptime_minutes());
 
-        ESP_LOGD(TAG, "Payload (%d): %s", offset, payload);
+        ESP_LOGI(TAG, "Payload (%d): %s", offset, payload);
 
         esp_http_client_set_post_field(client, payload, strlen(payload));
         esp_http_client_set_header(client, "Content-Type", "application/json");
