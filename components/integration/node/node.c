@@ -137,8 +137,7 @@ void node_set_as_ap(uint32_t network, uint32_t mask){
     device_reset(node_ptr->node_device_ptr);
   }
 
-  node_ptr->node_device_subnet = network;
-  node_ptr->node_device_mask = mask;
+  node_set_network_settings(network, mask);
 
   uint32_t node_gateway;
   uint8_t ap_channel_to_emit = cm_get_suggested_channel();
@@ -272,7 +271,13 @@ uint8_t node_get_device_channel(void) {
   return device_get_channel(node_ptr->node_device_ptr);
 }
 
+void node_set_network_settings(uint32_t network, uint32_t mask) {
+    node_ptr->node_device_subnet = network;
+    node_ptr->node_device_mask = mask;
+}
+
 int64_t node_get_device_uptime_minutes(void) {
     int64_t uptime_us = esp_timer_get_time() - rm_get_last_reset_time();
     return uptime_us / 60000000;
 }
+
