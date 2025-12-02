@@ -11,9 +11,11 @@ idf_component_register(
     INCLUDE_DIRS
         "include"
     REQUIRES
+        node
         routing_config
         sync
         ring_share
         shared_state
         wireless
 )
+
