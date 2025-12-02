@@ -334,12 +334,19 @@ const char *device_get_link_name(DevicePtr device_ptr) {
   return "N/A";
 }
 
-uint8_t device_get_sta_channel(DevicePtr device_ptr) {
+uint8_t device_get_channel(DevicePtr device_ptr) {
     if (device_ptr->mode == STATION || device_ptr->mode == AP_STATION) {
         if (device_ptr->station_ptr->ap_found) {
             return device_ptr->station_ptr->wifi_ap_found.primary;
         }
     }
+
+    if (device_ptr->mode == AP || device_ptr->mode == AP_STATION) {
+        if (device_ptr->access_point_ptr->initialized) {
+            return device_ptr->access_point_ptr->channel;
+        }
+    }
+  
     return 0;
 }
 
@@ -359,4 +366,5 @@ void device_set_max_tx_power(DevicePtr device_ptr, int8_t power) {
     float real_dbm = power * 0.25f;
     ESP_LOGI(LOGGING_TAG, "Wi-Fi max TX power set to %.2f dBm", real_dbm);
 }
+
 
