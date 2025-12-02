@@ -154,6 +154,8 @@ void node_set_as_ap(uint32_t network, uint32_t mask){
       wifi_network_password = NAT_NETWORK_PASSWORD;
       ap_max_sta_connections = 1;
     } else {
+      network = NAT_NETWORK;
+      mask = NAT_MASK;
       node_gateway = network + 1;
       wifi_network_prefix = HOUSE_NETWORK_NAME;
       wifi_network_password = HOUSE_NETWORK_PASSWORD;
@@ -280,4 +282,5 @@ int64_t node_get_device_uptime_minutes(void) {
     int64_t uptime_us = esp_timer_get_time() - rm_get_last_reset_time();
     return uptime_us / 60000000;
 }
+
 
