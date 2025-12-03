@@ -1,6 +1,6 @@
 #include "device.h"
 #include "config.h"
-#include "ring_link.h"
+#include "spi_link.h"
 #include "esp_check.h"
 #include "esp_timer.h"
 #include "callbacks.h"
@@ -10,6 +10,8 @@
 #include "info_manager/info_manager.h"
 #include "traffic.h"
 #include "node.h"
+
+#include "lwip/ip4_addr.h"
 
 #define MAX_DEVICES_PER_HOUSE 4
 
@@ -84,7 +86,7 @@ void node_setup(void){
   vTaskDelay(pdMS_TO_TICKS(node_ptr->node_device_orientation * CALIBRATION_DELAY_SECONDS * 1000));
 
   ESP_ERROR_CHECK(device_wifi_init());
-  ESP_ERROR_CHECK(ring_link_init());
+  ESP_ERROR_CHECK(spi_link_init(node_ptr->node_device_orientation));
 
   if(node_ptr->node_device_orientation == NODE_DEVICE_ORIENTATION_CENTER) {
     while (!rm_broadcast_reset()) {
@@ -240,7 +242,7 @@ esp_netif_t *node_get_wifi_netif(void) {
 }
 
 esp_netif_t *node_get_spi_netif(void) {
-  return get_ring_link_tx_netif();
+  return get_spi_link_tx_netif();
 }
 
 int8_t node_get_device_rssi(void) {
