@@ -126,8 +126,7 @@ void node_set_routing_hook(routing_hook_type_t hook) {
 
 struct netif *node_do_routing(uint32_t src, uint32_t dst){
     ESP_LOGD(TAG, "node_do_routing called");
-    ESP_LOGI(TAG, "routing to dst=%08lX, mask=%08lX, nw=%08lX", dst, SPI_NETWORK_MASK, SPI_NETWORK);
-    if ((dst & SPI_NETWORK_MASK) == SPI_NETWORK)
+    if ((dst & SPI_NETWORK_MASK_LE) == SPI_NETWORK_LE)
         return NULL; // let lwIP route
     
     return selected_routing_hook(src, dst);

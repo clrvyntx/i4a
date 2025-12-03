@@ -40,7 +40,7 @@
 #define SPI_FREQ SPI_MASTER_FREQ_8M
 #endif
 
-#ifndef PYSIM_HAL
+#ifndef PYSIM
 
 static spi_device_handle_t s_spi_device_handle = {0};
 
