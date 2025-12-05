@@ -1,6 +1,7 @@
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
+#include "esp_random.h"
 #include "esp_wifi.h"
 #include "nvs_flash.h"
 #include "esp_log.h"
@@ -194,6 +195,7 @@ static void device_connect_station_task(void* arg) {
           // Unlock AP before next scan loop on AP+STA mode
           if(device_ptr->mode == AP_STATION && device_ptr->access_point_ptr->is_locked) {
             ap_unlock(device_ptr->access_point_ptr);
+            vTaskDelay(pdMS_TO_TICKS(10000 + esp_random() % 10000)); // Wait a random delay to avoid sync issues with different nodes
           }
         }
       } 
