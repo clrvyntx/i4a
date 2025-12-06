@@ -1,6 +1,7 @@
 #include "node.h"
 #include "routing_hooks.h"
 #include "esp_log.h"
+#include "spi_link.h"
 
 static const char *TAG = "ROUTING";
 
@@ -125,6 +126,9 @@ void node_set_routing_hook(routing_hook_type_t hook) {
 
 struct netif *node_do_routing(uint32_t src, uint32_t dst){
     ESP_LOGD(TAG, "node_do_routing called");
+    if ((dst & SPI_NETWORK_MASK_LE) == SPI_NETWORK_LE)
+        return NULL; // let lwIP route
+    
     return selected_routing_hook(src, dst);
 }
 
