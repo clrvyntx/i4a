@@ -1,5 +1,9 @@
 #include "config.h"
 
+#ifdef PYSIM
+  #include "pysim.h"
+#endif
+
 static const char* TAG = "==> config";
 
 static config_t s_config = {
@@ -9,6 +13,22 @@ static config_t s_config = {
     .rx_ip_addr  = 0,
     .tx_ip_addr  = 0,
 };
+
+#ifdef PYSIM
+
+static uint8_t read_config_bits(void)
+{
+    uint8_t config_bits = ps_get_config_bits();
+
+    ESP_LOGI(TAG, "Raw pin values: %d %d %d", 
+         config_bits & 0b001,
+         config_bits & 0b010,
+         config_bits & 0b100);
+        
+    return config_bits;
+}
+
+#else // #ifdef PYSIM
 
 static void enable_config_pins(void)
 {
@@ -47,6 +67,7 @@ static uint8_t read_config_bits(void)
 
     return config_bits;
 }
+#endif // #ifdef PYSIM
 
 // Set device config based on config_bits values
 void config_setup(void)

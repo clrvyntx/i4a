@@ -9,6 +9,12 @@
 #include "task_config.h"
 #include "device.h"
 
+
+#ifdef PYSIM
+  #include "pysim.h"
+#endif // PYSIM
+
+
 static const char *LOGGING_TAG = "device";
 static const char *dev_orientation[5] = {"_N_", "_S_", "_E_", "_W_", "_C_"};
 static bool is_on_connect_loop = false;

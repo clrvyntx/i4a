@@ -14,6 +14,7 @@
 #include "callbacks.h"
 #include "task_config.h"
 #include "node.h"
+#include "pysim.h"
 
 #define ROOT_NETWORK 0x0A000000  // 10.0.0.0
 #define ROOT_MASK 0xFF000000 // 255.0.0.0
@@ -39,6 +40,9 @@ void routing_task(void *pvParameters) {
 }
 
 void app_main(void) {
+#ifdef PYSIM
+    pysim_init();
+#endif
     node_setup();
 
     wireless_t *wl = node_get_wireless_instance();

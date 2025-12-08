@@ -121,4 +121,21 @@ esp_err_t hal_spi_recv(void *p, size_t *len) {
     return spi_slave_transmit(SPI_RECEIVER_HOST, &t, portMAX_DELAY);
 }
 
-#endif // PYSIM_HAL
+
+#else // PYSIM
+
+#include "pysim.h"
+
+esp_err_t hal_spi_init() {
+    return ps_spi_init();
+}
+
+esp_err_t hal_spi_send(const void *p, size_t len) {
+    return ps_spi_send(p, len);
+}
+
+esp_err_t hal_spi_recv(void *p, size_t *len) {
+    return ps_spi_recv(p, len);
+}
+
+#endif // PYSIM

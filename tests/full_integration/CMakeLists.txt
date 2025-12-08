@@ -5,8 +5,9 @@ set(EXTRA_COMPONENT_DIRS
     ${CMAKE_SOURCE_DIR}/../../components/internal
     ${CMAKE_SOURCE_DIR}/../../components/routing
     ${CMAKE_SOURCE_DIR}/../../components/integration
+    ${CMAKE_SOURCE_DIR}/../../components/simulation
 )
-
+add_definitions(-DPYSIM)
 set(SDKCONFIG_DEFAULTS "${CMAKE_SOURCE_DIR}/../../components/sdkconfig.defaults")
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)

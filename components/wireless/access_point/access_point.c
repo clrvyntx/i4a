@@ -11,6 +11,10 @@
 #include "info_manager/info_manager.h"
 #include "access_point.h"
 
+#ifdef PYSIM
+  #include "pysim.h"
+#endif // PYSIM
+
 #define DEFAULT_DNS "8.8.8.8"
 
 static const char *LOGGING_TAG = "AP";
