@@ -23,7 +23,7 @@
 #define HOUSE_NETWORK_PASSWORD ""
 
 #define CALIBRATION_DELAY_SECONDS 2
-#define AP_STA_DELAY_SECONDS 1
+#define AP_STA_DELAY_SECONDS 2
 
 #define MAX_RETRIES 5
 #define RETRY_DELAY_MS 500
@@ -280,6 +280,7 @@ int64_t node_get_device_uptime_minutes(void) {
     int64_t uptime_us = esp_timer_get_time() - rm_get_last_reset_time();
     return uptime_us / 60000000;
 }
+
 
 
 
