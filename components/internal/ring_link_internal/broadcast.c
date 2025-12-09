@@ -57,8 +57,15 @@ esp_err_t broadcast_handler(ring_link_payload_t *p)
     // broadcast origin
     if (ring_link_payload_is_from_device(p))
     {
-        ESP_LOGD(TAG, "Broadcast complete (src=%i,dest=%i,id=%i,ttl=%i).", p->src_id, p->dst_id, p->id, p->ttl);
-        xTaskNotifyGive( s_broadcast_task );
+        if (!s_broadcast_task) {
+            ESP_LOGW(
+                TAG, "Broadcast (src=%i,dest=%i,id=%i,ttl=%i) took too long -- dropping",
+                p->src_id, p->dst_id, p->id, p->ttl
+            );
+        } else {
+            ESP_LOGD(TAG, "Broadcast complete (src=%i,dest=%i,id=%i,ttl=%i).", p->src_id, p->dst_id, p->id, p->ttl);
+            xTaskNotifyGive( s_broadcast_task );
+        }
         return ESP_OK;
     }
     else
@@ -67,3 +74,4 @@ esp_err_t broadcast_handler(ring_link_payload_t *p)
         return ring_link_lowlevel_forward_payload(p);
     }
 }
+
