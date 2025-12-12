@@ -14,7 +14,7 @@
 #include "callbacks.h"
 #include "task_config.h"
 #include "node.h"
-#include "pysim.h"
+#include "i4a_pysim.h"
 
 #define ROOT_NETWORK 0x0A000000  // 10.0.0.0
 #define ROOT_MASK 0xFF000000 // 255.0.0.0
@@ -41,7 +41,7 @@ void routing_task(void *pvParameters) {
 
 void app_main(void) {
 #ifdef PYSIM
-    pysim_init();
+    i4a_pysim_init();
 #endif
     node_setup();
 
@@ -79,7 +79,7 @@ void app_main(void) {
         node_set_as_ap(ROOT_NETWORK, ROOT_MASK);
     }
 
-    if(orientation == NODE_DEVICE_ORIENTATION_NORTH && !is_center_root){ // For testing, have a single one, in reality all non centers should be stations
+    if(orientation != NODE_DEVICE_ORIENTATION_CENTER && !is_center_root){ // For testing, have a single one, in reality all non centers should be stations
         node_set_as_sta();
     }
     

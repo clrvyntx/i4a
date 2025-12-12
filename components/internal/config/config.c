@@ -1,7 +1,7 @@
 #include "config.h"
 
 #ifdef PYSIM
-  #include "pysim.h"
+  #include "i4a_pysim.h"
 #endif
 
 static const char* TAG = "==> config";

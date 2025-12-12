@@ -124,7 +124,7 @@ esp_err_t hal_spi_recv(void *p, size_t *len) {
 
 #else // PYSIM
 
-#include "pysim.h"
+#include "i4a_pysim.h"
 
 esp_err_t hal_spi_init() {
     return ps_spi_init();

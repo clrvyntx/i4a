@@ -1,33 +1,174 @@
 #include "pysim.h"
 #include "esp_log.h"
 #include "esp_random.h"
-#include "esp_netif.h"
 #include "freertos/FreeRTOS.h"
-#include "virtual_nic.h"
+#include "driver/uart.h"
+#include "protocol.h"
 
-#include "uart.h"
+#define PS_UART_PORT UART_NUM_1
+#define PS_MAX_PAYLOAD_SIZE ((1600 * 2))
 
-const char *TAG = "pysim";
-
-typedef struct {
-    size_t len;
-    uint8_t data[1600];
-} spi_packet_t;
+#define TAG "pysim"
 
 static struct {
     bool initialized;
 
-    StaticSemaphore_t _st_spi_queue;
-    QueueHandle_t spi_queue;
+    StaticSemaphore_t _st_read_lock, _st_write_lock;
+    SemaphoreHandle_t read_lock, write_lock;
+    ps_event_callback_t event_callbacks[CONFIG_PYSIM_MAX_EVENTS];
+} self = { 0 };
 
-    struct {
-        vnic_t ap_tx, ap_rx;
-        vnic_t sta_tx, sta_rx;
-        esp_netif_t *ap_netif, *sta_netif;
-        wifi_mode_t mode;
-    } wlan;
-} hal = { 0 };
+static void uart_polling_task();
 
+void pysim_start() {
+    if (self.initialized) {
+        ESP_LOGW(TAG, "Trying to reinitialize HAL -- skipping.");
+        return;
+    }
+
+    uart_config_t uart_config = {
+        .baud_rate = 115200,
+        .data_bits = UART_DATA_8_BITS,
+        .parity = UART_PARITY_DISABLE,
+        .stop_bits = UART_STOP_BITS_1,
+        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
+    };
+    ESP_ERROR_CHECK(uart_driver_install(PS_UART_PORT, 1600 * 2, 0, 0, NULL, 0));
+    ESP_ERROR_CHECK(uart_param_config(PS_UART_PORT, &uart_config));
+    self.read_lock = xSemaphoreCreateMutexStatic(&self._st_read_lock);
+    self.write_lock = xSemaphoreCreateMutexStatic(&self._st_write_lock);
+
+    xTaskCreatePinnedToCore(uart_polling_task, "uart_polling_task", 4096, NULL, 10, NULL, 1);
+}
+
+static void read_exact(void *buffer, uint32_t len)
+{
+    if (uart_read_bytes(PS_UART_PORT, buffer, len, portMAX_DELAY) != len)
+    {
+        ESP_LOGE(TAG, "Received incomplete command from controller -- aborting");
+        abort();
+    }
+}
+
+static void write_all(const void *buffer, uint32_t len)
+{
+    if (uart_write_bytes(PS_UART_PORT, buffer, len) != len)
+    {
+        ESP_LOGE(TAG, "Wrote incomplete command to controller -- aborting");
+        abort();
+    }
+}
+
+
+static void uart_write_lock() {
+    while (!xSemaphoreTake(self.write_lock, portMAX_DELAY));
+}
+
+static void uart_write_unlock() {
+    xSemaphoreGive(self.write_lock);
+}
+
+static void uart_read_lock() {
+    while (!xSemaphoreTake(self.read_lock, portMAX_DELAY));
+}
+
+static void uart_read_unlock() {
+    xSemaphoreGive(self.read_lock);
+}
+
+uint8_t ps_execute(uint8_t command, const void* args, size_t sz_args, void* resp, size_t *sz_resp) {
+    if (sz_args > 0xFFFFFF) {
+        ESP_LOGE(TAG, "Maximum payload size is 0xFFFFFF");
+        return 0xFE;
+    }
+
+    uint32_t payload = (command << 24) | sz_args;
+
+    uart_write_lock(); // Locks: write
+    
+    write_all(&payload, sizeof(uint32_t));
+    if (sz_args > 0) {
+        write_all(args, sz_args);
+    }
+
+    uart_read_lock(); // Locks: write, read
+    
+    uint32_t result = 0;
+    read_exact(&result, sizeof(uint32_t));
+
+    uint8_t ret = (result >> 24);
+    uint32_t sz = (result & 0xFFFFFF);
+    uint32_t buffer_size = sz_resp ? *sz_resp : 0;
+
+    if (sz > buffer_size) {
+        ESP_LOGE(TAG, "Simulator returned bigger payload (%zu) than buffer (%zu) -- aborting", sz, buffer_size);
+        abort();
+    }
+
+    if (sz > 0) {
+        read_exact(resp, sz);
+    }
+    if (sz_resp) {
+        *sz_resp = sz;
+    }
+
+    uart_read_unlock(); // Locks: write
+    uart_write_unlock(); // Locks: -
+    return ret;
+}
+
+
+uint8_t ps_query(uint8_t cmd) {
+    uint8_t ret = ps_execute(
+        cmd,
+        NULL,
+        0,
+        NULL,
+        NULL
+    );
+
+    if (ret & 0x80) {
+        ESP_LOGE(TAG, "query(%u) failed: %u", cmd, ret);
+    }
+
+    return ret;
+}
+
+void ps_register_event(uint8_t event_id, ps_event_callback_t callback) {
+    if (event_id > CONFIG_PYSIM_MAX_EVENTS) {
+        ESP_LOGE(
+            TAG, 
+            "Trying to register handler for event ID=%u but max number of allowed events is %u -- check CONFIG_PYSIM_MAX_EVENTS", 
+            event_id,
+            CONFIG_PYSIM_MAX_EVENTS
+        );
+        esp_system_abort("ps_register_event with invalid event id");
+    } else {
+        self.event_callbacks[event_id] = callback;
+    }
+}
+
+uint8_t uart_do_long_poll() {
+    uart_write_lock(); // Locks: -
+    uart_read_lock();  // Locks: write
+
+    // Enter long polling
+    uint32_t cmd = PS_PACK_CMD(PS_CMD_LONG_POLL, 0);
+    write_all(&cmd, sizeof(uint32_t));  // Locks: write, read
+    
+    uart_write_unlock();    // Release write lock
+
+    uint32_t result = 0;
+    read_exact(&result, sizeof(uint32_t));
+    uart_read_unlock();  // Got data, release read lock
+
+    if (PS_RESPONSE_LEN(result) != 0) {
+        ESP_LOGE(TAG, "long poll returned data -- aborting");
+        abort();
+    }
+
+    return PS_RESPONSE_STATUS(result);
+}
 
 static void uart_polling_task() {
     static uint8_t event_buffer[1600];
@@ -42,378 +183,31 @@ static void uart_polling_task() {
 
         // There are pending events
         event_buffer_sz = sizeof(event_buffer);
-        ret = uart_execute(0xF5, 0, NULL, &event_buffer_sz, event_buffer);
-        
-        switch (ret) {
-            case 1:  // data at SPI interface
-            {
-                spi_packet_t* buffer = calloc(1, sizeof(spi_packet_t));
-                buffer->len = event_buffer_sz;
-                memcpy(buffer->data, event_buffer, event_buffer_sz);
-                xQueueSend(hal.spi_queue, &buffer, portMAX_DELAY);
-            }
-                break;
-            case 2:  // STA arrived
-                esp_event_post(WIFI_EVENT, WIFI_EVENT_AP_STACONNECTED, NULL, 0, portMAX_DELAY);
-                break;
-            case 3:  // STA left
-                esp_event_post(WIFI_EVENT, WIFI_EVENT_AP_STADISCONNECTED, NULL, 0, portMAX_DELAY);
-                break;
-            case 4:  // Connected to AP
-                esp_netif_action_connected(
-                    esp_netif_get_handle_from_ifkey("WIFI_STA_DEF"),
-                    WIFI_EVENT,
-                    WIFI_EVENT_STA_CONNECTED,
-                    NULL
+        ret = ps_execute(0xF5, NULL, 0, event_buffer, &event_buffer_sz);
+
+        if (PS_IS_ERROR(ret)) {
+            ESP_LOGE(TAG, "PySIM failed to retrieve event!! err=%u", ret);
+            esp_system_abort("PySIM failed to retrieve an event");
+        } else {
+            if (ret > CONFIG_PYSIM_MAX_EVENTS) {
+                ESP_LOGE(
+                    TAG, 
+                    "Got event ID=%u but max number of allowed events is %u -- check CONFIG_PYSIM_MAX_EVENTS", 
+                    ret,
+                    CONFIG_PYSIM_MAX_EVENTS
                 );
-                esp_event_post(WIFI_EVENT, WIFI_EVENT_STA_CONNECTED, NULL, 0, portMAX_DELAY);
-                break;
-            case 5:  // Connection to AP lost
-                esp_event_post(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, NULL, 0, portMAX_DELAY);
-                break;
-            case 6:  // data at AP interface
-                if (vnic_transmit(&hal.wlan.ap_rx, event_buffer, event_buffer_sz) != VNIC_OK) {
-                    ESP_LOGE(TAG, "sta vnic transmit failed");
-                }
-                break;
-            case 7:  // data at STA interface
-                if (vnic_transmit(&hal.wlan.sta_rx, event_buffer, event_buffer_sz) != VNIC_OK) {
-                    ESP_LOGE(TAG, "sta vnic transmit failed");
-                }
-                break;
-            default:
-                ESP_LOGE(TAG, "Unexpected poll result: %u -- aborting", ret);
-                abort();
+                continue;
+            }
+
+            if (self.event_callbacks[ret]) {
+                self.event_callbacks[ret](ret, event_buffer, event_buffer_sz);
+            } else {
+                ESP_LOGW(TAG, "Got event ID=%u but no handler registered");
+            }
         }
+        
+        
     }
 
     vTaskDelete(NULL);
-}
-
-static void nic_task_sta()
-{
-    static uint8_t buffer[1600];
-    size_t recvd = 0;
-
-    while (true)
-    {
-        vnic_result_t verr;
-        if ((verr = vnic_receive(&hal.wlan.sta_rx, buffer, 1600, &recvd)) != VNIC_OK)
-        {
-            ESP_LOGE(TAG, "vnic_receive failed: %u\n", verr);
-            break;
-        }
-
-        uart_execute(0x14, recvd, buffer, NULL, NULL);
-    }
-
-    vTaskDelete(NULL);
-}
-
-static void nic_task_ap()
-{
-    static uint8_t buffer[1600];
-    size_t recvd = 0;
-
-    while (true)
-    {
-        vnic_result_t verr;
-        if ((verr = vnic_receive(&hal.wlan.ap_rx, buffer, 1600, &recvd)) != VNIC_OK)
-        {
-            ESP_LOGE(TAG, "vnic_receive failed: %u\n", verr);
-            break;
-        }
-
-        uart_execute(0x17, recvd, buffer, NULL, NULL);
-    }
-
-    vTaskDelete(NULL);
-}
-
-static esp_err_t _ps_wifi_init() {
-    assert(vnic_create(&hal.wlan.ap_tx) == VNIC_OK);
-    assert(vnic_create(&hal.wlan.ap_rx) == VNIC_OK);
-    assert(vnic_create(&hal.wlan.sta_tx) == VNIC_OK);
-    assert(vnic_create(&hal.wlan.sta_rx) == VNIC_OK);
-
-    assert(vnic_bind_receiver(&hal.wlan.ap_tx, &hal.wlan.ap_rx) == VNIC_OK);
-    assert(vnic_bind_receiver(&hal.wlan.sta_tx, &hal.wlan.sta_rx) == VNIC_OK);
-    assert(vnic_bind_receiver(&hal.wlan.ap_rx, &hal.wlan.ap_tx) == VNIC_OK);
-    assert(vnic_bind_receiver(&hal.wlan.sta_rx, &hal.wlan.sta_tx) == VNIC_OK);
-
-    esp_netif_config_t ap_config = ESP_NETIF_DEFAULT_WIFI_AP();
-    esp_netif_config_t sta_config = ESP_NETIF_DEFAULT_WIFI_STA();
-
-    assert(vnic_register_esp_netif(&hal.wlan.ap_tx, ap_config) == VNIC_OK);
-    assert(vnic_register_esp_netif(&hal.wlan.sta_tx, sta_config) == VNIC_OK);
-    xTaskCreate(nic_task_ap, "nic_task_ap", 4096, NULL, tskIDLE_PRIORITY + 1, NULL);
-    xTaskCreate(nic_task_sta, "nic_task_sta", 4096, NULL, tskIDLE_PRIORITY + 1, NULL);
-
-    uint32_t mac = esp_random();
-    uint8_t wl_mac[6] = {0xaa, 0xaa, (mac >> 24) & 0xFF, (mac >> 16) & 0xFF, (mac >> 8) & 0xFF, mac & 0xFF};
-    esp_netif_t *ap = ps_netif_create_default_wifi_ap();
-    esp_netif_set_mac(ap, wl_mac);
-    esp_netif_t *sta = ps_netif_create_default_wifi_sta();
-    esp_netif_set_mac(sta, wl_mac);
-    return ESP_OK;
-}
-
-void pysim_init() {
-    if (hal.initialized) {
-        ESP_LOGW(TAG, "Trying to reinitialize HAL -- skipping.");
-        return;
-    }
-
-    hal.spi_queue = xQueueCreate(1, sizeof(spi_packet_t*));
-    setup_uart();
-    _ps_wifi_init();
-    xTaskCreatePinnedToCore(uart_polling_task, "uart_polling_task", 4096, NULL, 10, NULL, 1);
-}
-
-uint8_t ps_get_config_bits() {
-    ESP_LOGI(TAG, "Querying board config through UART...");
-
-    return uart_query(0x03);
-}
-
-esp_err_t ps_spi_init() {
-    return ESP_OK;
-}
-
-esp_err_t ps_spi_send(const void *p, size_t len) {
-    return uart_execute(0x01, (uint32_t) len, p, NULL, NULL) == 0 ? ESP_OK : ESP_FAIL;
-}
-
-esp_err_t ps_spi_recv(void *p, size_t *len) {
-    spi_packet_t *spi_packet = NULL;
-    while (xQueueReceive(hal.spi_queue, &spi_packet, portMAX_DELAY) != pdTRUE) ;
-    
-    if (spi_packet->len > *len) {
-        ESP_LOGE(TAG, "buffer too small (%lu < %lu)", *len, spi_packet->len);
-        abort();
-    }
-
-    *len = spi_packet->len;
-    memcpy(p, spi_packet->data, spi_packet->len);
-    free(spi_packet);
-    return ESP_OK;
-}
-
-/** Creates netifs for AP & STA */
-esp_err_t ps_wifi_init(const wifi_init_config_t *config) {
-    return ESP_OK;
-}
-
-esp_err_t ps_wifi_start(void) {
-    ESP_LOGI(TAG, "hal_wifi_start()");
-    uart_query(0x0B);
-    if (hal.wlan.mode == WIFI_MODE_AP) {
-        esp_event_post(WIFI_EVENT, WIFI_EVENT_AP_START, NULL, 0, portMAX_DELAY);
-    } else if (hal.wlan.mode == WIFI_MODE_STA) {
-        esp_event_post(WIFI_EVENT, WIFI_EVENT_STA_START, NULL, 0, portMAX_DELAY);
-    } else if (hal.wlan.mode == WIFI_MODE_APSTA) {
-        esp_event_post(WIFI_EVENT, WIFI_EVENT_AP_START, NULL, 0, portMAX_DELAY);
-        esp_event_post(WIFI_EVENT, WIFI_EVENT_STA_START, NULL, 0, portMAX_DELAY);
-    }
-    return ESP_OK;
-}
-
-esp_err_t ps_wifi_stop(void) {
-    ESP_LOGI(TAG, "hal_wifi_stop()");
-    uart_query(0x0C);
-    return ESP_OK;
-}
-
-esp_err_t ps_wifi_set_config(wifi_interface_t interface, wifi_config_t *conf) {
-    if (interface == WIFI_IF_AP) {
-        ESP_LOGI(
-            TAG, 
-            "hal_wifi_set_config(ap, ssid=%s, password=%s, channel=%u)", 
-            conf->ap.ssid, conf->ap.password, conf->ap.channel
-        );
-        struct {
-            char ssid[32];
-            char password[64];
-            uint32_t channel;
-        } payload = {0};
-        strcpy(payload.ssid, (char *)conf->ap.ssid);
-        strcpy(payload.password, (char *)conf->ap.password);
-        payload.channel = conf->ap.channel;
-        return uart_execute(0x06, sizeof(payload), &payload, NULL, NULL) == 0 ? ESP_OK : ESP_FAIL;
-    } else if (interface == WIFI_IF_STA) {
-        ESP_LOGI(
-            TAG, 
-            "hal_wifi_set_config(sta, ssid=%s, password=%s, bssid_set=%u, bssid=%02x:%02x:%02x:%02x:%02x:%02x)", 
-            conf->sta.ssid, conf->sta.password, conf->sta.bssid_set, 
-            conf->sta.bssid[0], conf->sta.bssid[1], conf->sta.bssid[2], conf->sta.bssid[3], 
-            conf->sta.bssid[4], conf->sta.bssid[5]
-        );
-        struct {
-            char ssid[32];
-            char password[64];
-        } payload = {0};
-        strcpy(payload.ssid, (char *)conf->sta.ssid);
-        strcpy(payload.password, (char *)conf->sta.password);
-        return uart_execute(0x07, sizeof(payload), &payload, NULL, NULL) == 0 ? ESP_OK : ESP_FAIL;
-    }
-
-    return ESP_ERR_WIFI_NOT_INIT;
-}
-
-esp_err_t ps_wifi_set_mode(wifi_mode_t mode) {
-    ESP_LOGI(TAG, "hal_wifi_set_mode(%u)", mode);
-    if (mode == WIFI_MODE_APSTA)
-        mode = WIFI_MODE_AP;  // Simulation limit
-    
-    if ((mode != WIFI_MODE_AP) && (mode != WIFI_MODE_STA)) {
-        ESP_LOGE(TAG, "WiFi mode %u not supported by emulator", mode);
-        return ESP_FAIL;
-    }
-
-    hal.wlan.mode = mode;
-    uint32_t mode_u32 =(uint32_t)mode;
-    return uart_execute(0x05, sizeof(mode_u32), &mode_u32, NULL, NULL) == 0 ? ESP_OK : ESP_FAIL;
-}
-
-esp_err_t ps_wifi_connect(void) {
-    ESP_LOGI(TAG, "hal_wifi_connect()");
-    uart_query(0x08);  // result == connected?
-    return ESP_OK;
-}
-
-esp_err_t ps_wifi_disconnect(void) {
-    ESP_LOGI(TAG, "hal_wifi_disconnect()");
-    uart_query(0x09);
-    return ESP_OK;
-}
-
-esp_err_t ps_wifi_deauth_sta(uint16_t aid) {
-    ESP_LOGI(TAG, "hal_wifi_deauth_sta(%u)", aid);
-    return uart_execute(0x0A, sizeof(aid), &aid, NULL, NULL) == 0 ? ESP_OK : ESP_FAIL;
-}
-
-esp_err_t ps_wifi_scan_start(const wifi_scan_config_t *config, bool block) {
-    if (!block) {
-        ESP_LOGE(TAG, "non blocking scan not implemented");
-        return ESP_FAIL;
-    }
-
-    if (config) {
-        ESP_LOGE(TAG, "scan with custom config not implemented");
-        return ESP_FAIL;
-    }
-
-    return uart_query(0x10) == 0 ? ESP_OK : ESP_FAIL;
-}
-
-esp_err_t ps_wifi_scan_get_ap_num(uint16_t *number) {
-    uint8_t ret = uart_query(0x0D);
-    if (ret & 0x80)
-        return ESP_FAIL;
-    
-    *number = (uint16_t) ret;
-    return ESP_OK;
-}
-
-esp_err_t ps_wifi_scan_get_ap_records(uint16_t *number, wifi_ap_record_t *ap_records) {
-    uint16_t result_len = *number;
-    uint16_t n_aps = uart_query(0x0D);
-    if (n_aps & 0x80) {
-        ESP_LOGE(TAG, "query(0x0D) failed: %u", n_aps);
-        return ESP_FAIL;
-    }
-
-    struct {
-        uint8_t bssid[6];
-        uint8_t ssid[33];
-        uint8_t primary;
-        int8_t  rssi;
-    } __attribute__((packed)) record;
-
-    for (uint16_t i = 0; i < n_aps; i++) {
-        size_t record_size = sizeof(record);
-        uart_execute(0x0F, 0, NULL, &record_size, (uint8_t*)&record);
-
-        if (i < result_len) {
-            memcpy(ap_records[i].bssid, record.bssid, sizeof(ap_records[i].bssid));
-            memcpy(ap_records[i].ssid, record.ssid, sizeof(ap_records[i].ssid));
-            ap_records[i].primary = record.primary;
-            ap_records[i].rssi = record.rssi;
-        }
-    }
-
-    *number = n_aps;
-    return ESP_OK;
-}
-
-esp_err_t ps_wifi_ap_get_sta_list(wifi_sta_list_t *sta) {
-    uint8_t n_stas = uart_query(0x12);
-    if (n_stas & 0x80) {
-        ESP_LOGE(TAG, "Query(0x12) failed: %u", n_stas);
-        return ESP_FAIL;
-    }
-
-    if (n_stas > ESP_WIFI_MAX_CONN_NUM) {
-        ESP_LOGW(TAG, "More stations than allowed by esp_wifi -- ignoring some");
-    }
-
-    sta->num = 0;
-
-    struct {
-        uint8_t mac[6];
-        int8_t  rssi;
-    } __attribute__((packed)) record;
-
-    for (uint32_t i = 0; i < n_stas; i++) {
-        size_t record_size = sizeof(record);
-        uart_execute(0x13, sizeof(uint32_t), &i, &record_size, (uint8_t*)&record);
-
-        if (sta->num < ESP_WIFI_MAX_CONN_NUM) {
-            memcpy(sta->sta[sta->num].mac, record.mac, sizeof(sta->sta[sta->num].mac));
-            sta->sta[sta->num].rssi = record.rssi;
-            sta->num++;
-        }
-    }
-
-    return ESP_OK;
-}
-
-esp_err_t ps_wifi_sta_get_ap_info(wifi_ap_record_t *ap_info) {
-    struct {
-        uint8_t bssid[6];
-        uint8_t ssid[33];
-        uint8_t primary;
-        int8_t  rssi;
-    } __attribute__((packed)) record;
-
-    size_t record_size = sizeof(record);
-    uint32_t ret = uart_execute(0x11, 0, NULL, &record_size, &record);
-
-    if (ret != 0) {
-        ESP_LOGE(TAG, "hal_wifi_sta_get_ap_info failed: %u", ret);
-        return ESP_FAIL;
-    }
-
-    memcpy(ap_info->bssid, record.bssid, sizeof(ap_info->bssid));
-    memcpy(ap_info->ssid, record.ssid, sizeof(ap_info->ssid));
-    ap_info->primary = record.primary;
-    ap_info->rssi = record.rssi;
-
-    return ESP_OK;
-}
-
-esp_err_t ps_wifi_set_max_tx_power(int8_t) {
-    return ESP_OK;
-}
-
-esp_netif_t* ps_netif_create_default_wifi_ap() {
-    return esp_netif_get_handle_from_ifkey("WIFI_AP_DEF");
-}
-
-esp_netif_t* ps_netif_create_default_wifi_sta() {
-    return esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
-}
-
-esp_err_t ps_netif_destroy_default_wifi(esp_netif_t*) {
-    return ESP_OK;
 }

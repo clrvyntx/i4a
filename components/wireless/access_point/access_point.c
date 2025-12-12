@@ -12,7 +12,7 @@
 #include "access_point.h"
 
 #ifdef PYSIM
-  #include "pysim.h"
+  #include "i4a_pysim.h"
 #endif // PYSIM
 
 #define DEFAULT_DNS "8.8.8.8"
@@ -119,6 +119,7 @@ void ap_set_network(AccessPointPtr ap, const char *network_cidr, const char *net
 void ap_start(AccessPointPtr ap) {
   ESP_LOGI(LOGGING_TAG, "Starting AP");
   ap->state = active;
+  esp_wifi_stop();
   ESP_ERROR_CHECK(esp_wifi_start());
 };
 

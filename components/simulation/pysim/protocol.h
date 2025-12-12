@@ -3,7 +3,8 @@
 
 #define PS_STATUS_MASK_ERROR 0x80
 
-#define PS_CMD_LONG_POLL 0xF4
+#define PS_CMD_LONG_POLL      0xF4
+#define PS_CMD_RETRIEVE_EVENT 0xF5
 
 #define PS_PACK_CMD(cmd, payload_len)   (((cmd) << 24) | (payload_len))
 #define PS_RESPONSE_LEN(response)       ((response) & 0x00FFFFFF)

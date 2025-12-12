@@ -11,7 +11,7 @@
 
 
 #ifdef PYSIM
-  #include "pysim.h"
+  #include "i4a_pysim.h"
 #endif // PYSIM
 
 

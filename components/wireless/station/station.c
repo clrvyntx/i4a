@@ -10,7 +10,7 @@
 
 
 #ifdef PYSIM
-  #include "pysim.h"
+  #include "i4a_pysim.h"
 #endif // PYSIM
 
 
@@ -144,6 +144,7 @@ static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_
 }
 
 void station_start(StationPtr stationPtr) {
+  esp_wifi_stop();
   ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &(wifi_config_t){ 0 }));
   ESP_ERROR_CHECK(esp_wifi_start());
 }

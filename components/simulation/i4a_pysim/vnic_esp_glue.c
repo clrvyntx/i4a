@@ -166,7 +166,7 @@ static err_t cb_lwip_init(struct netif *lwip_netif)
     const u8_t mac[] = VNIC_MAC_ADDR;
     memcpy(lwip_netif->hwaddr, mac, sizeof(lwip_netif->hwaddr));
     lwip_netif->hwaddr_len = ETH_HWADDR_LEN;
-    lwip_netif->mtu = 1600;
+    lwip_netif->mtu = 1500;
 
     netif_set_flags(lwip_netif,
                     NETIF_FLAG_BROADCAST | NETIF_FLAG_LINK_UP | NETIF_FLAG_ETHARP);
