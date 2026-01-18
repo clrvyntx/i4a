@@ -114,6 +114,8 @@ bool rm_broadcast_startup_info(bool is_root) {
 
     if(is_root){
         strncpy(rm->uuid, "000000000000", sizeof(rm->uuid));
+    } else {
+        strncpy(rm->uuid, rm->mac, sizeof(rm->uuid));
     }
  
     strncpy(packet.uuid, rm->uuid, sizeof(packet.uuid));
