@@ -272,6 +272,26 @@ bool device_send_wireless_message(DevicePtr device_ptr, const uint8_t *msg, uint
   return false;
 }
 
+bool device_is_point_to_point_message(DevicePtr device_ptr, uint32_t dst) {
+  if(device_ptr->mode == AP){
+    return ((dst & device_ptr->access_point_ptr->ap_mask) == device_ptr->access_point_ptr->ap_subnet);
+  }
+
+  if(device_ptr->mode == STATION){
+    return ((dst & device_ptr->station_ptr->sta_mask) == device_ptr->station_ptr->sta_subnet);
+  }
+
+  if(device_ptr->mode == AP_STATION){
+    if(device_ptr->station_ptr->ap_found){
+      return ((dst & device_ptr->station_ptr->sta_mask) == device_ptr->station_ptr->sta_subnet);
+    } else {
+      return ((dst & device_ptr->access_point_ptr->ap_mask) == device_ptr->access_point_ptr->ap_subnet);
+    }
+  }
+
+  return false;
+}
+
 // Device RSSI
 int8_t device_get_rssi(DevicePtr device_ptr) {
     if (device_ptr->mode == AP) {
@@ -368,5 +388,6 @@ void device_set_max_tx_power(DevicePtr device_ptr, int8_t power) {
     float real_dbm = power * 0.25f;
     ESP_LOGI(LOGGING_TAG, "Wi-Fi max TX power set to %.2f dBm", real_dbm);
 }
+
 
 
