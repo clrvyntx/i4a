@@ -69,6 +69,7 @@ void device_stop_ap_station(DevicePtr device_ptr);
 void device_restart_ap_station(DevicePtr device_ptr);
 esp_netif_t *device_get_netif(DevicePtr device_ptr);
 bool device_send_wireless_message(DevicePtr device_ptr, const uint8_t *msg, uint16_t len);
+bool device_is_point_to_point_message(DevicePtr device_ptr, uint32_t dst)
 int8_t device_get_rssi(DevicePtr device_ptr);
 const char *device_get_link_name(DevicePtr device_ptr);
 uint8_t device_get_channel(DevicePtr device_ptr);
@@ -79,6 +80,7 @@ void device_set_max_tx_power(DevicePtr device_ptr, int8_t power);
 #endif
 
 #endif //_DEVICE_H_
+
 
 
 
