@@ -1,4 +1,5 @@
 idf_component_register(SRCS "access_point.c"
                     INCLUDE_DIRS "."
-                    REQUIRES esp_wifi esp_netif server traffic info_manager)
+                    REQUIRES esp_wifi esp_netif server traffic)
+
 
