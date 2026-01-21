@@ -159,12 +159,6 @@ void ap_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, 
   if (event_base == WIFI_EVENT) {
     switch (event_id) {
 
-      case WIFI_EVENT_AP_START:
-        if (ap->is_center) {
-          im_http_client_start();
-        }
-        break;
-
       case WIFI_EVENT_AP_STACONNECTED:
         if(ap->is_locked) {
           esp_wifi_deauth_sta(0);
@@ -185,6 +179,7 @@ void ap_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, 
     }
   }
 }
+
 
 
 
