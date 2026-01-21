@@ -8,9 +8,6 @@
 #include "traffic.h"
 #include "station.h"
 
-#define STA_BRIDGE_NETWORK  0xC0A80300  // 192.168.3.0
-#define STA_BRIDGE_MASK 0xFFFFFFFC  // /30
-
 #define UUID_LEN 12
 #define SSID_UUID_OFFSET 6
 
@@ -216,4 +213,5 @@ void transform_wifi_ap_record_to_config(StationPtr stationPtr) {
   memcpy(stationPtr->wifi_config.sta.password, stationPtr->password, sizeof(stationPtr->password));
   stationPtr->wifi_config.sta.bssid_set = true;
 }
+
 
