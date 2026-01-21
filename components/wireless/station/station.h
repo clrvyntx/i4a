@@ -37,6 +37,8 @@ struct Station {
   wifi_config_t wifi_config;
   wifi_ap_record_t wifi_ap_found;
   esp_netif_t *netif;
+  uint32_t sta_subnet;
+  uint32_t sta_mask;
 };
 
 typedef struct Station Station;
@@ -86,3 +88,4 @@ void wait_connection_established();
 #endif
 
 #endif // _STA_H_
+
