@@ -104,18 +104,6 @@ static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_
 
   if (event_base == WIFI_EVENT) {
     switch (event_id) {
-      case WIFI_EVENT_STA_CONNECTED:
-        if (!stationPtr->is_apsta) {
-          cm_provide_to_siblings(stationPtr->wifi_ap_found.primary);
-        }
-
-        if(!stationPtr->is_fully_connected) {
-          client_open();
-          stationPtr->is_fully_connected = true;
-        }
-
-        break;
-      
       case WIFI_EVENT_STA_DISCONNECTED:
         if(stationPtr->is_fully_connected){
           client_close();
@@ -135,6 +123,34 @@ static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_
         break;
     }
   }
+
+  if (event_base == IP_EVENT) {
+    switch (event_id) {
+      case IP_EVENT_STA_GOT_IP:
+        if(stationPtr->is_fully_connected) {
+          if(!stationPtr->is_apsta){
+            cm_provide_to_siblings(stationPtr->wifi_ap_found.primary);
+          }
+          client_open();
+          s_retry_num = 0;
+        } else {
+          ip_event_got_ip_t *event = (ip_event_got_ip_t*) event_data;
+          esp_netif_ip_info_t s_learned_ip_info = event->ip_info;
+          esp_netif_ip_info_t static_ip;
+
+          uint32_t subnet_base_host = ntohl(s_learned_ip_info.ip.addr & s_learned_ip_info.netmask.addr);
+
+          static_ip.gw.addr = htonl(subnet_base_host + 1);
+          static_ip.ip.addr = htonl(subnet_base_host + 2);
+          static_ip.netmask = s_learned_ip_info.netmask;
+
+          stationPtr->is_fully_connected = true;
+          esp_netif_dhcpc_stop(stationPtr->netif);
+          ESP_ERROR_CHECK(esp_netif_set_ip_info(stationPtr->netif, &static_ip));
+        }
+        break;
+    }
+  }
 }
 
 void station_start(StationPtr stationPtr) {
@@ -144,14 +160,9 @@ void station_start(StationPtr stationPtr) {
 
 void station_connect(StationPtr stationPtr) {
   s_retry_num = 0;
-  esp_netif_ip_info_t static_ip;
-  static_ip.ip.addr = htonl(STA_BRIDGE_NETWORK + 2);    // 192.168.3.2
-  static_ip.gw.addr = htonl(STA_BRIDGE_NETWORK + 1);    // 192.168.3.1
-  static_ip.netmask.addr = htonl(STA_BRIDGE_MASK);      // /30
   stationPtr->state = s_active;
   ESP_LOGI(LOGGING_TAG, "Connecting to %s...", stationPtr->wifi_config.sta.ssid);
-  esp_netif_dhcpc_stop(stationPtr->netif);
-  ESP_ERROR_CHECK(esp_netif_set_ip_info(stationPtr->netif, &static_ip));
+  ESP_ERROR_CHECK(esp_netif_dhcpc_start(stationPtr->netif));
   ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &stationPtr->wifi_config));
   ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, stationPtr));
   ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, stationPtr));
@@ -205,3 +216,4 @@ void transform_wifi_ap_record_to_config(StationPtr stationPtr) {
   memcpy(stationPtr->wifi_config.sta.password, stationPtr->password, sizeof(stationPtr->password));
   stationPtr->wifi_config.sta.bssid_set = true;
 }
+
