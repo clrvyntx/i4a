@@ -5,6 +5,7 @@
 #include "lwip/ip_addr.h"
 #include "client.h"
 #include "channel_manager/channel_manager.h"
+#include "info_manager/info_manager.h"
 #include "traffic.h"
 #include "station.h"
 
@@ -127,6 +128,7 @@ static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_
         if(stationPtr->is_fully_connected) {
           if(!stationPtr->is_apsta){
             cm_provide_to_siblings(stationPtr->wifi_ap_found.primary);
+            im_http_client_start();
           }
           client_open();
           s_retry_num = 0;
@@ -217,6 +219,7 @@ void transform_wifi_ap_record_to_config(StationPtr stationPtr) {
   memcpy(stationPtr->wifi_config.sta.password, stationPtr->password, sizeof(stationPtr->password));
   stationPtr->wifi_config.sta.bssid_set = true;
 }
+
 
 
 
