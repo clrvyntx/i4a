@@ -228,7 +228,7 @@ bool node_send_wireless_message(const uint8_t *msg, uint16_t len) {
 }
 
 bool node_is_point_to_point_message(uint32_t dst) {
-  return ((dst & BRIDGE_MASK) == BRIDGE_NETWORK);
+  return device_is_point_to_point_message(node_ptr->node_device_ptr, dst);
 }
 
 bool node_is_packet_for_this_subnet(uint32_t dst) {
@@ -280,6 +280,7 @@ int64_t node_get_device_uptime_minutes(void) {
     int64_t uptime_us = esp_timer_get_time() - rm_get_last_reset_time();
     return uptime_us / 60000000;
 }
+
 
 
 
