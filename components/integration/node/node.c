@@ -28,9 +28,6 @@
 #define MAX_RETRIES 5
 #define RETRY_DELAY_MS 500
 
-#define BRIDGE_NETWORK  0xC0A80300  // 192.168.3.0
-#define BRIDGE_MASK 0xFFFFFFFC  // /30
-
 #define NAT_NETWORK 0x0AA00000  // 10.160.0.0
 #define NAT_MASK    0xFFFFFFFC  // /30
 
@@ -160,8 +157,8 @@ void node_set_as_ap(uint32_t network, uint32_t mask){
       ap_max_sta_connections = MAX_DEVICES_PER_HOUSE;
     }
   } else {
-    network = BRIDGE_NETWORK;
-    mask = BRIDGE_MASK;
+    network = ((network | ~mask) - 3) & 0xFFFFFFFC; // Get last possible /30 address from given subnet
+    mask = 0xFFFFFFFC; // /30
     node_gateway = network + 2;
     wifi_network_prefix = NODE_NAME_PREFIX;
     wifi_network_password = NODE_LINK_PASSWORD;
@@ -280,6 +277,7 @@ int64_t node_get_device_uptime_minutes(void) {
     int64_t uptime_us = esp_timer_get_time() - rm_get_last_reset_time();
     return uptime_us / 60000000;
 }
+
 
 
 
