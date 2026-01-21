@@ -136,10 +136,14 @@ static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_
           esp_netif_ip_info_t static_ip;
 
           uint32_t subnet_base_host = ntohl(s_learned_ip_info.ip.addr & s_learned_ip_info.netmask.addr);
+          uint32_t subnet_base_mask = ntohl(s_learned_ip_info.netmask.addr);
 
           static_ip.gw.addr = htonl(subnet_base_host + 1);
           static_ip.ip.addr = htonl(subnet_base_host + 2);
           static_ip.netmask = s_learned_ip_info.netmask;
+
+          stationPtr->sta_subnet = subnet_base_host;
+          stationPtr->sta_mask = subnet_base_mask;
 
           stationPtr->is_fully_connected = true;
           esp_netif_dhcpc_stop(stationPtr->netif);
@@ -213,5 +217,6 @@ void transform_wifi_ap_record_to_config(StationPtr stationPtr) {
   memcpy(stationPtr->wifi_config.sta.password, stationPtr->password, sizeof(stationPtr->password));
   stationPtr->wifi_config.sta.bssid_set = true;
 }
+
 
 
