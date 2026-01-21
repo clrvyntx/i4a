@@ -101,6 +101,9 @@ void ap_set_network(AccessPointPtr ap, const char *network_cidr, const char *net
       return;
   }
 
+  ap->ap_mask   = ntohl(ip.netmask.addr);
+  ap->ap_subnet = ntohl(ip.ip.addr) & ap->ap_mask;
+  
   dhcps_offer_t dhcps_dns_value = OFFER_DNS;
   ESP_ERROR_CHECK(esp_netif_dhcps_option(ap->netif, ESP_NETIF_OP_SET, ESP_NETIF_DOMAIN_NAME_SERVER, &dhcps_dns_value, sizeof(dhcps_dns_value)));
 
@@ -182,5 +185,6 @@ void ap_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, 
     }
   }
 }
+
 
 
