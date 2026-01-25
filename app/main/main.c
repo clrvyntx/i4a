@@ -13,6 +13,7 @@
 #include "routing_hooks.h"
 #include "callbacks.h"
 #include "task_config.h"
+#include "info_manager/info_manager.h"
 #include "node.h"
 
 #define ROOT_NETWORK 0x0A000000  // 10.0.0.0
@@ -73,6 +74,7 @@ void app_main(void) {
 
     if(orientation == NODE_DEVICE_ORIENTATION_CENTER && is_center_root){
         node_set_as_ap(ROOT_NETWORK, ROOT_MASK);
+        im_http_client_start();
     }
 
     if(orientation != NODE_DEVICE_ORIENTATION_CENTER && !is_center_root){
@@ -90,5 +92,6 @@ void app_main(void) {
     );
 
 }
+
 
 
