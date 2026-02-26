@@ -11,7 +11,9 @@
 #include "esp_wifi.h"
 #include "task_config.h"
 
-#define SERVER_ADDRESS "http://10.160.0.2:8000"
+#define SERVER_HOST "10.160.0.2"
+#define SERVER_PORT 8000
+#define SERVER_PATH "/"
 #define MAX_HTTP_OUTPUT_BUFFER 2048
 
 #define CLIENT_POST_INTERVAL_MS (5 * 60 * 1000)     // 5 min
@@ -32,7 +34,9 @@ static void im_client_task(void *arg) {
     vTaskDelay(pdMS_TO_TICKS(CLIENT_POST_INTERVAL_MS));
 
     esp_http_client_config_t config = {
-        .url = SERVER_ADDRESS,
+        .host = SERVER_HOST,
+        .port = SERVER_PORT,
+        .path = SERVER_PATH,
         .method = HTTP_METHOD_POST,
         .timeout_ms = 5000,
     };
