@@ -10,6 +10,7 @@
 #include "info_manager/info_manager.h"
 #include "esp_wifi.h"
 #include "task_config.h"
+#include "esp_crt_bundle.h"
 
 #define SERVER_ADDRESS "example.com"
 #define MAX_HTTP_OUTPUT_BUFFER 2048
@@ -35,8 +36,7 @@ static void im_client_task(void *arg) {
         .url = "http://" SERVER_ADDRESS,
         .method = HTTP_METHOD_POST,
         .timeout_ms = 5000,
-        // For HTTPS, add crt:
-        // .crt_bundle_attach = esp_crt_bundle_attach,
+        .crt_bundle_attach = esp_crt_bundle_attach
     };
 
     esp_http_client_handle_t client = esp_http_client_init(&config);
