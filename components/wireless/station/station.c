@@ -149,15 +149,14 @@ static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_
           stationPtr->sta_subnet = subnet_base_host;
           stationPtr->sta_mask = subnet_base_mask;
 
-          
+          stationPtr->is_fully_connected = true;
+          esp_netif_dhcpc_stop(stationPtr->netif);
+          ESP_ERROR_CHECK(esp_netif_set_ip_info(stationPtr->netif, &static_ip));
+
           esp_netif_dns_info_t dns_info;
           dns_info.ip.u_addr.ip4.addr = ipaddr_addr(DEFAULT_DNS);
           dns_info.ip.type = ESP_IPADDR_TYPE_V4;
           ESP_ERROR_CHECK(esp_netif_set_dns_info(stationPtr->netif, ESP_NETIF_DNS_MAIN, &dns_info));
-
-          stationPtr->is_fully_connected = true;
-          esp_netif_dhcpc_stop(stationPtr->netif);
-          ESP_ERROR_CHECK(esp_netif_set_ip_info(stationPtr->netif, &static_ip));
         }
         break;
     }
@@ -227,3 +226,4 @@ void transform_wifi_ap_record_to_config(StationPtr stationPtr) {
   memcpy(stationPtr->wifi_config.sta.password, stationPtr->password, sizeof(stationPtr->password));
   stationPtr->wifi_config.sta.bssid_set = true;
 }
+
