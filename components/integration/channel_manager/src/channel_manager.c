@@ -56,7 +56,7 @@ bool cm_provide_to_siblings(uint8_t connected_channel) {
         return false;
     }
 
-    const uint8_t *selected_formation = select_formation(connected_channel, cm->orientation);
+    const uint8_t *selected_formation = select_formation(connected_channel);
     cm->suggested_channel = selected_formation[cm->orientation];
 
     bool broadcast = rs_broadcast(cm->rs, RS_CHANNEL_MANAGER, selected_formation, CHANNELS);
