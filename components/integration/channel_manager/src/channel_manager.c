@@ -6,10 +6,8 @@
 
 static const char *TAG = "channel_manager";
 
-static const uint8_t formation_1[CHANNELS] = {1, 6, 3, 9, 11};
-static const uint8_t formation_3[CHANNELS] = {3, 9, 1, 6, 11};
-static const uint8_t formation_6[CHANNELS] = {6, 1, 9, 3, 11};
-static const uint8_t formation_9[CHANNELS] = {9, 3, 6, 1, 11};
+static const uint8_t formation_1[CHANNELS] = {1, 7, 4, 10, 11};
+static const uint8_t formation_2[CHANNELS] = {3, 9, 6, 12, 11};
 
 static channel_manager_t channel_manager = { 0 };
 static channel_manager_t *cm = &channel_manager;
@@ -41,14 +39,15 @@ void cm_init(ring_share_t *rs, orientation_t orientation) {
     ESP_LOGI(TAG, "Channel manager initialized");
 }
 
-static const uint8_t *select_formation(uint8_t connected_channel, uint8_t orientation) {
-    static const uint8_t *formations[] = {formation_1, formation_3, formation_6, formation_9};
-    for (int f = 0; f < 4; f++) {
-        if (formations[f][orientation] == connected_channel) {
-            return formations[f];
+static const uint8_t *select_formation(uint8_t connected_channel) {
+    // Check the first 4 channels of formation_1
+    for (int i = 0; i < 4; i++) {
+        if (formation_1[i] == connected_channel) {
+            return formation_2; // swap to the other formation
         }
     }
-    return formation_1; // fallback
+    // If not in formation_1, use formation_1 explicitly
+    return formation_1;
 }
 
 bool cm_provide_to_siblings(uint8_t connected_channel) {
