@@ -76,7 +76,7 @@ void station_find_ap(StationPtr stationPtr) {
   int best_rssi = RSSI_THRESHOLD;
 
   for (int i = 0; i < networks_to_scan; i++) {
-    if (is_network_allowed(stationPtr->device_uuid, stationPtr->ssid_like, (char*)ap_info[i].ssid, stationPtr->is_apsta)) {
+    if (is_network_allowed(stationPtr->device_uuid, stationPtr->ssid_like, (char*)ap_info[i].ssid, stationPtr->is_apsta, stationPtr->device_orientation)) {
       ESP_LOGI(LOGGING_TAG, "Allowed SSID: %s | RSSI: %d | Channel: %d", ap_info[i].ssid, ap_info[i].rssi, ap_info[i].primary);
       if (ap_info[i].rssi > best_rssi) {
         best_ap = &ap_info[i];
