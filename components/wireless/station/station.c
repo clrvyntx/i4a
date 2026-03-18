@@ -20,7 +20,7 @@ static const char* LOGGING_TAG = "station";
 
 static int s_retry_num = 0;
 
-static bool is_network_allowed(char* device_uuid, char* network_prefix, char* network_name, bool is_apsta) {
+static bool is_network_allowed(char* device_uuid, char* network_prefix, char* network_name, bool is_apsta, uint8_t orientation) {
   // Must contain the prefix
   if (strstr(network_name, network_prefix) == NULL) {
     return false;
