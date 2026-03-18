@@ -18,6 +18,7 @@
 
 static const char* LOGGING_TAG = "station";
 
+static const char *sta_orientation[5] = {"N", "S", "E", "W", "C"};
 static int s_retry_num = 0;
 
 static bool is_network_allowed(char* device_uuid, char* network_prefix, char* network_name, bool is_apsta, uint8_t orientation) {
