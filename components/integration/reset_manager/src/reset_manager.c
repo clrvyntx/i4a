@@ -13,6 +13,7 @@ static reset_manager_t reset_manager = {0};
 static reset_manager_t *rm = &reset_manager;
 
 #define RESET_TIMEOUT_US 30000000 // 30 Seconds
+#define RESET_BROADCAST_WAIT_MS 2000 // 2 Seconds
 
 #define RM_OPCODE_RESET    0xA5
 #define RM_OPCODE_STARTUP  0xB6
@@ -37,6 +38,7 @@ static void rm_on_sibling_message(void *ctx, const uint8_t *msg, uint16_t len) {
                 return;
             } else {
                 ESP_LOGW(TAG, "Reset signal received: resetting device");
+                vTaskDelay(pdMS_TO_TICKS(RESET_BROADCAST_WAIT_MS)); // Wait for the broadcast to be fully passed on to the ring
                 esp_restart();
             }
 
