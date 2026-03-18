@@ -7,7 +7,7 @@
 static const char *TAG = "channel_manager";
 
 static const uint8_t formation_1[CHANNELS] = {1, 7, 4, 10, 11};
-static const uint8_t formation_2[CHANNELS] = {5, 11, 2, 8, 11};
+static const uint8_t formation_2[CHANNELS] = {5, 11, 8, 2, 11};
 
 static channel_manager_t channel_manager = { 0 };
 static channel_manager_t *cm = &channel_manager;
