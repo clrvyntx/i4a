@@ -8,9 +8,9 @@
 #include "server.h"
 
 #define PORT 3999
-#define KEEPALIVE_IDLE 10      // start probing after 10s idle
-#define KEEPALIVE_INTERVAL 10  // probe every 10s
-#define KEEPALIVE_COUNT 2      // drop after 2 failed probes
+#define KEEPALIVE_IDLE 60      // start probing after 60s idle
+#define KEEPALIVE_INTERVAL 30  // probe every 30s
+#define KEEPALIVE_COUNT 3      // drop after 3 failed probes
 #define BUFFER_SIZE 512
 
 static const char *LOGGING_TAG = "tcp_server";
