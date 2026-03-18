@@ -40,7 +40,7 @@ static bool is_network_allowed(char* device_uuid, char* network_prefix, char* ne
 
 }
 
-void station_init(StationPtr stationPtr, const char* wifi_ssid_like, uint16_t orientation, char* device_uuid, const char* password, bool is_apsta) {
+void station_init(StationPtr stationPtr, const char* wifi_ssid_like, uint8_t orientation, char* device_uuid, const char* password, bool is_apsta) {
 
   strcpy(stationPtr->ssid_like, wifi_ssid_like);
   strcpy(stationPtr->device_uuid, device_uuid);
