@@ -11,6 +11,7 @@
 
 #define UUID_LEN 12
 #define SSID_UUID_OFFSET 6
+#define SSID_ORIENTATION_OFFSET 4
 
 #define SCAN_LIST_SIZE 10
 #define MAX_RETRIES 10
@@ -30,6 +31,17 @@ static bool is_network_allowed(char* device_uuid, char* network_prefix, char* ne
   // Must NOT contain the device UUID
   if (strstr(network_name, device_uuid) != NULL) {
     return false;
+  }
+
+  // N/S and E/W can only connect in pairs
+  char ssid_orientation = network_name[SSID_ORIENTATION_OFFSET];
+  char my_orientation = sta_orientation[orientation][0];
+
+  bool ssid_is_ns = (ssid_orientation == 'N' || ssid_orientation == 'S');
+  bool sta_is_ns = (my_orientation == 'N' || my_orientation == 'S');
+
+  if (ssid_is_ns != sta_is_ns) {
+      return false;
   }
 
   // Finish checking if it's not on APSTA mode, otherwise check to prevent redundant connections
