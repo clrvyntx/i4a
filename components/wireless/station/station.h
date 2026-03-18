@@ -44,7 +44,7 @@ struct Station {
 typedef struct Station Station;
 typedef struct Station* StationPtr;
 
-void station_init(StationPtr stationPtr, const char* wifi_ssid_like, uint16_t orientation, char* device_uuid, const char* password, bool is_apsta);
+void station_init(StationPtr stationPtr, const char* wifi_ssid_like, uint8_t orientation, char* device_uuid, const char* password, bool is_apsta);
 void station_start(StationPtr stationPtr);
 void station_connect(StationPtr stationPtr);
 void station_disconnect(StationPtr stationPtr);
