@@ -33,9 +33,6 @@ static esp_err_t process_payload(ring_link_payload_t *p)
     else
     {
         ESP_LOGD(TAG, "Unknown payload type: '0x%02x'", p->buffer_type);
-        ESP_LOGD(TAG, "Expected types: INTERNAL=0x%02x, ESP_NETIF=0x%02x",
-                 RING_LINK_PAYLOAD_TYPE_INTERNAL,
-                 RING_LINK_PAYLOAD_TYPE_ESP_NETIF);
         ring_link_lowlevel_free_rx_buffer(p);
         return ESP_FAIL;
     }
