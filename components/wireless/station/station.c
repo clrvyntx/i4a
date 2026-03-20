@@ -39,6 +39,7 @@ static bool is_network_allowed(char* device_uuid, char* network_prefix, char* ne
   // DEBUG: Connect ONLY to the allowed UUID
   if (strstr(network_name, ALLOWED_DEBUG_UUID) == NULL) {
     return false;
+  }
   */
 
   // N/S and E/W can only connect in pairs
