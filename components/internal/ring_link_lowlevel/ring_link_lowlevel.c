@@ -22,7 +22,7 @@ esp_err_t ring_link_lowlevel_transmit_payload(ring_link_payload_t *p)
         xSemaphoreGive( s_tx_semaphore_handle );
         return rc;
     }
-    ESP_LOGD(TAG, "Could not adquire Mutex...");
+    ESP_LOGE(TAG, "Could not adquire Mutex...");
     return ESP_FAIL;
 }
 
