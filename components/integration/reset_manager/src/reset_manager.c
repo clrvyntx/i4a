@@ -12,6 +12,8 @@ static const char *TAG = "reset_manager";
 static reset_manager_t reset_manager = {0};
 static reset_manager_t *rm = &reset_manager;
 
+#define ROOT_UUID "000000000000"
+
 #define RESET_TIMEOUT_US 30000000 // 30 Seconds
 #define RESET_BROADCAST_WAIT_MS 2000 // 2 Seconds
 
@@ -115,7 +117,7 @@ bool rm_broadcast_startup_info(bool is_root) {
     packet.opcode = RM_OPCODE_STARTUP;
 
     if(is_root){
-        strncpy(rm->uuid, "000000000000", sizeof(rm->uuid));
+        strncpy(rm->uuid, ROOT_UUID, sizeof(rm->uuid));
     } else {
         strncpy(rm->uuid, rm->mac, sizeof(rm->uuid));
     }
