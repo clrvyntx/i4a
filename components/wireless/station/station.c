@@ -14,8 +14,6 @@
 #define SSID_UUID_OFFSET 6
 #define SSID_ORIENTATION_OFFSET 4
 
-#define ALLOWED_DEBUG_UUID "000000000000"
-
 #define SCAN_LIST_SIZE 10
 #define MAX_RETRIES 10
 #define RSSI_THRESHOLD -128 // Minimum RSSI (in dBm) required to consider an AP as available
@@ -37,7 +35,8 @@ static bool is_network_allowed(char* device_uuid, char* network_prefix, char* ne
 
   /* 
   // DEBUG: Connect ONLY to the allowed UUID
-  if (strstr(network_name, ALLOWED_DEBUG_UUID) == NULL) {
+  const char *allowed_debug_uuid = "000000000000";
+  if (strstr(network_name, allowed_debug_uuid) == NULL) {
     return false;
   }
   */
