@@ -15,5 +15,5 @@ def receive_info():
     return jsonify({"status": "ok"}), 200
 
 if __name__ == "__main__":
-    # Listen on all interfaces (0.0.0.0) so ESPs on the LAN can reach it
-    app.run(host="0.0.0.0", port=8000)
+    # Listen on node network (10.160.0.2) so ESPs on the LAN can reach it
+    app.run(host="10.160.0.2", port=8000)
