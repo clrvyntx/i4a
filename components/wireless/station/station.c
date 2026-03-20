@@ -8,13 +8,13 @@
 #include "info_manager/info_manager.h"
 #include "traffic.h"
 #include "station.h"
+#include "config.h"
 
 #define UUID_LEN 12
 #define SSID_UUID_OFFSET 6
 #define SSID_ORIENTATION_OFFSET 4
 
-#define STA_NORTH 0
-#define STA_SOUTH 1
+#define ALLOWED_DEBUG_UUID "00000000"
 
 #define SCAN_LIST_SIZE 10
 #define MAX_RETRIES 10
@@ -35,11 +35,17 @@ static bool is_network_allowed(char* device_uuid, char* network_prefix, char* ne
     return false;
   }
 
+  /* 
+  // DEBUG: Connect ONLY to the allowed UUID
+  if (strstr(network_name, ALLOWED_DEBUG_UUID) == NULL) {
+    return false;
+  */
+
   // N/S and E/W can only connect in pairs
   char ssid_orientation = network_name[SSID_ORIENTATION_OFFSET];
 
   bool ssid_is_ns = (ssid_orientation == 'N' || ssid_orientation == 'S');
-  bool sta_is_ns = (orientation == STA_NORTH || orientation == STA_SOUTH);
+  bool sta_is_ns = (orientation == CONFIG_ORIENTATION_NORTH || orientation == CONFIG_ORIENTATION_SOUTH);
 
   if (ssid_is_ns != sta_is_ns) {
       return false;
