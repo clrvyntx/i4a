@@ -9,6 +9,7 @@
 #include "server.h"
 #include "task_config.h"
 #include "device.h"
+#include "config.h"
 
 static const char *LOGGING_TAG = "device";
 static const char *dev_orientation[5] = {"_N_", "_S_", "_E_", "_W_", "_C_"};
@@ -84,7 +85,7 @@ void device_init_ap(DevicePtr device_ptr, uint8_t channel, const char *wifi_netw
   memset(wifi_ssid, 0, sizeof(wifi_ssid));
   strcpy(wifi_ssid, wifi_network_prefix);
 
-  bool is_center = (orientation == 4);
+  bool is_center = (orientation == CONFIG_ID_CENTER);
   if(!is_center){
     strcat(wifi_ssid, dev_orientation[orientation]);
     strcat(wifi_ssid, device_uuid);
