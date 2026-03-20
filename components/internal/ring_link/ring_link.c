@@ -15,24 +15,10 @@ static esp_err_t process_payload(ring_link_payload_t *p)
 
     uint32_t expected = ring_link_compute_crc32(p);
     if (expected != p->crc32) {
-        ESP_LOGE(TAG, "CRC32 mismatch, dropping.");
+        ESP_LOGD(TAG, "CRC32 mismatch, dropping.");
         ring_link_lowlevel_free_rx_buffer(p);
         return ESP_FAIL;
     }
-
-    ESP_LOGD(TAG, "Received payload:");
-    ESP_LOGD(TAG, "  buffer_type: 0x%02x", p->buffer_type);
-    ESP_LOGD(TAG, "  id: %d", p->id);
-    ESP_LOGD(TAG, "  src_id: %d", p->src_id);
-    ESP_LOGD(TAG, "  dst_id: %d", p->dst_id);
-    
-    ESP_LOGD(TAG, "Checks:");
-    ESP_LOGD(TAG, "  is_internal: %d (expect 0x%02x)", 
-             ring_link_payload_is_internal(p), 
-             RING_LINK_PAYLOAD_TYPE_INTERNAL);
-    ESP_LOGD(TAG, "  is_esp_netif: %d (expect 0x%02x)", 
-             ring_link_payload_is_esp_netif(p), 
-             RING_LINK_PAYLOAD_TYPE_ESP_NETIF);
 
     if (ring_link_payload_is_internal(p))
     {
@@ -46,18 +32,10 @@ static esp_err_t process_payload(ring_link_payload_t *p)
     }
     else
     {
-        ESP_LOGE(TAG, "Unknown payload type: '0x%02x'", p->buffer_type);
+        ESP_LOGD(TAG, "Unknown payload type: '0x%02x'", p->buffer_type);
         ESP_LOGD(TAG, "Expected types: INTERNAL=0x%02x, ESP_NETIF=0x%02x",
                  RING_LINK_PAYLOAD_TYPE_INTERNAL,
                  RING_LINK_PAYLOAD_TYPE_ESP_NETIF);
-        
-        ESP_LOGW(TAG, "Received payload:");
-        ESP_LOGW(TAG, "  id: %d", p->id);
-        ESP_LOGW(TAG, "  ttl: %d", p->ttl);
-        ESP_LOGW(TAG, "  src_id: %d", p->src_id);
-        ESP_LOGW(TAG, "  dst_id: %d", p->dst_id);
-        ESP_LOGW(TAG, "  len: %d", p->len);
-        
         ring_link_lowlevel_free_rx_buffer(p);
         return ESP_FAIL;
     }
