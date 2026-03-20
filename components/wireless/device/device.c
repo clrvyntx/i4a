@@ -90,6 +90,14 @@ void device_init_ap(DevicePtr device_ptr, uint8_t channel, const char *wifi_netw
     strcat(wifi_ssid, dev_orientation[orientation]);
     strcat(wifi_ssid, device_uuid);
   }
+  
+  /*
+  // DEBUG: Add UUID to Center devices to differentiate multiple nodes in same location
+  if(is_center){
+  strcat(wifi_ssid, dev_orientation[orientation]);
+  strcat(wifi_ssid, device_uuid);
+  }
+  */
 
   ESP_LOGI(LOGGING_TAG, "Initializing AP with SSID: %s", wifi_ssid);
   
