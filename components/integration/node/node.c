@@ -278,7 +278,21 @@ int64_t node_get_device_uptime_minutes(void) {
     return uptime_us / 60000000;
 }
 
+void node_disable_sta(void) {
+    device_disable_station(node_ptr->node_device_ptr);
+}
 
+void node_enable_sta(void) {
+    device_enable_station(node_ptr->node_device_ptr);
+}
+
+void node_disable_ap(void) {
+    device_disable_ap(node_ptr->node_device_ptr);
+}
+
+void node_enable_ap(void) {
+    device_enable_ap(node_ptr->node_device_ptr);
+}
 
 
 
