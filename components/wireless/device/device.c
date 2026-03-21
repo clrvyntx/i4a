@@ -398,5 +398,42 @@ void device_set_max_tx_power(DevicePtr device_ptr, int8_t power) {
     ESP_LOGI(LOGGING_TAG, "Wi-Fi max TX power set to %.2f dBm", real_dbm);
 }
 
+// Disable STA interface at runtime
+void device_disable_station(DevicePtr device_ptr) {
+    if (device_ptr->station_ptr->active) {
+        ESP_LOGI(LOGGING_TAG, "Disabling STA interface...");
+        device_disconnect_station(device_ptr); // stop connect task
+        device_stop_station(device_ptr);       // stop STA
+        device_ptr->station_ptr->active = false;
+        device_ptr->station_ptr->state = s_inactive;
+    }
+}
 
+// Enable STA interface at runtime
+void device_enable_station(DevicePtr device_ptr) {
+    if (!device_ptr->station_ptr->active && device_ptr->station_ptr->initialized) {
+        ESP_LOGI(LOGGING_TAG, "Enabling STA interface...");
+        device_start_station(device_ptr);    // start STA
+        device_connect_station(device_ptr);  // start connect task
+        device_ptr->station_ptr->active = true;
+        device_ptr->station_ptr->state = s_active;
+    }
+}
 
+// Disable AP interface at runtime
+void device_disable_ap(DevicePtr device_ptr) {
+    if (device_ptr->access_point_ptr->state == active) {
+        ESP_LOGI(LOGGING_TAG, "Disabling AP interface...");
+        device_stop_ap(device_ptr);        // stop AP
+        device_ptr->access_point_ptr->state = inactive;
+    }
+}
+
+// Enable AP interface at runtime
+void device_enable_ap(DevicePtr device_ptr) {
+    if (device_ptr->access_point_ptr->state == inactive && device_ptr->access_point_ptr->initialized) {
+        ESP_LOGI(LOGGING_TAG, "Enabling AP interface...");
+        device_start_ap(device_ptr);       // start AP
+        device_ptr->access_point_ptr->state = active;
+    }
+}
