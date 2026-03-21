@@ -41,7 +41,7 @@ typedef struct AccessPoint AccessPoint;
 typedef struct AccessPoint* AccessPointPtr;
 
 // Methods
-void ap_init(AccessPointPtr ap, uint8_t wifi_channel, const char *wifi_ssid , const char *wifi_password, uint8_t wifi_max_sta_conn, bool is_center);
+void ap_init(AccessPointPtr ap, uint8_t wifi_channel, const char *wifi_ssid , const char *wifi_password, uint8_t wifi_max_sta_conn, bool is_center, bool is_apsta);
 void ap_print_info(AccessPointPtr ap);
 bool ap_is_initialized(AccessPointPtr ap);
 bool ap_is_active(AccessPointPtr ap);
