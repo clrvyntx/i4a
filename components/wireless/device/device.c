@@ -13,7 +13,7 @@
 
 static const char *LOGGING_TAG = "device";
 static const char *dev_orientation[5] = {"_N_", "_S_", "_E_", "_W_", "_C_"};
-static TaskHandle_t station_task_handle = NULL;  // Tracks STA connect task
+static bool is_on_connect_loop = false;
 
 // Function to initialize NVS (non-volatile storage)
 static esp_err_t init_nvs() {
@@ -90,17 +90,17 @@ void device_init_ap(DevicePtr device_ptr, uint8_t channel, const char *wifi_netw
     strcat(wifi_ssid, dev_orientation[orientation]);
     strcat(wifi_ssid, device_uuid);
   }
-  
+
   /*
-  // DEBUG: Add UUID to Center devices to differentiate multiple nodes in same location
-  if(is_center){
-  strcat(wifi_ssid, dev_orientation[orientation]);
-  strcat(wifi_ssid, device_uuid);
-  }
-  */
+   * // DEBUG: Add UUID to Center devices to differentiate multiple nodes in same location
+   * if(is_center){
+   * strcat(wifi_ssid, dev_orientation[orientation]);
+   * strcat(wifi_ssid, device_uuid);
+}
+*/
 
   ESP_LOGI(LOGGING_TAG, "Initializing AP with SSID: %s", wifi_ssid);
-  
+
   ap_init(device_ptr->access_point_ptr, channel, wifi_ssid, password, max_sta_connections, is_center, device_ptr->mode == AP_STATION);
 };
 
@@ -116,11 +116,11 @@ void device_reset(DevicePtr device_ptr) {
   if (device_ptr->state == d_active) {
     if (device_ptr->mode == AP) {
       device_stop_ap(device_ptr);
-    } 
+    }
     if (device_ptr->mode == STATION) {
       device_disconnect_station(device_ptr);
       device_stop_station(device_ptr);
-    } 
+    }
     if (device_ptr->mode == AP_STATION) {
       device_stop_ap(device_ptr);
       device_disconnect_station(device_ptr);
@@ -136,7 +136,7 @@ void device_destroy_netif(DevicePtr device_ptr){
   if (device_ptr->mode == AP) {
     ap_destroy_netif(device_ptr->access_point_ptr);
   }
-  
+
   if (device_ptr->mode == STATION) {
     station_destroy_netif(device_ptr->station_ptr);
   }
@@ -180,59 +180,40 @@ void device_start_station(DevicePtr device_ptr) {
 static void device_connect_station_task(void* arg) {
   DevicePtr device_ptr = (DevicePtr)arg;  // Get the device pointer from the task argument
 
-  while (1) {
-      // If station is disconnected, start scanning for APs
-      if (!station_is_active(device_ptr->station_ptr)) {
-          ESP_LOGI(LOGGING_TAG, "Wi-Fi not connected. Scanning for APs...");
-          station_find_ap(device_ptr->station_ptr);
-  
-          if (station_found_ap(device_ptr->station_ptr)) {
-              ESP_LOGI(LOGGING_TAG, "Wi-Fi found! Connecting...");
-              station_connect(device_ptr->station_ptr);
-          } else {
-              ESP_LOGE(LOGGING_TAG, "No Wi-Fi found. Re-scanning in 10s...");
-              vTaskDelay(pdMS_TO_TICKS(10000 + esp_random() % 10000));
-          }
+  while (is_on_connect_loop) {
+
+    // If station is disconnected, start scanning for APs
+    if (!station_is_active(device_ptr->station_ptr)) {
+      ESP_LOGI(LOGGING_TAG, "Wi-Fi not connected. Scanning for available networks...");
+
+      station_find_ap(device_ptr->station_ptr);
+      if (station_found_ap(device_ptr->station_ptr)) {
+        ESP_LOGI(LOGGING_TAG, "Wi-Fi found! Attempting to connect.");
+        station_connect(device_ptr->station_ptr);
+      } else {
+        ESP_LOGE(LOGGING_TAG, "No Wi-Fi found. Re-scanning in 10 seconds.");
       }
-  
-      vTaskDelay(pdMS_TO_TICKS(10000));  // Wait 10s between scans
+    }
+
+    vTaskDelay(pdMS_TO_TICKS(10000)); // Wait 10 seconds before checking again
   }
-  
-  // Task deletion handled externally
-  station_task_handle = NULL;
-  vTaskDelete(NULL);
+
+  ESP_LOGW(LOGGING_TAG, "Station not on connect loop, killing the task.");
+  vTaskDelete(NULL);  // Delete the task
 
 }
 
 void device_connect_station(DevicePtr device_ptr) {
-    // Kill old STA task if it exists
-    if (station_task_handle != NULL) {
-        ESP_LOGI(LOGGING_TAG, "Killing previous STA connect task");
-        vTaskDelete(station_task_handle);
-        station_task_handle = NULL;
-    }
-
-    // Create new STA connect task
-    xTaskCreatePinnedToCore(
-        device_connect_station_task,
-        "device_connect_station_task",
-        TASK_DEVICE_STACK,
-        device_ptr,
-        TASK_DEVICE_PRIORITY,
-        &station_task_handle,
-        TASK_DEVICE_CORE
-    );
+  is_on_connect_loop = true;
+  xTaskCreatePinnedToCore(device_connect_station_task, "device_connect_station_task",
+                          TASK_DEVICE_STACK, device_ptr, TASK_DEVICE_PRIORITY,
+                          NULL, TASK_DEVICE_CORE);
 }
 
 void device_disconnect_station(DevicePtr device_ptr) {
-    if (station_task_handle != NULL) {
-        ESP_LOGI(LOGGING_TAG, "Stopping STA connect task");
-        vTaskDelete(station_task_handle);
-        station_task_handle = NULL;
-    }
-
-    station_disconnect(device_ptr->station_ptr);
-}
+  is_on_connect_loop = false;
+  station_disconnect(device_ptr->station_ptr);
+};
 
 void device_restart_station(DevicePtr device_ptr) {
   station_restart(device_ptr->station_ptr);
@@ -307,137 +288,138 @@ bool device_is_point_to_point_message(DevicePtr device_ptr, uint32_t dst) {
 
 // Device RSSI
 int8_t device_get_rssi(DevicePtr device_ptr) {
-    if (device_ptr->mode == AP) {
-        wifi_sta_list_t list;
-        esp_err_t err = esp_wifi_ap_get_sta_list(&list);
+  if (device_ptr->mode == AP) {
+    wifi_sta_list_t list;
+    esp_err_t err = esp_wifi_ap_get_sta_list(&list);
 
-        if (err == ESP_OK && list.num > 0) {
-            return list.sta[0].rssi;
-        } else {
-          return -127;
-        }
+    if (err == ESP_OK && list.num > 0) {
+      return list.sta[0].rssi;
+    } else {
+      return -127;
     }
+  }
 
-    if (device_ptr->mode == STATION) {
-        wifi_ap_record_t ap_info = {};
-        esp_err_t err = esp_wifi_sta_get_ap_info(&ap_info);
+  if (device_ptr->mode == STATION) {
+    wifi_ap_record_t ap_info = {};
+    esp_err_t err = esp_wifi_sta_get_ap_info(&ap_info);
 
-        if (err == ESP_OK) {
-            return ap_info.rssi;
-        }  else {
-          return -127;
-        }
+    if (err == ESP_OK) {
+      return ap_info.rssi;
+    }  else {
+      return -127;
     }
+  }
 
-    if (device_ptr->mode == AP_STATION) {
-        if (device_ptr->station_ptr->ap_found) {
-          wifi_ap_record_t ap_info = {};
-          esp_err_t err = esp_wifi_sta_get_ap_info(&ap_info);
-  
-          if (err == ESP_OK) {
-              return ap_info.rssi;
-          }  else {
-            return -127;
-          }
-        } else {
-          wifi_sta_list_t list;
-          esp_err_t err = esp_wifi_ap_get_sta_list(&list);
-  
-          if (err == ESP_OK && list.num > 0) {
-              return list.sta[0].rssi;
-          } else {
-            return -127;
-          }
-        }
+  if (device_ptr->mode == AP_STATION) {
+    if (device_ptr->station_ptr->ap_found) {
+      wifi_ap_record_t ap_info = {};
+      esp_err_t err = esp_wifi_sta_get_ap_info(&ap_info);
+
+      if (err == ESP_OK) {
+        return ap_info.rssi;
+      }  else {
+        return -127;
+      }
+    } else {
+      wifi_sta_list_t list;
+      esp_err_t err = esp_wifi_ap_get_sta_list(&list);
+
+      if (err == ESP_OK && list.num > 0) {
+        return list.sta[0].rssi;
+      } else {
+        return -127;
+      }
     }
+  }
 
-    return -127;
+  return -127;
 }
 
 const char *device_get_link_name(DevicePtr device_ptr) {
-  if (device_ptr->mode == STATION || device_ptr->mode == AP_STATION)
+  if (device_ptr->mode == STATION || device_ptr->mode == AP_STATION) {
     if (device_ptr->station_ptr->ap_found) {
-          return (const char*)device_ptr->station_ptr->wifi_ap_found.ssid;
+      return (const char*)device_ptr->station_ptr->wifi_ap_found.ssid;
     }
-
-  if (device_ptr->mode == AP || device_ptr->mode == AP_STATION) {
-      if (device_ptr->access_point_ptr->initialized) {
-          return device_ptr->access_point_ptr->ssid;
-      }
   }
 
-  return "N/A";
+    if (device_ptr->mode == AP || device_ptr->mode == AP_STATION) {
+      if (device_ptr->access_point_ptr->initialized) {
+        return device_ptr->access_point_ptr->ssid;
+      }
+    }
+
+    return "N/A";
 }
 
 uint8_t device_get_channel(DevicePtr device_ptr) {
-    if (device_ptr->mode == STATION || device_ptr->mode == AP_STATION) {
-        if (device_ptr->station_ptr->ap_found) {
-            return device_ptr->station_ptr->wifi_ap_found.primary;
-        }
+  if (device_ptr->mode == STATION || device_ptr->mode == AP_STATION) {
+    if (device_ptr->station_ptr->ap_found) {
+      return device_ptr->station_ptr->wifi_ap_found.primary;
     }
+  }
 
-    if (device_ptr->mode == AP || device_ptr->mode == AP_STATION) {
-        if (device_ptr->access_point_ptr->initialized) {
-            return device_ptr->access_point_ptr->channel;
-        }
+  if (device_ptr->mode == AP || device_ptr->mode == AP_STATION) {
+    if (device_ptr->access_point_ptr->initialized) {
+      return device_ptr->access_point_ptr->channel;
     }
-  
-    return 0;
+  }
+
+  return 0;
 }
 
 void device_set_max_tx_power(DevicePtr device_ptr, int8_t power) {
-    if (device_ptr->mode == NAN) {
-        ESP_LOGW(LOGGING_TAG, "Cannot set TX power: device not initialized");
-        return;
-    }
+  if (device_ptr->mode == NAN) {
+    ESP_LOGW(LOGGING_TAG, "Cannot set TX power: device not initialized");
+    return;
+  }
 
-    // Clamp to valid range
-    if (power < 8) power = 8;
-    if (power > 84) power = 84;
+  // Clamp to valid range
+  if (power < 8) power = 8;
+  if (power > 84) power = 84;
 
-    ESP_ERROR_CHECK(esp_wifi_set_max_tx_power(power));
+  ESP_ERROR_CHECK(esp_wifi_set_max_tx_power(power));
 
-    // Convert to real dBm
-    float real_dbm = power * 0.25f;
-    ESP_LOGI(LOGGING_TAG, "Wi-Fi max TX power set to %.2f dBm", real_dbm);
+  // Convert to real dBm
+  float real_dbm = power * 0.25f;
+  ESP_LOGI(LOGGING_TAG, "Wi-Fi max TX power set to %.2f dBm", real_dbm);
 }
 
 // Disable STA interface at runtime
 void device_disable_station(DevicePtr device_ptr) {
-    if (device_ptr->station_ptr->active) {
-        ESP_LOGI(LOGGING_TAG, "Disabling STA interface...");
-        device_disconnect_station(device_ptr); // stop connect task
-        device_stop_station(device_ptr);       // stop STA
-        device_ptr->station_ptr->active = false;
-        device_ptr->station_ptr->state = s_inactive;
-    }
+  if (device_ptr->station_ptr->active) {
+    ESP_LOGI(LOGGING_TAG, "Disabling STA interface...");
+    device_disconnect_station(device_ptr); // stop connect task
+    device_stop_station(device_ptr);       // stop STA
+    device_ptr->station_ptr->active = false;
+    device_ptr->station_ptr->state = s_inactive;
+  }
 }
 
 // Enable STA interface at runtime
 void device_enable_station(DevicePtr device_ptr) {
-    if (!device_ptr->station_ptr->active && device_ptr->station_ptr->initialized) {
-        ESP_LOGI(LOGGING_TAG, "Enabling STA interface...");
-        device_start_station(device_ptr);    // start STA
-        device_connect_station(device_ptr);  // start connect task
-        device_ptr->station_ptr->active = true;
-        device_ptr->station_ptr->state = s_active;
-    }
+  if (!device_ptr->station_ptr->active && device_ptr->station_ptr->initialized) {
+    ESP_LOGI(LOGGING_TAG, "Enabling STA interface...");
+    device_start_station(device_ptr);    // start STA
+    device_connect_station(device_ptr);  // start connect task
+    device_ptr->station_ptr->active = true;
+    device_ptr->station_ptr->state = s_active;
+  }
 }
 
 // Disable AP interface at runtime
 void device_disable_ap(DevicePtr device_ptr) {
-    if (device_ptr->access_point_ptr->state == active) {
-        ESP_LOGI(LOGGING_TAG, "Disabling AP interface...");
-        device_stop_ap(device_ptr);        // stop AP
-        device_ptr->access_point_ptr->state = inactive;
-    }
+  if (device_ptr->access_point_ptr->state == active) {
+    ESP_LOGI(LOGGING_TAG, "Disabling AP interface...");
+    device_stop_ap(device_ptr);        // stop AP
+    device_ptr->access_point_ptr->state = inactive;
+  }
 }
 
 // Enable AP interface at runtime
 void device_enable_ap(DevicePtr device_ptr) {
-    if (device_ptr->access_point_ptr->state == inactive && device_ptr->access_point_ptr->initialized) {
-        ESP_LOGI(LOGGING_TAG, "Enabling AP interface...");
-        device_start_ap(device_ptr);       // start AP
-        device_ptr->access_point_ptr->state = active;
-    }
+  if (device_ptr->access_point_ptr->state == inactive && device_ptr->access_point_ptr->initialized) {
+    ESP_LOGI(LOGGING_TAG, "Enabling AP interface...");
+    device_start_ap(device_ptr);       // start AP
+    device_ptr->access_point_ptr->state = active;
+  }
 }
