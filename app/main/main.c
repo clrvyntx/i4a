@@ -34,8 +34,8 @@ void routing_task(void *pvParameters) {
     routing_t *rt = (routing_t *)pvParameters;
 
     while (true) {
-        vTaskDelay(pdMS_TO_TICKS(100));
-        rt_on_tick(rt, 100);
+        vTaskDelay(pdMS_TO_TICKS(1000));
+        rt_on_tick(rt, 1000);
     }
 }
 
@@ -92,6 +92,3 @@ void app_main(void) {
     );
 
 }
-
-
-
