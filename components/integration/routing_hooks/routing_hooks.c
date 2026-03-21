@@ -8,6 +8,7 @@ static routing_t routing = { 0 };
 static routing_t *rt = &routing;
 
 typedef struct netif *(*routing_hook_func_t)(uint32_t src_ip, uint32_t dst_ip);
+static routing_hook_func_t user_defined_hook = NULL;
 
 static struct netif *routing_hook_root_center(uint32_t src_ip, uint32_t dst_ip);
 static struct netif *routing_hook_forwarder(uint32_t src_ip, uint32_t dst_ip);
@@ -21,7 +22,8 @@ static routing_hook_func_t routing_hooks[ROUTING_HOOK_COUNT] = {
     [ROUTING_HOOK_ROOT_CENTER] = routing_hook_root_center,
     [ROUTING_HOOK_FORWARDER] = routing_hook_forwarder,
     [ROUTING_HOOK_HOME] = routing_hook_home,
-    [ROUTING_HOOK_ROOT_FORWARDER] = routing_hook_root_forwarder
+    [ROUTING_HOOK_ROOT_FORWARDER] = routing_hook_root_forwarder,
+    [ROUTING_HOOK_CUSTOM] = routing_hook_custom 
 };
 
 static struct netif *routing_hook_root_center(uint32_t src_ip, uint32_t dst_ip) {
@@ -113,6 +115,17 @@ static struct netif *routing_hook_default(uint32_t src_ip, uint32_t dst_ip) {
     return lwip_netif;
 }
 
+static struct netif *routing_hook_custom(uint32_t src_ip, uint32_t dst_ip) {
+    ESP_LOGD(TAG, "Routing Hook: CUSTOM called");
+
+    if (user_defined_hook) {
+        return user_defined_hook(src_ip, dst_ip);
+    }
+
+    ESP_LOGD(TAG, "No custom hook registered -> fallback to default");
+    return routing_hook_default(src_ip, dst_ip);
+}
+
 void node_set_routing_hook(routing_hook_type_t hook) {
     if (hook < ROUTING_HOOK_COUNT) {
         ESP_LOGD(TAG, "Setting routing hook -> valid index, updating selected hook");
@@ -120,6 +133,15 @@ void node_set_routing_hook(routing_hook_type_t hook) {
     } else {
         ESP_LOGD(TAG, "Setting routing hook -> invalid index, using default hook");
         selected_routing_hook = routing_hook_default;
+    }
+}
+
+void node_register_custom_routing_hook(routing_hook_func_t hook) {
+    if (hook) {
+        ESP_LOGD(TAG, "Registering custom routing hook");
+        user_defined_hook = hook;
+    } else {
+        ESP_LOGD(TAG, "Custom hook is NULL, ignoring");
     }
 }
 
