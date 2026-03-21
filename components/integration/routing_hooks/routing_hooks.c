@@ -7,14 +7,15 @@ static const char *TAG = "ROUTING";
 static routing_t routing = { 0 };
 static routing_t *rt = &routing;
 
-typedef struct netif *(*routing_hook_func_t)(uint32_t src_ip, uint32_t dst_ip);
 static routing_hook_func_t user_defined_hook = NULL;
+typedef struct netif *(*routing_hook_func_t)(uint32_t src_ip, uint32_t dst_ip);
 
 static struct netif *routing_hook_root_center(uint32_t src_ip, uint32_t dst_ip);
 static struct netif *routing_hook_forwarder(uint32_t src_ip, uint32_t dst_ip);
 static struct netif *routing_hook_home(uint32_t src_ip, uint32_t dst_ip);
 static struct netif *routing_hook_root_forwarder(uint32_t src_ip, uint32_t dst_ip);
 static struct netif *routing_hook_default(uint32_t src_ip, uint32_t dst_ip);
+static struct netif *routing_hook_custom(uint32_t src_ip, uint32_t dst_ip);
 
 static routing_hook_func_t selected_routing_hook = routing_hook_default;
 
