@@ -179,9 +179,14 @@ void device_start_station(DevicePtr device_ptr) {
 
 static void device_connect_station_task(void* arg) {
   DevicePtr device_ptr = (DevicePtr)arg;  // Get the device pointer from the task argument
+  device_ptr->station_ptr->active = true;
 
   while (1) {
-    // If station is disconnected, start scanning for APs
+    if (!device_ptr->station_ptr->active) {
+      vTaskDelay(pdMS_TO_TICKS(60000)); // STA disabled, long sleep
+      continue;
+    }
+
     if (!station_is_active(device_ptr->station_ptr)) {
       ESP_LOGI(LOGGING_TAG, "Wi-Fi not connected. Scanning for APs...");
       station_find_ap(device_ptr->station_ptr);
@@ -191,11 +196,12 @@ static void device_connect_station_task(void* arg) {
         station_connect(device_ptr->station_ptr);
       } else {
         ESP_LOGE(LOGGING_TAG, "No Wi-Fi found. Re-scanning in 10s...");
-        vTaskDelay(pdMS_TO_TICKS(10000 + esp_random() % 10000));
+        vTaskDelay(pdMS_TO_TICKS(10000));
       }
+    } else {
+      // Connected, sleep to reduce CPU usage
+      vTaskDelay(pdMS_TO_TICKS(10000));
     }
-
-    vTaskDelay(pdMS_TO_TICKS(10000));  // Wait 10s between scans
   }
 
   // Task deletion handled externally
@@ -361,13 +367,13 @@ const char *device_get_link_name(DevicePtr device_ptr) {
     }
   }
 
-    if (device_ptr->mode == AP || device_ptr->mode == AP_STATION) {
-      if (device_ptr->access_point_ptr->initialized) {
-        return device_ptr->access_point_ptr->ssid;
-      }
+  if (device_ptr->mode == AP || device_ptr->mode == AP_STATION) {
+    if (device_ptr->access_point_ptr->initialized) {
+      return device_ptr->access_point_ptr->ssid;
     }
+  }
 
-    return "N/A";
+  return "N/A";
 }
 
 uint8_t device_get_channel(DevicePtr device_ptr) {
@@ -406,22 +412,16 @@ void device_set_max_tx_power(DevicePtr device_ptr, int8_t power) {
 // Disable STA interface at runtime
 void device_disable_station(DevicePtr device_ptr) {
   if (device_ptr->station_ptr->active) {
-    ESP_LOGI(LOGGING_TAG, "Disabling STA interface...");
-    device_disconnect_station(device_ptr); // stop connect task
-    device_stop_station(device_ptr);       // stop STA
+    ESP_LOGI(LOGGING_TAG, "Disabling STA scan loop...");
     device_ptr->station_ptr->active = false;
-    device_ptr->station_ptr->state = s_inactive;
   }
 }
 
 // Enable STA interface at runtime
 void device_enable_station(DevicePtr device_ptr) {
   if (!device_ptr->station_ptr->active && device_ptr->station_ptr->initialized) {
-    ESP_LOGI(LOGGING_TAG, "Enabling STA interface...");
-    device_start_station(device_ptr);    // start STA
-    device_connect_station(device_ptr);  // start connect task
+    ESP_LOGI(LOGGING_TAG, "Enabling STA scan loop...");
     device_ptr->station_ptr->active = true;
-    device_ptr->station_ptr->state = s_active;
   }
 }
 
