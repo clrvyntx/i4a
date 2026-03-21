@@ -14,7 +14,7 @@
 
 static const char *LOGGING_TAG = "AP";
 
-void ap_init(AccessPointPtr ap, uint8_t wifi_channel, const char *wifi_ssid, const char *wifi_password, uint8_t wifi_max_sta_conn, bool is_center) {
+void ap_init(AccessPointPtr ap, uint8_t wifi_channel, const char *wifi_ssid, const char *wifi_password, uint8_t wifi_max_sta_conn, bool is_center, bool is_apsta) {
   // Populate the Access Point wifi_config_t 
   strcpy((char *)ap->wifi_config.ap.ssid, wifi_ssid);
   ap->wifi_config.ap.ssid_len = strlen(wifi_ssid);
@@ -43,6 +43,7 @@ void ap_init(AccessPointPtr ap, uint8_t wifi_channel, const char *wifi_ssid, con
   ap->is_center = is_center;
   ap->server_is_up = false;
   ap->is_locked = false;
+  ap->is_apsta = is_apsta;
 }
 
 bool ap_is_initialized(AccessPointPtr ap) {
