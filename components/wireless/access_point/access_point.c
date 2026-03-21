@@ -43,7 +43,6 @@ void ap_init(AccessPointPtr ap, uint8_t wifi_channel, const char *wifi_ssid, con
   ap->initialized = true;
   ap->is_center = is_center;
   ap->server_is_up = false;
-  ap->is_locked = false;
   ap->is_apsta = is_apsta;
 }
 
@@ -143,16 +142,6 @@ void ap_destroy_netif(AccessPointPtr ap) {
   } else {
     ESP_LOGI(LOGGING_TAG, "AP netif already destroyed or not initialized.");
   }
-}
-
-void ap_lock(AccessPointPtr ap) {
-  ESP_LOGI(LOGGING_TAG, "Locking down AP (rejecting all connections)");
-  ap->is_locked = true;
-}
-
-void ap_unlock(AccessPointPtr ap) {
-  ESP_LOGI("AP", "Unlocking AP (accepting all connections)");
-  ap->is_locked = false;
 }
 
 void ap_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
