@@ -13,7 +13,7 @@
 
 static const char *LOGGING_TAG = "device";
 static const char *dev_orientation[5] = {"_N_", "_S_", "_E_", "_W_", "_C_"};
-static bool is_on_connect_loop = false;
+static TaskHandle_t station_task_handle = NULL;  // Tracks STA connect task
 
 // Function to initialize NVS (non-volatile storage)
 static esp_err_t init_nvs() {
@@ -180,40 +180,59 @@ void device_start_station(DevicePtr device_ptr) {
 static void device_connect_station_task(void* arg) {
   DevicePtr device_ptr = (DevicePtr)arg;  // Get the device pointer from the task argument
 
-  while (is_on_connect_loop) {
-    
-  // If station is disconnected, start scanning for APs
-    if (!station_is_active(device_ptr->station_ptr)) {
-      ESP_LOGI(LOGGING_TAG, "Wi-Fi not connected. Scanning for available networks...");
-      
-      station_find_ap(device_ptr->station_ptr);
-      if (station_found_ap(device_ptr->station_ptr)) {
-        ESP_LOGI(LOGGING_TAG, "Wi-Fi found! Attempting to connect.");
-        station_connect(device_ptr->station_ptr);
-      } else {
-        ESP_LOGE(LOGGING_TAG, "No Wi-Fi found. Re-scanning in 10 seconds.");
+  while (1) {
+      // If station is disconnected, start scanning for APs
+      if (!station_is_active(device_ptr->station_ptr)) {
+          ESP_LOGI(LOGGING_TAG, "Wi-Fi not connected. Scanning for APs...");
+          station_find_ap(device_ptr->station_ptr);
+  
+          if (station_found_ap(device_ptr->station_ptr)) {
+              ESP_LOGI(LOGGING_TAG, "Wi-Fi found! Connecting...");
+              station_connect(device_ptr->station_ptr);
+          } else {
+              ESP_LOGE(LOGGING_TAG, "No Wi-Fi found. Re-scanning in 10s...");
+              vTaskDelay(pdMS_TO_TICKS(10000 + esp_random() % 10000));
+          }
       }
-    } 
-    
-    vTaskDelay(pdMS_TO_TICKS(10000)); // Wait 10 seconds before checking again
+  
+      vTaskDelay(pdMS_TO_TICKS(10000));  // Wait 10s between scans
   }
-
-  ESP_LOGW(LOGGING_TAG, "Station not on connect loop, killing the task.");
-  vTaskDelete(NULL);  // Delete the task
+  
+  // Task deletion handled externally
+  station_task_handle = NULL;
+  vTaskDelete(NULL);
 
 }
 
 void device_connect_station(DevicePtr device_ptr) {
-  is_on_connect_loop = true;
-  xTaskCreatePinnedToCore(device_connect_station_task, "device_connect_station_task",
-                          TASK_DEVICE_STACK, device_ptr, TASK_DEVICE_PRIORITY,
-                          NULL, TASK_DEVICE_CORE);
+    // Kill old STA task if it exists
+    if (station_task_handle != NULL) {
+        ESP_LOGI(LOGGING_TAG, "Killing previous STA connect task");
+        vTaskDelete(station_task_handle);
+        station_task_handle = NULL;
+    }
+
+    // Create new STA connect task
+    xTaskCreatePinnedToCore(
+        device_connect_station_task,
+        "device_connect_station_task",
+        TASK_DEVICE_STACK,
+        device_ptr,
+        TASK_DEVICE_PRIORITY,
+        &station_task_handle,
+        TASK_DEVICE_CORE
+    );
 }
 
 void device_disconnect_station(DevicePtr device_ptr) {
-  is_on_connect_loop = false;
-  station_disconnect(device_ptr->station_ptr);
-};
+    if (station_task_handle != NULL) {
+        ESP_LOGI(LOGGING_TAG, "Stopping STA connect task");
+        vTaskDelete(station_task_handle);
+        station_task_handle = NULL;
+    }
+
+    station_disconnect(device_ptr->station_ptr);
+}
 
 void device_restart_station(DevicePtr device_ptr) {
   station_restart(device_ptr->station_ptr);
