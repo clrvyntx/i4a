@@ -9,6 +9,7 @@
 #include "dhcpserver/dhcpserver.h"
 #include "dhcpserver/dhcpserver_options.h"
 #include "access_point.h"
+#include "node.h"
 
 #define DEFAULT_DNS "8.8.8.8"
 
@@ -163,6 +164,9 @@ void ap_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, 
         if (!ap->is_center && !ap->server_is_up) {
           server_create();
           ap->server_is_up = true;
+          if(ap->is_apsta) {
+            node_disable_sta();
+          }
         }
         break;
 
@@ -170,6 +174,9 @@ void ap_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, 
         if (ap->server_is_up) {
           server_close();
           ap->server_is_up = false;
+          if(ap->is_apsta) {
+            node_enable_sta();
+          }
         }
         break;
 
