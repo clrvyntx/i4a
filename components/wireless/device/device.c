@@ -181,34 +181,19 @@ static void device_connect_station_task(void* arg) {
   DevicePtr device_ptr = (DevicePtr)arg;  // Get the device pointer from the task argument
 
   while (is_on_connect_loop) {
-
-    // If on AP+STA mode, check if the STA interface is being used by checking if the AP server is up or not
-    bool skip_station_connect = device_ptr->mode == AP_STATION && device_ptr->access_point_ptr->server_is_up;
     
-    if(!skip_station_connect){
-    // If station is disconnected, start scanning for APs
-      if (!station_is_active(device_ptr->station_ptr)) {
-        // Lock AP before scanning on AP+STA mode
-        if(device_ptr->mode == AP_STATION && !device_ptr->access_point_ptr->is_locked) {
-          ap_lock(device_ptr->access_point_ptr);
-        }
-        
-        ESP_LOGI(LOGGING_TAG, "Wi-Fi not connected. Scanning for available networks...");
-        
-        station_find_ap(device_ptr->station_ptr);
-        if (station_found_ap(device_ptr->station_ptr)) {
-          ESP_LOGI(LOGGING_TAG, "Wi-Fi found! Attempting to connect.");
-          station_connect(device_ptr->station_ptr);
-        } else {
-          ESP_LOGE(LOGGING_TAG, "No Wi-Fi found. Re-scanning in 10 seconds.");
-          // Unlock AP before next scan loop on AP+STA mode
-          if(device_ptr->mode == AP_STATION && device_ptr->access_point_ptr->is_locked) {
-            ap_unlock(device_ptr->access_point_ptr);
-            vTaskDelay(pdMS_TO_TICKS(10000 + esp_random() % 10000)); // Wait a random delay to avoid sync issues with different nodes
-          }
-        }
-      } 
-    }
+  // If station is disconnected, start scanning for APs
+    if (!station_is_active(device_ptr->station_ptr)) {
+      ESP_LOGI(LOGGING_TAG, "Wi-Fi not connected. Scanning for available networks...");
+      
+      station_find_ap(device_ptr->station_ptr);
+      if (station_found_ap(device_ptr->station_ptr)) {
+        ESP_LOGI(LOGGING_TAG, "Wi-Fi found! Attempting to connect.");
+        station_connect(device_ptr->station_ptr);
+      } else {
+        ESP_LOGE(LOGGING_TAG, "No Wi-Fi found. Re-scanning in 10 seconds.");
+      }
+    } 
     
     vTaskDelay(pdMS_TO_TICKS(10000)); // Wait 10 seconds before checking again
   }
