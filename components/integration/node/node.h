@@ -27,6 +27,10 @@ void node_set_as_sta(void); // Sets device as Station, scanning for nearby conne
 void node_set_network_settings(uint32_t network, uint32_t mask); // Sets the device's network and mask (for routing algorithm purposes, may not be the device's physical address)
 bool node_is_point_to_point_message(uint32_t dst); // Returns whether it's a message between point-to-point devices or not (useful for point-to-point connections that should bypass the routing algorithm)
 bool node_is_packet_for_this_subnet(uint32_t dst); // Returns whether the incoming packet is destined to the device's own subnet or not (useful for house or root devices)
+void node_disable_sta(void); // Disable the STA interface at runtime while keeping its settings
+void node_enable_sta(void);  // Enable the STA interface at runtime using the saved configuration
+void node_disable_ap(void);  // Disable the AP interface at runtime while keeping its settings
+void node_enable_ap(void);   // Enable the AP interface at runtime using the saved configuration
 
 // Node parameters
 node_device_orientation_t node_get_device_orientation(void); // Orientation of node's specific device
@@ -39,10 +43,6 @@ const char *node_get_device_mac(void); // Returns the device's MAC string
 const char *node_get_link_name(void); // Returns the name of device's current wireless link
 int64_t node_get_device_uptime_minutes(void); // Returns the amount of time (in minutes) that the device has been initialized
 uint8_t node_get_device_channel(void); // Returns the device's currently assigned channel
-void node_disable_sta(void); // Disable the STA interface at runtime while keeping its settings
-void node_enable_sta(void);  // Enable the STA interface at runtime using the saved configuration
-void node_disable_ap(void);  // Disable the AP interface at runtime while keeping its settings
-void node_enable_ap(void);   // Enable the AP interface at runtime using the saved configuration
 
 // Node communication functions
 bool node_send_wireless_message(const uint8_t *msg, uint16_t len); // Send a wireless message to the other side of the wireless link between two devices of different nodes
