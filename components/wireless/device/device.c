@@ -101,7 +101,7 @@ void device_init_ap(DevicePtr device_ptr, uint8_t channel, const char *wifi_netw
 
   ESP_LOGI(LOGGING_TAG, "Initializing AP with SSID: %s", wifi_ssid);
   
-  ap_init(device_ptr->access_point_ptr, channel, wifi_ssid, password, max_sta_connections, is_center);
+  ap_init(device_ptr->access_point_ptr, channel, wifi_ssid, password, max_sta_connections, is_center, device_ptr->mode == AP_STATION);
 };
 
 void device_init_station(DevicePtr device_ptr, const char* wifi_ssid_like, uint16_t orientation, char* device_uuid, const char* password) {
