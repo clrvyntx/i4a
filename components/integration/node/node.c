@@ -25,8 +25,8 @@
 #define CALIBRATION_DELAY_SECONDS 2
 #define AP_STA_DELAY_SECONDS 1
 
-#define MAX_RETRIES 10
-#define RETRY_DELAY_MS 100
+#define MAX_RETRIES 5
+#define RETRY_DELAY_MS 500
 
 #define NAT_NETWORK 0x0AA00000  // 10.160.0.0
 #define NAT_MASK    0xFFFFFFFC  // /30
@@ -85,23 +85,23 @@ void node_setup(void){
 
   if(node_ptr->node_device_orientation == NODE_DEVICE_ORIENTATION_CENTER) {
     while (!rm_broadcast_reset()) {
-      vTaskDelay(pdMS_TO_TICKS(1000));
+      vTaskDelay(pdMS_TO_TICKS(100));
     }
 
     vTaskDelay(pdMS_TO_TICKS(10000)); // Wait 10 seconds so all the devices come back up in case this was an actual node reset
 
     while (!rm_broadcast_startup_info(config_mode_is(CONFIG_MODE_ROOT))) {
-      vTaskDelay(pdMS_TO_TICKS(1000));
+      vTaskDelay(pdMS_TO_TICKS(100));
     }
 
   } else {
     while (!rm_is_device_up()){
       if(rm_should_device_reset()){
         while (!rm_broadcast_reset()) {
-          vTaskDelay(pdMS_TO_TICKS(1000));
+          vTaskDelay(pdMS_TO_TICKS(100));
         }
       }
-      vTaskDelay(pdMS_TO_TICKS(1000));
+      vTaskDelay(pdMS_TO_TICKS(100));
     }
   }
 
