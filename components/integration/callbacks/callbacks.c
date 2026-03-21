@@ -9,7 +9,7 @@
 #include "callbacks.h"
 
 #define MAX_MESSAGE_SIZE 512
-#define SIBLING_QUEUE_LENGTH 10
+#define SIBLING_QUEUE_LENGTH 40
 #define PEER_QUEUE_LENGTH 5
 #define PEER_DELAY_SECONDS 5
 
