@@ -9,6 +9,7 @@
 #include "traffic.h"
 #include "station.h"
 #include "config.h"
+#include "node.h"
 
 #define UUID_LEN 12
 #define SSID_UUID_OFFSET 6
@@ -125,6 +126,9 @@ static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_
       case WIFI_EVENT_STA_DISCONNECTED:
         if(stationPtr->is_fully_connected){
           client_close();
+          if(stationPtr->is_apsta){
+            node_enable_ap();
+          }
           stationPtr->is_fully_connected = false;
         }
         if (s_retry_num < MAX_RETRIES) {
@@ -149,6 +153,8 @@ static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_
           if(!stationPtr->is_apsta){
             cm_provide_to_siblings(stationPtr->wifi_ap_found.primary);
             im_http_client_start();
+          } else {
+            node_disable_ap();
           }
           client_open();
           s_retry_num = 0;
