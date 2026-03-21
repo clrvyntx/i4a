@@ -39,6 +39,10 @@ const char *node_get_device_mac(void); // Returns the device's MAC string
 const char *node_get_link_name(void); // Returns the name of device's current wireless link
 int64_t node_get_device_uptime_minutes(void); // Returns the amount of time (in minutes) that the device has been initialized
 uint8_t node_get_device_channel(void); // Returns the device's currently assigned channel
+void node_disable_sta(void); // Disable the STA interface at runtime while keeping its settings
+void node_enable_sta(void);  // Enable the STA interface at runtime using the saved configuration
+void node_disable_ap(void);  // Disable the AP interface at runtime while keeping its settings
+void node_enable_ap(void);   // Enable the AP interface at runtime using the saved configuration
 
 // Node communication functions
 bool node_send_wireless_message(const uint8_t *msg, uint16_t len); // Send a wireless message to the other side of the wireless link between two devices of different nodes
