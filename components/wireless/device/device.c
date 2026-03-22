@@ -52,8 +52,6 @@ void device_init(DevicePtr device_ptr, const char *device_uuid, uint8_t device_o
   device_ptr->state = d_inactive;
   device_ptr->device_is_root = device_is_root;
   device_ptr->device_orientation = device_orientation;
-  device_ptr->ap_lock = false;
-  device_ptr->sta_lock = false;
 
   AccessPoint ap = {};
   device_ptr->access_point = ap;
@@ -413,29 +411,39 @@ void device_set_max_tx_power(DevicePtr device_ptr, int8_t power) {
 
 // Disable STA interface at runtime
 void device_disable_station(DevicePtr device_ptr) {
+  if (device_ptr == NULL) {
+    return;
+  }
+
+  device_ptr->sta_lock = true;
   if (device_ptr->mode == STATION || device_ptr->mode == AP_STATION) {
-    device_ptr->sta_lock = true;
     station_disconnect(device_ptr->station_ptr);
   }
 }
 
 // Enable STA interface at runtime
 void device_enable_station(DevicePtr device_ptr) {
-  if (device_ptr->mode == STATION || device_ptr->mode == AP_STATION) {
-    device_ptr->sta_lock = false;
+  if (device_ptr == NULL) {
+    return;
   }
+
+  device_ptr->sta_lock = false;
 }
 
 // Disable AP interface at runtime
 void device_disable_ap(DevicePtr device_ptr) {
-  if (device_ptr->mode == AP || device_ptr->mode == AP_STATION) {
-    device_ptr->ap_lock = true;
+  if (device_ptr == NULL) {
+    return;
   }
+  
+  device_ptr->ap_lock = true;
 }
 
 // Enable AP interface at runtime
 void device_enable_ap(DevicePtr device_ptr) {
-  if (device_ptr->mode == AP || device_ptr->mode == AP_STATION) {
-    device_ptr->ap_lock = false;
+  if (device_ptr == NULL) {
+    return;
   }
+  
+  device_ptr->ap_lock = false;
 }
