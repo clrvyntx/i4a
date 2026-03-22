@@ -447,3 +447,19 @@ void device_enable_ap(DevicePtr device_ptr) {
   
   device_ptr->ap_lock = false;
 }
+
+bool device_is_sta_locked(DevicePtr device_ptr) {
+  if (device_ptr == NULL) {
+    return true;
+  } else {
+    return device_ptr->sta_lock;
+  }
+}
+
+bool device_is_ap_locked(DevicePtr device_ptr) {
+  if (device_ptr == NULL) {
+    return true;
+  } else {
+    return device_ptr->ap_lock;
+  }
+}
