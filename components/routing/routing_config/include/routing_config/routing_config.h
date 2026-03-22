@@ -4,11 +4,11 @@
 #define N_DEVICES 5
 
 typedef enum orientation {
-    ORIENTATION_NORTH = 0,
-    ORIENTATION_SOUTH = 1,
-    ORIENTATION_EAST = 2,
-    ORIENTATION_WEST = 3,
-    ORIENTATION_CENTER = 4,
+    ORIENTATION_NORTH = 1,
+    ORIENTATION_SOUTH = 2,
+    ORIENTATION_EAST = 3,
+    ORIENTATION_WEST = 4,
+    ORIENTATION_CENTER = 5,
 } orientation_t;
 
 #endif  // _I4A_CONFIG_H_
