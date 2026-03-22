@@ -54,6 +54,8 @@ static node_t node = {
 
 static Device node_device = {
   .mode = NAN,
+  .ap_lock = false,
+  .sta_lock = false,
 };
 
 static node_t *node_ptr = &node;
@@ -298,7 +300,11 @@ void node_enable_ap(void) {
     device_enable_ap(node_ptr->node_device_ptr);
 }
 
+bool node_is_ap_locked(void) {
+  return device_is_ap_locked(node_ptr->node_device_ptr);
+}
 
-
-
+bool node_is_sta_locked(void) {
+  return device_is_sta_locked(node_ptr->node_device_ptr);
+}
 
