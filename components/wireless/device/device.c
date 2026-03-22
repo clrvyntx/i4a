@@ -56,10 +56,13 @@ void device_init(DevicePtr device_ptr, const char *device_uuid, uint8_t device_o
   AccessPoint ap = {};
   device_ptr->access_point = ap;
   device_ptr->access_point_ptr = &device_ptr->access_point;
+  device_ptr->access_point_ptr->initialized = false;
 
   Station station = {};
   device_ptr->station = station;
   device_ptr->station_ptr = &device_ptr->station;
+  device_ptr->station_ptr->initialized = false;
+  
 
   if (mode == AP) {
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
