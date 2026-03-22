@@ -31,6 +31,8 @@ void node_disable_sta(void); // Disable the STA interface at runtime while keepi
 void node_enable_sta(void);  // Enable the STA interface at runtime using the saved configuration
 void node_disable_ap(void);  // Disable the AP interface at runtime while keeping its settings
 void node_enable_ap(void);   // Enable the AP interface at runtime using the saved configuration
+bool node_is_sta_locked(void);
+bool node_is_ap_locked(void);
 
 // Node parameters
 node_device_orientation_t node_get_device_orientation(void); // Orientation of node's specific device
