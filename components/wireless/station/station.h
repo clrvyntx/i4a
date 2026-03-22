@@ -25,7 +25,6 @@ struct Station {
   // Members
   char device_uuid[32];
   uint8_t device_orientation;
-  bool device_is_root;
   char ssid_like[32];
   char password[64];
   bool initialized;
