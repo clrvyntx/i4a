@@ -411,17 +411,17 @@ void device_set_max_tx_power(DevicePtr device_ptr, int8_t power) {
 
 // Disable STA interface at runtime
 void device_disable_station(DevicePtr device_ptr) {
-  if (device_ptr->station_ptr->active) {
+  if (device_ptr->station_ptr->initialized) {
     ESP_LOGI(LOGGING_TAG, "Disabling STA scan loop...");
-    device_ptr->station_ptr->active = false;
+    device_ptr->station_ptr->is_locked = true;
   }
 }
 
 // Enable STA interface at runtime
 void device_enable_station(DevicePtr device_ptr) {
-  if (!device_ptr->station_ptr->active && device_ptr->station_ptr->initialized) {
+  if (device_ptr->station_ptr->initialized) {
     ESP_LOGI(LOGGING_TAG, "Enabling STA scan loop...");
-    device_ptr->station_ptr->active = true;
+    device_ptr->station_ptr->is_locked = false;
   }
 }
 
