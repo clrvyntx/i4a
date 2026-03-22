@@ -67,11 +67,12 @@ void station_init(StationPtr stationPtr, const char* wifi_ssid_like, uint8_t ori
   strcpy(stationPtr->device_uuid, device_uuid);
   strcpy(stationPtr->password, password);
   stationPtr->device_orientation = orientation;
-  stationPtr->initialized = true;
   stationPtr->state = s_inactive;
   stationPtr->ap_found = false;
   stationPtr->is_fully_connected = false;
   stationPtr->is_apsta = is_apsta;
+  stationPtr->is_locked = false;
+  stationPtr->initialized = true;
 
   esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta();
   assert(sta_netif);
