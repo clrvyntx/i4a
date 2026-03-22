@@ -43,7 +43,6 @@ void ap_init(AccessPointPtr ap, uint8_t wifi_channel, const char *wifi_ssid, con
   ap->is_center = is_center;
   ap->server_is_up = false;
   ap->is_apsta = is_apsta;
-  ap->is_locked = false;
   ap->initialized = true;
 }
 
