@@ -40,6 +40,12 @@
 #define TASK_IM_SCHEDULER_STACK     4096
 #define TASK_IM_SCHEDULER_PRIORITY  LOW_PRIORITY
 
+// Remote Control tasks
+
+#define TASK_REMOTE_CONTROL_CORE      1
+#define TASK_REMOTE_CONTROL_STACK     4096
+#define TASK_REMOTE_CONTROL_PRIORITY  LOW_PRIORITY
+
 // Callbacks tasks
 
 #define TASK_CALLBACK_CORE          0
