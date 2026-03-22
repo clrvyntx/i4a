@@ -40,10 +40,11 @@ void ap_init(AccessPointPtr ap, uint8_t wifi_channel, const char *wifi_ssid, con
   strcpy(ap->ssid, wifi_ssid);
   strcpy(ap->password, wifi_password);
   ap->channel = wifi_channel;
-  ap->initialized = true;
   ap->is_center = is_center;
   ap->server_is_up = false;
   ap->is_apsta = is_apsta;
+  ap->is_locked = false;
+  ap->initialized = true;
 }
 
 bool ap_is_initialized(AccessPointPtr ap) {
@@ -150,13 +151,19 @@ void ap_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, 
     switch (event_id) {
 
       case WIFI_EVENT_AP_STACONNECTED:
-        if (!ap->is_center && !ap->server_is_up) {
-          server_create();
-          ap->server_is_up = true;
-          if(ap->is_apsta) {
-            node_disable_sta();
+        if (!ap->is_locked) {
+          if (!ap->is_center && !ap->server_is_up) {
+            server_create();
+            ap->server_is_up = true;
+            if(ap->is_apsta) {
+              node_disable_sta();
+            }
           }
+        } else {
+          ESP_LOGW(LOGGING_TAG, "AP is locked, deauthenticating all stations");
+          esp_wifi_deauth_sta(0);
         }
+
         break;
 
       case WIFI_EVENT_AP_STADISCONNECTED:
