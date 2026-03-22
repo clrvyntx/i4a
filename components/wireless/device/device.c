@@ -426,18 +426,16 @@ void device_enable_station(DevicePtr device_ptr) {
 
 // Disable AP interface at runtime
 void device_disable_ap(DevicePtr device_ptr) {
-  if (device_ptr->access_point_ptr->state == active) {
+  if (device_ptr->access_point_ptr->initialized) {
     ESP_LOGI(LOGGING_TAG, "Disabling AP interface...");
-    device_stop_ap(device_ptr);        // stop AP
-    device_ptr->access_point_ptr->state = inactive;
+    device_ptr->access_point_ptr->is_locked = true;
   }
 }
 
 // Enable AP interface at runtime
 void device_enable_ap(DevicePtr device_ptr) {
-  if (device_ptr->access_point_ptr->state == inactive && device_ptr->access_point_ptr->initialized) {
+  if (device_ptr->access_point_ptr->initialized) {
     ESP_LOGI(LOGGING_TAG, "Enabling AP interface...");
-    device_start_ap(device_ptr);       // start AP
-    device_ptr->access_point_ptr->state = active;
+    device_ptr->access_point_ptr->is_locked = false;
   }
 }
