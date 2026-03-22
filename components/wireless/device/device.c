@@ -184,7 +184,7 @@ static void device_connect_station_task(void* arg) {
   DevicePtr device_ptr = (DevicePtr)arg;  // Get the device pointer from the task argument
 
   while (1) {
-    if (device_ptr->station_ptr->is_locked) {
+    if (device_ptr->sta_lock) {
       vTaskDelay(pdMS_TO_TICKS(60000)); // STA disabled, long sleep
       continue;
     }
