@@ -19,6 +19,8 @@
 #define ROOT_NETWORK 0x0A000000  // 10.0.0.0
 #define ROOT_MASK 0xFF000000 // 255.0.0.0
 
+#define ROUTING_ORIENTATION_OFFSET 1
+
 static const char *TAG = "main";
 
 static sync_t _sync = { 0 };
@@ -48,9 +50,9 @@ void app_main(void) {
     node_device_orientation_t orientation = node_get_device_orientation();
     bool is_center_root = node_is_device_center_root();
 
-    sync_init(&_sync, rs, orientation);
-    ss_init(&ss, &_sync, rs, orientation);
-    rt_create(rt, rs, wl, &_sync, &ss, orientation);
+    sync_init(&_sync, rs, orientation + ROUTING_ORIENTATION_OFFSET);
+    ss_init(&ss, &_sync, rs, orientation + ROUTING_ORIENTATION_OFFSET);
+    rt_create(rt, rs, wl, &_sync, &ss, orientation + ROUTING_ORIENTATION_OFFSET);
 
     if(orientation == NODE_DEVICE_ORIENTATION_CENTER){
         if(is_center_root){
