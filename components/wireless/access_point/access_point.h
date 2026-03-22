@@ -28,6 +28,7 @@ struct AccessPoint {
   bool is_center;
   bool server_is_up;
   bool is_apsta;
+  bool is_locked;
   AccessPoint_State state;
   wifi_config_t wifi_config;
   char network_cidr[16];
