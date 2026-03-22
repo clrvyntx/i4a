@@ -29,7 +29,7 @@ struct Station {
   char ssid_like[32];
   char password[64];
   bool initialized;
-  bool active;
+  bool is_locked;
   bool ap_found;
   bool is_fully_connected;
   bool is_apsta;
