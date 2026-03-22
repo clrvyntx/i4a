@@ -416,6 +416,7 @@ void device_disable_station(DevicePtr device_ptr) {
   if (device_ptr->station_ptr->initialized) {
     ESP_LOGI(LOGGING_TAG, "Disabling STA scan loop...");
     device_ptr->station_ptr->is_locked = true;
+    station_disconnect(device_ptr->station_ptr);
   }
 }
 
