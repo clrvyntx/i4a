@@ -42,6 +42,8 @@ struct Device {
   AccessPointPtr access_point_ptr;
   Station station;
   StationPtr station_ptr;
+  bool sta_lock;
+  bool ap_lock;
 };
 
 typedef struct Device Device;
