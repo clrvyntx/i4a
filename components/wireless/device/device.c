@@ -52,6 +52,8 @@ void device_init(DevicePtr device_ptr, const char *device_uuid, uint8_t device_o
   device_ptr->state = d_inactive;
   device_ptr->device_is_root = device_is_root;
   device_ptr->device_orientation = device_orientation;
+  device_ptr->ap_lock = false;
+  device_ptr->sta_lock = false;
 
   AccessPoint ap = {};
   device_ptr->access_point = ap;
@@ -411,33 +413,29 @@ void device_set_max_tx_power(DevicePtr device_ptr, int8_t power) {
 
 // Disable STA interface at runtime
 void device_disable_station(DevicePtr device_ptr) {
-  if (device_ptr->station_ptr->initialized) {
-    ESP_LOGI(LOGGING_TAG, "Disabling STA scan loop...");
-    device_ptr->station_ptr->is_locked = true;
+  if (device_ptr->mode == STATION || device_ptr->mode == AP_STATION) {
+    device_ptr->sta_lock = true;
     station_disconnect(device_ptr->station_ptr);
   }
 }
 
 // Enable STA interface at runtime
 void device_enable_station(DevicePtr device_ptr) {
-  if (device_ptr->station_ptr->initialized) {
-    ESP_LOGI(LOGGING_TAG, "Enabling STA scan loop...");
-    device_ptr->station_ptr->is_locked = false;
+  if (device_ptr->mode == STATION || device_ptr->mode == AP_STATION) {
+    device_ptr->sta_lock = false;
   }
 }
 
 // Disable AP interface at runtime
 void device_disable_ap(DevicePtr device_ptr) {
-  if (device_ptr->access_point_ptr->initialized) {
-    ESP_LOGI(LOGGING_TAG, "Disabling AP interface...");
-    device_ptr->access_point_ptr->is_locked = true;
+  if (device_ptr->mode == AP || device_ptr->mode == AP_STATION) {
+    device_ptr->ap_lock = true;
   }
 }
 
 // Enable AP interface at runtime
 void device_enable_ap(DevicePtr device_ptr) {
-  if (device_ptr->access_point_ptr->initialized) {
-    ESP_LOGI(LOGGING_TAG, "Enabling AP interface...");
-    device_ptr->access_point_ptr->is_locked = false;
+  if (device_ptr->mode == AP || device_ptr->mode == AP_STATION) {
+    device_ptr->ap_lock = false;
   }
 }
