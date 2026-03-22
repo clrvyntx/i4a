@@ -132,6 +132,13 @@ void ap_restart(AccessPointPtr ap) {
   ap_start(ap);
 };
 
+void ap_disconnect_all_stations(AccessPointPtr ap){
+  if(ap->state == active) {
+    ESP_LOGI(LOGGING_TAG, "Deauthenticating all stations");
+    ESP_ERROR_CHECK(esp_wifi_deauth_sta(0));
+  }
+}
+
 void ap_destroy_netif(AccessPointPtr ap) {
   if (ap->netif) {
     ESP_LOGW(LOGGING_TAG, "Destroying AP netif...");
@@ -159,8 +166,8 @@ void ap_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, 
             }
           }
         } else {
-          ESP_LOGW(LOGGING_TAG, "AP is locked, deauthenticating all stations");
-          esp_wifi_deauth_sta(0);
+          ESP_LOGW(LOGGING_TAG, "AP is locked");
+          ap_disconnect_all_stations(ap);
         }
 
         break;
