@@ -8,8 +8,8 @@
 #include "server.h"
 
 #define PORT 3999
-#define KEEPALIVE_IDLE 60      // start probing after 60s idle
-#define KEEPALIVE_INTERVAL 30  // probe every 30s
+#define KEEPALIVE_IDLE 5     // start probing after 5s idle
+#define KEEPALIVE_INTERVAL 5  // probe every 5s
 #define KEEPALIVE_COUNT 3      // drop after 3 failed probes
 #define BUFFER_SIZE 512
 
