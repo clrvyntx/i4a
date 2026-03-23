@@ -260,7 +260,7 @@ esp_netif_t *device_get_netif(DevicePtr device_ptr){
   }
 
   if(device_ptr->mode == AP_STATION) {
-    if(device_ptr->station_ptr->ap_found){
+    if(device_ptr->station_ptr->is_fully_connected){
       return device_ptr->station_ptr->netif;
     } else {
       return device_ptr->access_point_ptr->netif;
@@ -281,7 +281,7 @@ bool device_send_wireless_message(DevicePtr device_ptr, const uint8_t *msg, uint
   }
 
   if(device_ptr->mode == AP_STATION){
-    if(device_ptr->station_ptr->ap_found){
+    if(device_ptr->station_ptr->is_fully_connected){
       return client_send_message(msg, len);
     } else {
       return server_send_message(msg, len);
@@ -301,7 +301,7 @@ bool device_is_point_to_point_message(DevicePtr device_ptr, uint32_t dst) {
   }
 
   if(device_ptr->mode == AP_STATION){
-    if(device_ptr->station_ptr->ap_found){
+    if(device_ptr->station_ptr->is_fully_connected){
       return ((dst & device_ptr->station_ptr->sta_mask) == device_ptr->station_ptr->sta_subnet);
     } else {
       return ((dst & device_ptr->access_point_ptr->ap_mask) == device_ptr->access_point_ptr->ap_subnet);
@@ -336,7 +336,7 @@ int8_t device_get_rssi(DevicePtr device_ptr) {
   }
 
   if (device_ptr->mode == AP_STATION) {
-    if (device_ptr->station_ptr->ap_found) {
+    if (device_ptr->station_ptr->is_fully_connected) {
       wifi_ap_record_t ap_info = {};
       esp_err_t err = esp_wifi_sta_get_ap_info(&ap_info);
 
@@ -362,7 +362,7 @@ int8_t device_get_rssi(DevicePtr device_ptr) {
 
 const char *device_get_link_name(DevicePtr device_ptr) {
   if (device_ptr->mode == STATION || device_ptr->mode == AP_STATION) {
-    if (device_ptr->station_ptr->ap_found) {
+    if (device_ptr->station_ptr->is_fully_connected) {
       return (const char*)device_ptr->station_ptr->wifi_ap_found.ssid;
     }
   }
@@ -378,7 +378,7 @@ const char *device_get_link_name(DevicePtr device_ptr) {
 
 uint8_t device_get_channel(DevicePtr device_ptr) {
   if (device_ptr->mode == STATION || device_ptr->mode == AP_STATION) {
-    if (device_ptr->station_ptr->ap_found) {
+    if (device_ptr->station_ptr->is_fully_connected) {
       return device_ptr->station_ptr->wifi_ap_found.primary;
     }
   }
