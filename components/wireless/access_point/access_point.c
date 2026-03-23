@@ -12,6 +12,7 @@
 #include "node.h"
 
 #define DEFAULT_DNS "8.8.8.8"
+#define STATION_TIMEOUT_SECONDS 30
 
 static const char *LOGGING_TAG = "AP";
 
@@ -33,6 +34,8 @@ void ap_init(AccessPointPtr ap, uint8_t wifi_channel, const char *wifi_ssid, con
   esp_netif_t *netif = esp_netif_create_default_wifi_ap();
   ap->netif = netif;
   ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &ap->wifi_config));
+  // Set dead STA inactive timer
+  ESP_ERROR_CHECK(esp_wifi_set_inactive_time(WIFI_IF_AP, STATION_TIMEOUT_SECONDS));
   // Register the event handler
   ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &ap_event_handler, ap));
   // Start traffic monitoring
