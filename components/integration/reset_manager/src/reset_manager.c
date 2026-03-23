@@ -14,7 +14,7 @@ static reset_manager_t *rm = &reset_manager;
 
 #define ROOT_UUID "000000000000"
 
-#define RESET_TIMEOUT_US 30000000 // 30 Seconds
+#define RESET_TIMEOUT_US 45000000 // 45 Seconds
 #define RESET_BROADCAST_WAIT_MS 2000 // 2 Seconds
 
 #define RM_OPCODE_RESET    0xA5
