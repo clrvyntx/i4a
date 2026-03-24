@@ -22,5 +22,6 @@ void node_set_routing_hook(routing_hook_type_t hook);
 void node_register_custom_routing_hook(routing_hook_func_t hook);
 struct netif *node_do_routing(uint32_t src, uint32_t dst);
 routing_t *node_get_rt_instance(void);
+void node_print_routing_table(void);
 
 #endif // _ROUTING_HOOKS_H_
