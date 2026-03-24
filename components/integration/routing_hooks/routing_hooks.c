@@ -155,3 +155,7 @@ routing_t *node_get_rt_instance(void){
     ESP_LOGD(TAG, "node_get_rt_instance called");
     return rt;
 }
+
+void node_print_routing_table(void){
+    return routing_table_show(&rt->node_state.routing_table);
+}
