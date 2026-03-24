@@ -15,7 +15,6 @@
 #define SSID_UUID_OFFSET 6
 #define SSID_ORIENTATION_OFFSET 4
 
-#define SCAN_LIST_SIZE 10
 #define MAX_RETRIES 10
 #define RSSI_THRESHOLD -128 // Minimum RSSI (in dBm) required to consider an AP as available
 
@@ -78,44 +77,58 @@ void station_init(StationPtr stationPtr, const char* wifi_ssid_like, uint8_t ori
   stationPtr->netif = sta_netif;
 
 }
-
 void station_find_ap(StationPtr stationPtr) {
-  uint16_t number = SCAN_LIST_SIZE;
-  wifi_ap_record_t ap_info[SCAN_LIST_SIZE];
-  uint16_t ap_count = 0;
-  memset(ap_info, 0, sizeof(ap_info));
-
   esp_wifi_scan_start(NULL, true);
-  ESP_LOGI(LOGGING_TAG, "Max AP number ap_info can hold = %u", number);
-  ESP_ERROR_CHECK(esp_wifi_scan_get_ap_num(&ap_count));
-  ESP_ERROR_CHECK(esp_wifi_scan_get_ap_records(&number, ap_info));
-  ESP_LOGI(LOGGING_TAG, "Total APs scanned = %u, actual AP number ap_info holds = %u", ap_count, number);
 
-  uint16_t networks_to_scan = (ap_count > number) ? number : ap_count;
+  uint16_t ap_count = 0;
+  esp_wifi_scan_get_ap_num(&ap_count);
+  ESP_LOGI(LOGGING_TAG, "Total APs scanned = %u", ap_count);
 
-  wifi_ap_record_t *best_ap = NULL;
+  wifi_ap_record_t ap;
+  wifi_ap_record_t best_ap;
+  bool found = false;
   int best_rssi = RSSI_THRESHOLD;
 
-  for (int i = 0; i < networks_to_scan; i++) {
-    if (is_network_allowed(stationPtr->device_uuid, stationPtr->ssid_like, (char*)ap_info[i].ssid, stationPtr->is_apsta, stationPtr->device_orientation)) {
-      ESP_LOGI(LOGGING_TAG, "Allowed SSID: %s | RSSI: %d | Channel: %d", ap_info[i].ssid, ap_info[i].rssi, ap_info[i].primary);
-      if (ap_info[i].rssi > best_rssi) {
-        best_ap = &ap_info[i];
-        best_rssi = ap_info[i].rssi;
+  while (esp_wifi_scan_get_ap_record(&ap) == ESP_OK) {
+
+    if (ap.rssi < RSSI_THRESHOLD) {
+      continue;
+    }
+
+    if (is_network_allowed(
+          stationPtr->device_uuid,
+          stationPtr->ssid_like,
+          (char*)ap.ssid,
+          stationPtr->is_apsta,
+          stationPtr->device_orientation)) {
+
+      ESP_LOGI(LOGGING_TAG,
+        "Allowed SSID: %s | RSSI: %d | Channel: %d",
+        ap.ssid, ap.rssi, ap.primary);
+
+      if (!found || ap.rssi > best_rssi) {
+        best_ap = ap;
+        best_rssi = ap.rssi;
+        found = true;
       }
+
     }
   }
 
-  if (best_ap) {
-    memcpy(&stationPtr->wifi_ap_found, best_ap, sizeof(*best_ap));
+  if (found) {
+    memcpy(&stationPtr->wifi_ap_found, &best_ap, sizeof(best_ap));
     stationPtr->ap_found = true;
-    ESP_LOGI(LOGGING_TAG, "Best AP found: SSID: %s | RSSI: %d | Channel: %d", best_ap->ssid, best_ap->rssi, best_ap->primary);
+
+    ESP_LOGI(LOGGING_TAG,
+      "Best AP found: SSID: %s | RSSI: %d | Channel: %d",
+      best_ap.ssid, best_ap.rssi, best_ap.primary);
+
     transform_wifi_ap_record_to_config(stationPtr);
+
   } else {
     ESP_LOGW(LOGGING_TAG, "No allowed APs found");
     stationPtr->ap_found = false;
   }
-
 }
 
 static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data) {
