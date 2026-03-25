@@ -85,7 +85,7 @@ void app_main(void) {
         im_http_client_start();
     }
 
-    if(orientation != NODE_DEVICE_ORIENTATION_CENTER && !is_center_root){
+    if(orientation == NODE_DEVICE_ORIENTATION_NORTH && !is_center_root){ // For testing, have a single one, in reality all non centers should be stations
         node_set_as_sta();
     }
     
