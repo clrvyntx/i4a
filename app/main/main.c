@@ -63,11 +63,7 @@ void app_main(void) {
             rt_init_home(rt);
         }
     } else {
-        if(is_center_root){
-            node_set_routing_hook(ROUTING_HOOK_ROOT_FORWARDER);
-        } else {
-            node_set_routing_hook(ROUTING_HOOK_FORWARDER);
-        }
+        node_set_routing_hook(ROUTING_HOOK_FORWARDER);
         rt_init_forwarder(rt);
     }
     
