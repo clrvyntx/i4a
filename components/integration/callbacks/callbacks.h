@@ -9,6 +9,11 @@
 extern "C" {
 #endif
 
+typedef enum peer_type {
+  PEER_CLIENT = 0,
+  PEER_SERVER = 1
+} peer_type_t;
+
 // Init
 esp_err_t node_init_event_queues(void);
 esp_err_t node_start_event_tasks(void);
