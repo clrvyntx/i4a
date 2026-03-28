@@ -47,7 +47,7 @@ static bool get_network_address_and_mask(void) {
 }
 
 static void socket_read_loop(const int sock, const char *server_ip) {
-    node_on_peer_connected(peer_net, peer_mask);
+    node_on_peer_connected(peer_net, peer_mask, PEER_CLIENT);
     uint8_t rx_buffer[BUFFER_SIZE];
 
     while (1) {
@@ -62,7 +62,7 @@ static void socket_read_loop(const int sock, const char *server_ip) {
             node_on_peer_message(rx_buffer, len);
         }
     }
-    node_on_peer_lost(peer_net, peer_mask);
+    node_on_peer_lost(peer_net, peer_mask, PEER_CLIENT);
 }
 
 static void tcp_client_task(void *pvParameters) {
