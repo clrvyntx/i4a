@@ -42,7 +42,7 @@ static void socket_read_loop(const int sock, const char *client_ip) {
 
   uint8_t rx_buffer[BUFFER_SIZE];
   client_sock = sock;
-  node_on_peer_connected(peer_net, peer_mask);
+  node_on_peer_connected(peer_net, peer_mask, PEER_SERVER);
   
   while (1) {
     int len = recv(sock, rx_buffer, sizeof(rx_buffer), 0);
@@ -57,7 +57,7 @@ static void socket_read_loop(const int sock, const char *client_ip) {
     }
   }
 
-  node_on_peer_lost(peer_net, peer_mask);
+  node_on_peer_lost(peer_net, peer_mask, PEER_SERVER);
   client_sock = -1;
 }
 
