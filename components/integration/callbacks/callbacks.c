@@ -35,6 +35,7 @@ typedef struct {
     peer_event_type_t type;
     uint32_t net;
     uint32_t mask;
+    peer_type_t peer_type;
 } peer_event_t;
 
 static QueueHandle_t peer_event_queue = NULL;
@@ -62,7 +63,7 @@ static void peer_event_task(void *arg) {
     peer_event_t event;
     while (1) {
         if (xQueueReceive(peer_event_queue, &event, portMAX_DELAY)) {
-            vTaskDelay(pdMS_TO_TICKS(PEER_DELAY_SECONDS * 1000));
+            vTaskDelay(event.peer_type * pdMS_TO_TICKS(PEER_DELAY_SECONDS * 1000));
             ESP_LOGD(TAG, "Peer event received: type=%s", (event.type == PEER_EVENT_CONNECTED ? "CONNECTED" : "LOST"));
             if (event.type == PEER_EVENT_CONNECTED) {
                 wl->callbacks.on_peer_connected(wl->context, event.net, event.mask);
@@ -132,20 +133,22 @@ esp_err_t node_start_event_tasks(void) {
     return ESP_OK;
 }
 
-void node_on_peer_connected(uint32_t net, uint32_t mask) {
+void node_on_peer_connected(uint32_t net, uint32_t mask, peer_type_t peer_type) {
     peer_event_t event = {
         .type = PEER_EVENT_CONNECTED,
         .net = net,
-        .mask = mask
+        .mask = mask,
+        .peer_type = peer_type
     };
     xQueueSend(peer_event_queue, &event, portMAX_DELAY);
 }
 
-void node_on_peer_lost(uint32_t net, uint32_t mask) {
+void node_on_peer_lost(uint32_t net, uint32_t mask, peer_type_t peer_type) {
     peer_event_t event = {
         .type = PEER_EVENT_LOST,
         .net = net,
-        .mask = mask
+        .mask = mask,
+        .peer_type = peer_type
     };
     xQueueSend(peer_event_queue, &event, portMAX_DELAY);
 }
