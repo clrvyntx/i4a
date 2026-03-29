@@ -13,7 +13,6 @@ typedef struct netif *(*routing_hook_func_t)(uint32_t src_ip, uint32_t dst_ip);
 static struct netif *routing_hook_root_center(uint32_t src_ip, uint32_t dst_ip);
 static struct netif *routing_hook_forwarder(uint32_t src_ip, uint32_t dst_ip);
 static struct netif *routing_hook_home(uint32_t src_ip, uint32_t dst_ip);
-static struct netif *routing_hook_root_forwarder(uint32_t src_ip, uint32_t dst_ip);
 static struct netif *routing_hook_default(uint32_t src_ip, uint32_t dst_ip);
 static struct netif *routing_hook_custom(uint32_t src_ip, uint32_t dst_ip);
 
@@ -23,7 +22,6 @@ static routing_hook_func_t routing_hooks[ROUTING_HOOK_COUNT] = {
     [ROUTING_HOOK_ROOT_CENTER] = routing_hook_root_center,
     [ROUTING_HOOK_FORWARDER] = routing_hook_forwarder,
     [ROUTING_HOOK_HOME] = routing_hook_home,
-    [ROUTING_HOOK_ROOT_FORWARDER] = routing_hook_root_forwarder,
     [ROUTING_HOOK_CUSTOM] = routing_hook_custom 
 };
 
@@ -41,23 +39,6 @@ static struct netif *routing_hook_root_center(uint32_t src_ip, uint32_t dst_ip) 
     } else {
         ESP_LOGD(TAG, "Decision: packet not for this subnet -> use WIFI netif");
         return (struct netif *)esp_netif_get_netif_impl(node_get_wifi_netif());
-    }
-}
-
-static struct netif *routing_hook_root_forwarder(uint32_t src_ip, uint32_t dst_ip) {
-    ESP_LOGD(TAG, "Routing Hook: ROOT_FORWARDER called");
-
-    if(node_is_point_to_point_message(dst_ip)){
-        ESP_LOGD(TAG, "Decision: point-to-point message -> use WIFI netif");
-        return (struct netif *)esp_netif_get_netif_impl(node_get_wifi_netif());
-    }
-
-    if(node_is_packet_for_this_subnet(dst_ip)){
-        ESP_LOGD(TAG, "Decision: packet for this subnet -> use WIFI netif");
-        return (struct netif *)esp_netif_get_netif_impl(node_get_wifi_netif());
-    } else {
-        ESP_LOGD(TAG, "Decision: packet not for this subnet -> use SPI netif");
-        return (struct netif *)esp_netif_get_netif_impl(node_get_spi_netif());
     }
 }
 
