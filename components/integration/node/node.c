@@ -189,9 +189,6 @@ void node_set_as_ap(uint32_t network, uint32_t mask){
     device_set_network_ap(node_ptr->node_device_ptr, network_cidr, network_gateway, network_mask);
     device_start_ap(node_ptr->node_device_ptr);
     device_set_max_tx_power(node_ptr->node_device_ptr, 80);
-    if(node_ptr->node_device_orientation == NODE_DEVICE_ORIENTATION_CENTER) {
-      remote_command_server_create();
-    }
   } else {
     device_init(node_ptr->node_device_ptr, node_ptr->node_device_uuid, node_ptr->node_device_orientation, wifi_network_prefix, wifi_network_password, ap_channel_to_emit, ap_max_sta_connections, (uint8_t)node_ptr->node_device_is_center_root, AP_STATION);
     device_set_network_ap(node_ptr->node_device_ptr, network_cidr, network_gateway, network_mask);
@@ -199,6 +196,14 @@ void node_set_as_ap(uint32_t network, uint32_t mask){
     device_start_station(node_ptr->node_device_ptr);
     device_set_max_tx_power(node_ptr->node_device_ptr, 80);
     device_connect_station(node_ptr->node_device_ptr);
+  }
+
+  if(node_ptr->node_device_orientation == NODE_DEVICE_ORIENTATION_CENTER) {
+    if(node_ptr->node_device_is_center_root) {
+      im_http_client_start();
+    } else {
+      remote_command_server_create();
+    }
   }
 }
 
