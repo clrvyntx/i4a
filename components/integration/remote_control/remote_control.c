@@ -73,7 +73,7 @@ static int determine_command(const char *input) {
     return -1;
 }
 
-static void apply_command(remote_command_t command) {
+static void apply_command(remote_commands_t command) {
     if (command == AP_DISABLE) {
         ESP_LOGI(LOGGING_TAG, "Disabling AP (deauth STAs)...");
         node_disable_ap();
@@ -151,7 +151,7 @@ static void remote_command_server_task(void *pvParameters) {
 
         
         // Determine command and response
-        int command = determine_command(rx_buffer);
+        int command = determine_command((const char *)rx_buffer);
         char response[128];
         
         if(command != -1) {
