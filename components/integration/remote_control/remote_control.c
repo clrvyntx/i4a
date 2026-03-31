@@ -10,13 +10,24 @@
 #define PORT 3999
 #define BUFFER_SIZE 512
 
-// Still WIP! For now this simply toggles the AP on/off whenever a message comes via the TCP socket
+#define AUTH_PASSWORD "I4A123456"
+#define PASSWORD_LEN 9
+
+typedef enum remote_commands {
+    AP_ENABLE = 0,
+    AP_DISABLE,
+    REMOTE_COMMAND_NUMBER
+} remote_commands_t;
+
+static const char *command_table[REMOTE_COMMAND_NUMBER] = {
+    [AP_ENABLE]  = "ap_enable",
+    [AP_DISABLE] = "ap_disable"
+};
 
 static const char *LOGGING_TAG = "remote_control_server";
 
 static int listen_sock = -1;
 static bool server_is_up = false;
-static bool ap_enabled = true;
 
 // Get the AP's IP address
 static bool get_ap_ip_info(esp_ip4_addr_t *ap_ip) {
@@ -32,23 +43,47 @@ static bool get_ap_ip_info(esp_ip4_addr_t *ap_ip) {
     return true;
 }
 
-// Determine the command result without toggling AP yet
-static int determine_command(const char *command) {
-    ESP_LOGI(LOGGING_TAG, "Received command: %s", command);
-    return ap_enabled ? 0 : 1;  // 0 = disable, 1 = enable
+static int determine_command(const char *input) {
+    // Check minimum length
+    if (strlen(input) < PASSWORD_LEN + 2) {
+        return -1;
+    }
+
+    // Check ':' separator
+    if (input[PASSWORD_LEN] != ':') {
+        return -1;
+    }
+
+    // Check password
+    if (strncmp(input, AUTH_PASSWORD, PASSWORD_LEN) != 0) {
+        return -1;
+    }
+
+    // Extract command string
+    const char *cmd_str = input + PASSWORD_LEN + 1;
+
+    // Iterate table
+    for (int i = 0; i < REMOTE_COMMAND_NUMBER; i++) {
+        if (command_table[i] && strcmp(cmd_str, command_table[i]) == 0) {
+            return i;
+        }
+    }
+
+    // Return error if couldn't find a match
+    return -1;
 }
 
-// Actually toggle the AP after socket is closed
-static void apply_command(int command) {
-    if (command == 0) {
+static void apply_command(remote_command_t command) {
+    if (command == AP_DISABLE) {
         ESP_LOGI(LOGGING_TAG, "Disabling AP (deauth STAs)...");
         node_disable_ap();
-        ap_enabled = false;
-    } else {
+    }
+
+    if (command == AP_ENABLE) {
         ESP_LOGI(LOGGING_TAG, "Enabling AP (allow new connections)...");
         node_enable_ap();
-        ap_enabled = true;
     }
+
 }
 
 // Initialize the TCP server
@@ -114,10 +149,19 @@ static void remote_command_server_task(void *pvParameters) {
 
         rx_buffer[len] = 0;  // Null-terminate
 
-        int command = determine_command((const char *)rx_buffer);
+        
+        // Determine command and response
+        int command = determine_command(rx_buffer);
+        char response[128];
+        
+        if(command != -1) {
+            snprintf(response, sizeof(response), "Applying command: %s", command_table[command]);
+        } else {
+            snprintf(response, sizeof(response),
+                     "Error: invalid command or password. Check formatting.");
+        }
 
-        // Prepare response
-        const char *response = (command == 0) ? "AP disabled" : "AP enabled";
+        // Send response
         send(sock, response, strlen(response), 0);
 
         // Close the connection
@@ -126,7 +170,9 @@ static void remote_command_server_task(void *pvParameters) {
         ESP_LOGI(LOGGING_TAG, "Connection from %s closed", addr_str);
 
         // Apply AP change after socket closed
-        apply_command(command);
+        if(command != -1) {
+            apply_command(command);
+        }
     }
 }
 
