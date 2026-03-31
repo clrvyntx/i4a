@@ -33,6 +33,14 @@ static bool is_network_allowed(char* device_uuid, char* network_prefix, char* ne
     return false;
   }
 
+  /* 
+  // DEBUG: Connect ONLY to the allowed UUID
+  const char *allowed_debug_uuid = "000000000000";
+  if (strstr(network_name, allowed_debug_uuid) == NULL) {
+    return false;
+  }
+  */
+
   // N/S and E/W can only connect in pairs
   char ssid_orientation = network_name[SSID_ORIENTATION_OFFSET];
 
