@@ -29,9 +29,6 @@
 #define MAX_RETRIES 5
 #define RETRY_DELAY_MS 500
 
-#define NAT_NETWORK 0x0AA00000  // 10.160.0.0
-#define NAT_MASK    0xFFFFFFFC  // /30
-
 #define DEFAULT_SUBNET 0x00000000
 #define DEFAULT_MASK 0xFFFFFFFF
 
@@ -69,19 +66,19 @@ static node_device_orientation_t node_get_config_orientation(void){
   }
 }
 
-static void node_change_rx_tx_ip_addresses(uint32_t subnet, uint32_t netmask, uint32_t tx_offset, uint32_t rx_offset) {
-    uint32_t tx_ip = (subnet & netmask) + tx_offset;
-    uint32_t rx_ip = (subnet & netmask) + rx_offset;
+static void node_change_rx_tx_ip_addresses(uint32_t subnet) {
+    uint32_t tx_ip = subnet + 1;
+    uint32_t rx_ip = subnet + 2;
 
     esp_netif_ip_info_t tx_info = {
         .ip.addr = htonl(tx_ip),
-        .netmask.addr = htonl(netmask),
+        .netmask.addr = htonl(0xFFFFFFFF),
         .gw.addr = htonl(tx_ip)
     };
 
     esp_netif_ip_info_t rx_info = {
         .ip.addr = htonl(rx_ip),
-        .netmask.addr = htonl(netmask),
+        .netmask.addr = htonl(0xFFFFFFFF),
         .gw.addr = htonl(tx_ip)
     };
 
@@ -159,6 +156,8 @@ void node_set_as_ap(uint32_t network, uint32_t mask){
   }
 
   node_set_network_settings(network, mask);
+  uint32_t last_net30 = ((network | ~mask) - 3) & 0xFFFFFFFC; // Get last possible /30 address from given subnet
+  uint32_t penultimate_net30 = last_net30 - 4; // Get second to last /30 address from given subnet
 
   uint32_t node_gateway;
   uint8_t ap_channel_to_emit = cm_get_suggested_channel();
@@ -167,26 +166,29 @@ void node_set_as_ap(uint32_t network, uint32_t mask){
   char *wifi_network_password;
 
   if (node_ptr->node_device_orientation == NODE_DEVICE_ORIENTATION_CENTER) {
-    if(node_ptr->node_device_is_center_root){
-      network = NAT_NETWORK;
-      mask = NAT_MASK;
+    if(node_ptr->node_device_is_center_root) {
+      network = last_net30;
+      mask = 0xFFFFFFFC; // /30
       node_gateway = network + 2;
       wifi_network_prefix = NAT_NETWORK_NAME;
       wifi_network_password = NAT_NETWORK_PASSWORD;
       ap_max_sta_connections = 1;
+      node_change_rx_tx_ip_addresses(penultimate_net30);
     } else {
       node_gateway = network + 1;
       wifi_network_prefix = HOUSE_NETWORK_NAME;
       wifi_network_password = HOUSE_NETWORK_PASSWORD;
       ap_max_sta_connections = MAX_DEVICES_PER_HOUSE;
+      node_change_rx_tx_ip_addresses(last_net30);
     }
   } else {
-    network = ((network | ~mask) - 3) & 0xFFFFFFFC; // Get last possible /30 address from given subnet
+    network = last_net30;
     mask = 0xFFFFFFFC; // /30
     node_gateway = network + 2;
     wifi_network_prefix = NODE_NAME_PREFIX;
     wifi_network_password = NODE_LINK_PASSWORD;
     ap_max_sta_connections = 1;
+    node_change_rx_tx_ip_addresses(penultimate_net30);
   }
 
   ip4_addr_t net_addr, gateway_addr, mask_addr;
