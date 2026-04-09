@@ -289,3 +289,7 @@ esp_err_t ring_link_rx_netif_init(void)
     ESP_ERROR_CHECK(esp_event_post(RING_LINK_RX_EVENT, RING_LINK_EVENT_START, NULL, 0, portMAX_DELAY));
     return ESP_OK;
 }
+
+esp_netif_t *get_ring_link_rx_netif(void){
+    return ring_link_rx_netif;
+}
