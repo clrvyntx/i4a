@@ -88,8 +88,6 @@ static void node_change_rx_tx_ip_addresses(uint32_t subnet, uint32_t netmask, ui
     ESP_ERROR_CHECK(esp_netif_set_ip_info(get_ring_link_tx_netif(), &tx_info));
     ESP_ERROR_CHECK(esp_netif_set_ip_info(get_ring_link_rx_netif(), &rx_info));
 
-    ESP_LOGI(TAG, "TX IP: %s, RX IP: %s, netmask: %08X", 
-             ip4addr_ntoa(&tx_info.ip), ip4addr_ntoa(&rx_info.ip), netmask);
 }
 
 void node_setup(void){
