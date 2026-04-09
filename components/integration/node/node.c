@@ -42,6 +42,8 @@ typedef struct node {
   bool node_device_is_center_root;
   uint32_t node_device_subnet;
   uint32_t node_device_mask;
+  uint32_t node_spi_tx_ip;
+  uint32_t node_spi_rx_ip;
 } node_t;
 
 static node_t node = {
@@ -84,6 +86,9 @@ static void node_change_rx_tx_ip_addresses(uint32_t subnet) {
 
     ESP_ERROR_CHECK(esp_netif_set_ip_info(get_ring_link_tx_netif(), &tx_info));
     ESP_ERROR_CHECK(esp_netif_set_ip_info(get_ring_link_rx_netif(), &rx_info));
+
+    node_ptr->node_spi_tx_ip = tx_ip;
+    node_ptr->node_spi_rx_ip = rx_ip;
 
 }
 
