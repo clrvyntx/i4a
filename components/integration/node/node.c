@@ -12,7 +12,7 @@
 #include "remote_control.h"
 #include "node.h"
 
-#define MAX_DEVICES_PER_HOUSE 4
+#define MAX_DEVICES_PER_HOUSE 5
 
 #define NODE_NAME_PREFIX "I4A"
 #define NODE_LINK_PASSWORD "zWfAc2wXq5"
@@ -42,8 +42,6 @@ typedef struct node {
   bool node_device_is_center_root;
   uint32_t node_device_subnet;
   uint32_t node_device_mask;
-  uint32_t node_spi_tx_ip;
-  uint32_t node_spi_rx_ip;
 } node_t;
 
 static node_t node = {
@@ -66,30 +64,6 @@ static node_device_orientation_t node_get_config_orientation(void){
   } else {
       return NODE_DEVICE_ORIENTATION_CENTER;
   }
-}
-
-static void node_change_rx_tx_ip_addresses(uint32_t subnet) {
-    uint32_t tx_ip = subnet + 1;
-    uint32_t rx_ip = subnet + 2;
-
-    esp_netif_ip_info_t tx_info = {
-        .ip.addr = htonl(tx_ip),
-        .netmask.addr = htonl(0xFFFFFFFF),
-        .gw.addr = htonl(tx_ip)
-    };
-
-    esp_netif_ip_info_t rx_info = {
-        .ip.addr = htonl(rx_ip),
-        .netmask.addr = htonl(0xFFFFFFFF),
-        .gw.addr = htonl(tx_ip)
-    };
-
-    ESP_ERROR_CHECK(esp_netif_set_ip_info(get_ring_link_tx_netif(), &tx_info));
-    ESP_ERROR_CHECK(esp_netif_set_ip_info(get_ring_link_rx_netif(), &rx_info));
-
-    node_ptr->node_spi_tx_ip = tx_ip;
-    node_ptr->node_spi_rx_ip = rx_ip;
-
 }
 
 void node_setup(void){
@@ -162,7 +136,6 @@ void node_set_as_ap(uint32_t network, uint32_t mask){
 
   node_set_network_settings(network, mask);
   uint32_t last_net30 = ((network | ~mask) - 3) & 0xFFFFFFFC; // Get last possible /30 address from given subnet
-  uint32_t penultimate_net30 = last_net30 - 4; // Get second to last /30 address from given subnet
 
   uint32_t node_gateway;
   uint8_t ap_channel_to_emit = cm_get_suggested_channel();
@@ -178,13 +151,11 @@ void node_set_as_ap(uint32_t network, uint32_t mask){
       wifi_network_prefix = NAT_NETWORK_NAME;
       wifi_network_password = NAT_NETWORK_PASSWORD;
       ap_max_sta_connections = 1;
-      node_change_rx_tx_ip_addresses(penultimate_net30);
     } else {
       node_gateway = network + 1;
       wifi_network_prefix = HOUSE_NETWORK_NAME;
       wifi_network_password = HOUSE_NETWORK_PASSWORD;
       ap_max_sta_connections = MAX_DEVICES_PER_HOUSE;
-      node_change_rx_tx_ip_addresses(last_net30);
     }
   } else {
     network = last_net30;
@@ -193,7 +164,6 @@ void node_set_as_ap(uint32_t network, uint32_t mask){
     wifi_network_prefix = NODE_NAME_PREFIX;
     wifi_network_password = NODE_LINK_PASSWORD;
     ap_max_sta_connections = 1;
-    node_change_rx_tx_ip_addresses(penultimate_net30);
   }
 
   ip4_addr_t net_addr, gateway_addr, mask_addr;
