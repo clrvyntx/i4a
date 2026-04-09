@@ -69,6 +69,29 @@ static node_device_orientation_t node_get_config_orientation(void){
   }
 }
 
+static void node_change_rx_tx_ip_addresses(uint32_t subnet, uint32_t netmask, uint32_t tx_offset, uint32_t rx_offset) {
+    uint32_t tx_ip = (subnet & netmask) + tx_offset;
+    uint32_t rx_ip = (subnet & netmask) + rx_offset;
+
+    esp_netif_ip_info_t tx_info = {
+        .ip.addr = htonl(tx_ip),
+        .netmask.addr = htonl(netmask),
+        .gw.addr = htonl(tx_ip)
+    };
+
+    esp_netif_ip_info_t rx_info = {
+        .ip.addr = htonl(rx_ip),
+        .netmask.addr = htonl(netmask),
+        .gw.addr = htonl(tx_ip)
+    };
+
+    ESP_ERROR_CHECK(esp_netif_set_ip_info(get_ring_link_tx_netif(), &tx_info));
+    ESP_ERROR_CHECK(esp_netif_set_ip_info(get_ring_link_rx_netif(), &rx_info));
+
+    ESP_LOGI(TAG, "TX IP: %s, RX IP: %s, netmask: %08X", 
+             ip4addr_ntoa(&tx_info.ip), ip4addr_ntoa(&rx_info.ip), netmask);
+}
+
 void node_setup(void){
   ESP_ERROR_CHECK(node_init_event_queues());
   ESP_ERROR_CHECK(node_start_event_tasks());
