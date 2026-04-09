@@ -1,3 +1,22 @@
+"""
+Remote TCP Client with Authentication
+
+This script connects to a TCP server on port 3999, sends a command with a password, 
+and prints the server's response.
+
+Usage:
+    python remote_control.py <server_ip> <command> -p <password>
+
+Example:
+    python remote_control.py 192.168.1.100 ap_disable -p mypassword
+
+Notes:
+    - <server_ip> is the IP address of the server you want to communicate with.
+    - <command> is the instruction you want the server to execute (e.g., 'ap_enable', 'ap_disable').
+    - <password> is the authentication password required by the server.
+    - The script sends messages in the format: password:command
+"""
+
 import socket
 import argparse
 
