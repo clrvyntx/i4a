@@ -17,6 +17,8 @@ err_t ring_link_rx_netstack_lwip_init_fn(struct netif *netif);
 
 esp_netif_recv_ret_t ring_link_rx_netstack_lwip_input_fn(void *h, void *buffer, size_t len, void* l2_buff);
 
+esp_netif_t *get_ring_link_rx_netif(void);
+
 #ifdef __cplusplus
 }
 #endif
