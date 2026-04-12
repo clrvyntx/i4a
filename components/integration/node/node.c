@@ -135,7 +135,6 @@ void node_set_as_ap(uint32_t network, uint32_t mask){
   }
 
   node_set_network_settings(network, mask);
-  uint32_t last_net30 = ((network | ~mask) - 3) & 0xFFFFFFFC; // Get last possible /30 address from given subnet
 
   uint32_t node_gateway;
   uint8_t ap_channel_to_emit = cm_get_suggested_channel();
@@ -145,7 +144,6 @@ void node_set_as_ap(uint32_t network, uint32_t mask){
 
   if (node_ptr->node_device_orientation == NODE_DEVICE_ORIENTATION_CENTER) {
     if(node_ptr->node_device_is_center_root) {
-      network = last_net30;
       mask = 0xFFFFFFFC; // /30
       node_gateway = network + 2;
       wifi_network_prefix = NAT_NETWORK_NAME;
@@ -158,7 +156,6 @@ void node_set_as_ap(uint32_t network, uint32_t mask){
       ap_max_sta_connections = MAX_DEVICES_PER_HOUSE;
     }
   } else {
-    network = last_net30;
     mask = 0xFFFFFFFC; // /30
     node_gateway = network + 2;
     wifi_network_prefix = NODE_NAME_PREFIX;
