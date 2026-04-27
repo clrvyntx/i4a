@@ -82,6 +82,7 @@ void device_enable_station(DevicePtr device_ptr);
 void device_disable_station(DevicePtr device_ptr);
 bool device_is_sta_locked(DevicePtr device_ptr);
 bool device_is_ap_locked(DevicePtr device_ptr);
+bool device_is_apsta(DevicePtr device_ptr);
 
 #ifdef __cplusplus
 }
