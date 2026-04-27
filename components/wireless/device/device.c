@@ -463,3 +463,7 @@ bool device_is_ap_locked(DevicePtr device_ptr) {
     return device_ptr->ap_lock;
   }
 }
+
+bool device_is_apsta(DevicePtr device_ptr){
+  return device_ptr->mode == AP_STATION;
+}
