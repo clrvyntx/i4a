@@ -124,6 +124,8 @@ void device_reset(DevicePtr device_ptr) {
     device_ptr->state = d_inactive;
   }
   device_destroy_netif(device_ptr);
+  device_ptr->sta_lock = false;
+  device_ptr->ap_lock  = false;
   device_ptr->mode = NAN;
 }
 
