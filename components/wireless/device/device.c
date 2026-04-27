@@ -11,6 +11,8 @@
 #include "device.h"
 #include "config.h"
 
+#define STA_INTERVAL_SECS 15
+
 static const char *LOGGING_TAG = "device";
 static const char *dev_orientation[5] = {"_N_", "_S_", "_E_", "_W_", "_C_"};
 static TaskHandle_t station_task_handle = NULL;  // Tracks STA connect task
@@ -172,6 +174,9 @@ void device_start_station(DevicePtr device_ptr) {
 
 static void device_connect_station_task(void* arg) {
   DevicePtr device_ptr = (DevicePtr)arg;  // Get the device pointer from the task argument
+
+  // Wait in intervals of 15 seconds to avoid simultaneous node connection
+  vTaskDelay(pdMS_TO_TICKS(device_ptr->device_orientation * 1000 * STA_INTERVAL_SECS));
 
   while (1) {
     if (device_ptr->sta_lock) {
