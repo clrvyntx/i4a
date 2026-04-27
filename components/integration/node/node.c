@@ -310,3 +310,6 @@ bool node_is_sta_locked(void) {
   return device_is_sta_locked(node_ptr->node_device_ptr);
 }
 
+bool node_is_device_apsta(void) {
+  return device_is_apsta(node_ptr->node_device_ptr);
+}
