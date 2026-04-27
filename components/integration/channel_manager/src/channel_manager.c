@@ -1,6 +1,7 @@
 #include "channel_manager/channel_manager.h"
 #include "esp_random.h"
 #include "esp_log.h"
+#include "node.h"
 
 #define CHANNELS 5
 
@@ -17,10 +18,15 @@ static void on_sibling_message(void *ctx, const uint8_t *msg, uint16_t len) {
         ESP_LOGW(TAG, "Ignoring sibling message with wrong length: %d", len);
         return;
     }
-    
-    channel_manager_t *cm = ctx;
-    cm->suggested_channel = msg[cm->orientation];
-    ESP_LOGI(TAG, "Updated suggested channel=%d", cm->suggested_channel);
+
+    // During AP+STA the device has already assigned channels
+    if(!node_is_device_apsta()) {
+        node_disable_sta(); // Disable STA to avoid multiple connections during initial node discovery
+        channel_manager_t *cm = ctx;
+        cm->suggested_channel = msg[cm->orientation];
+        ESP_LOGI(TAG, "Updated suggested channel=%d", cm->suggested_channel);
+    }
+
 }
 
 void cm_init(ring_share_t *rs, orientation_t orientation) {
