@@ -178,7 +178,7 @@ static void device_connect_station_task(void* arg) {
   DevicePtr device_ptr = (DevicePtr)arg;  // Get the device pointer from the task argument
 
   // Wait in intervals of 10 seconds to avoid simultaneous node connection
-  vTaskDelay(pdMS_TO_TICKS((1 + device_ptr->device_orientation) * 1000 * STA_INTERVAL_SECS));
+  vTaskDelay(pdMS_TO_TICKS(device_ptr->device_orientation * 1000 * STA_INTERVAL_SECS));
 
   while (1) {
     if (device_ptr->sta_lock) {
