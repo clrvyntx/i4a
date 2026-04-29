@@ -7,7 +7,7 @@
 # It:
 #  - Enables IP forwarding (routing)
 #  - Removes incorrect default route via wlan0 (if present)
-#  - Adds a route to the 10.0.0.0/8 network via the last /30 subnet's first host
+#  - Adds a route to the 10.0.0.0/8 network via the first host
 #  - Applies NAT (MASQUERADE) so traffic from wlan0 is routed out eth0
 #
 # MAKE SURE:
@@ -23,10 +23,10 @@ if [ "$IFACE" == "wlan0" ] && [ "$STATUS" == "up" ]; then
     sysctl -w net.ipv4.ip_forward=1
 
     # Remove bad default route via wlan0, if present
-    ip route del default via 10.255.255.254 dev wlan0 2>/dev/null
+    ip route del default via 10.0.0.2 dev wlan0 2>/dev/null
 
     # Route all 10.0.0.0/8 traffic to the last /30 subnet's first host
-    ip route add 10.0.0.0/8 via 10.255.255.253 dev wlan0
+    ip route add 10.0.0.0/8 via 10.0.0.1 dev wlan0
 
     # Set up NAT: outgoing traffic from wlan0 to eth0 gets masqueraded
     iptables -t nat -C POSTROUTING -o eth0 -j MASQUERADE 2>/dev/null || \
