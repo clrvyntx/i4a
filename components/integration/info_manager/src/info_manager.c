@@ -12,7 +12,7 @@
 #include "task_config.h"
 #include "esp_crt_bundle.h"
 
-#define SERVER_ADDRESS "http://10.255.255.254:8000"
+#define SERVER_ADDRESS "http://10.0.0.2:8000"
 #define MAX_HTTP_OUTPUT_BUFFER 2048
 
 #define CLIENT_POST_INTERVAL_MS (5 * 60 * 1000)     // 5 min
