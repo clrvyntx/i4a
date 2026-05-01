@@ -175,7 +175,6 @@ static void ring_link_tx_default_action_start(void *arg, esp_event_base_t base, 
     ESP_ERROR_CHECK(esp_netif_set_ip_info(ring_link_tx_netif, &ip_info));
 
     esp_netif_action_start(ring_link_tx_netif, base, event_id, data);
-    ESP_ERROR_CHECK(esp_netif_set_default_netif(ring_link_tx_netif));
 }
 
 esp_err_t ring_link_tx_netif_init(void)
