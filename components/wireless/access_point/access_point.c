@@ -120,6 +120,7 @@ void ap_start(AccessPointPtr ap) {
   ESP_LOGI(LOGGING_TAG, "Starting AP");
   ap->state = active;
   ESP_ERROR_CHECK(esp_wifi_start());
+  ESP_ERROR_CHECK(esp_netif_set_default_netif(ap->netif));
   // Set dead STA inactive timer
   ESP_ERROR_CHECK(esp_wifi_set_inactive_time(WIFI_IF_AP, STATION_TIMEOUT_SECONDS));
   ESP_LOGI(LOGGING_TAG, "AP inactive STA timeout set to %d seconds", STATION_TIMEOUT_SECONDS);
