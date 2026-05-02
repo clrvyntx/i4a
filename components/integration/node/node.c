@@ -66,6 +66,23 @@ static node_device_orientation_t node_get_config_orientation(void){
   }
 }
 
+static void node_change_rx_tx_ip_addresses(uint32_t subnet) {
+    uint32_t tx_ip = subnet;
+
+    esp_netif_ip_info_t tx_info = {
+        .ip.addr = htonl(tx_ip),
+        .netmask.addr = htonl(0xFFFFFFFF),
+        .gw.addr = htonl(tx_ip)
+    };
+
+    esp_netif_ip_info_t rx_info;
+    ESP_ERROR_CHECK(esp_netif_get_ip_info(get_ring_link_rx_netif(), &rx_info));
+    rx_info.gw.addr = htonl(tx_ip);
+
+    ESP_ERROR_CHECK(esp_netif_set_ip_info(get_ring_link_tx_netif(), &tx_info));
+    ESP_ERROR_CHECK(esp_netif_set_ip_info(get_ring_link_rx_netif(), &rx_info));
+}
+
 void node_setup(void){
   ESP_ERROR_CHECK(node_init_event_queues());
   ESP_ERROR_CHECK(node_start_event_tasks());
@@ -277,6 +294,7 @@ uint8_t node_get_device_channel(void) {
 void node_set_network_settings(uint32_t network, uint32_t mask) {
     node_ptr->node_device_subnet = network;
     node_ptr->node_device_mask = mask;
+    node_change_rx_tx_ip_addresses(network);
 }
 
 int64_t node_get_device_uptime_minutes(void) {
