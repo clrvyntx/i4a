@@ -9,7 +9,7 @@ Usage:
     2. Run the server:
          python info_server.py
     3. ESP devices should send POST requests with JSON payload to:
-         http://10.255.255.254:8000/
+         http://10.0.0.2:8000/
 """
 
 from flask import Flask, request, jsonify
@@ -30,4 +30,4 @@ def receive_info():
 
 if __name__ == "__main__":
     # Listen on the fixed IP 10.255.255.254 so ESPs on the LAN can reach it
-    app.run(host="10.255.255.254", port=8000)
+    app.run(host="10.0.0.2", port=8000)
