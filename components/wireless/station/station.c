@@ -75,7 +75,6 @@ void station_init(StationPtr stationPtr, const char* wifi_ssid_like, uint8_t ori
   esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta();
   assert(sta_netif);
   stationPtr->netif = sta_netif;
-  esp_netif_set_route_prio(stationPtr->netif, 10);
 
 }
 void station_find_ap(StationPtr stationPtr) {
