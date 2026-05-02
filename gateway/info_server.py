@@ -29,5 +29,5 @@ def receive_info():
     return jsonify({"status": "ok"}), 200
 
 if __name__ == "__main__":
-    # Listen on the fixed IP 10.255.255.254 so ESPs on the LAN can reach it
+    # Listen on the fixed IP 10.0.0.2 so ESPs on the LAN can reach it
     app.run(host="10.0.0.2", port=8000)
