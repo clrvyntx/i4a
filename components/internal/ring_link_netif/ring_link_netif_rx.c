@@ -274,7 +274,6 @@ static void ring_link_rx_default_action_start(void *arg, esp_event_base_t base, 
 
     uint8_t mac[6] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55};
     esp_netif_set_mac(ring_link_rx_netif, mac);
-    esp_netif_set_route_prio(ring_link_rx_netif, 20);
     esp_netif_action_start(ring_link_rx_netif, base, event_id, data);
 }
 
