@@ -66,8 +66,8 @@ void config_setup(void)
         s_config.mode = (config_mode_t) config_bits;
         s_config.orientation = CONFIG_ORIENTATION_NONE;
     }
-    s_config.rx_ip_addr = ESP_IP4TOADDR(10, 192, 0, (int)(s_config.orientation) + 1);
-    s_config.tx_ip_addr = ESP_IP4TOADDR(10, 192, 0, (int)(s_config.orientation) + 10);
+    s_config.rx_ip_addr = ESP_IP4TOADDR(192, 168, 0, (int)(s_config.orientation) + 1);
+    s_config.tx_ip_addr = ESP_IP4TOADDR(192, 168, 0, (int)(s_config.orientation) + 10);
 }
 
 config_id_t config_get_id(void)
