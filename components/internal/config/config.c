@@ -90,7 +90,7 @@ esp_netif_ip_info_t config_get_tx_ip_info(void)
     esp_netif_ip_info_t ip_info = {
         .ip = {.addr = s_config.tx_ip_addr},
         .gw = {.addr = s_config.tx_ip_addr},
-        .netmask = {.addr = ESP_IP4TOADDR(255, 255, 255, 255)},
+        .netmask = {.addr = ESP_IP4TOADDR(255, 255, 0, 0)},
     };
     return ip_info;
 }
