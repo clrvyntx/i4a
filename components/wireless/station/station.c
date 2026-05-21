@@ -53,7 +53,7 @@ static bool is_network_allowed(char* device_uuid, char* network_prefix, char* ne
 
   // Finish checking if it's not on APSTA mode, otherwise check to prevent redundant connections
   if(is_apsta){
-    return strncmp(network_name + SSID_UUID_OFFSET, device_uuid, UUID_LEN) > 0;
+    return strncmp(network_name + SSID_UUID_OFFSET, device_uuid, UUID_LEN) < 0;
   } else {
     return true;
   }
