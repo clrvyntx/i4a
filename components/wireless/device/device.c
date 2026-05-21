@@ -11,7 +11,7 @@
 #include "device.h"
 #include "config.h"
 
-#define STA_INTERVAL_SECS 15
+#define STA_INTERVAL_SECS 10
 
 static const char *LOGGING_TAG = "device";
 static const char *dev_orientation[5] = {"_N_", "_S_", "_E_", "_W_", "_C_"};
