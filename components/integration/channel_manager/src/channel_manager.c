@@ -21,7 +21,6 @@ static void on_sibling_message(void *ctx, const uint8_t *msg, uint16_t len) {
 
     // During AP+STA the device has already assigned channels
     if(!node_is_device_apsta()) {
-        node_disable_sta(); // Disable STA to avoid multiple connections during initial node discovery
         channel_manager_t *cm = ctx;
         cm->suggested_channel = msg[cm->orientation];
         ESP_LOGI(TAG, "Updated suggested channel=%d", cm->suggested_channel);
