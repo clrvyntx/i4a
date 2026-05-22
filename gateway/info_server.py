@@ -15,7 +15,7 @@ Usage:
 import socket
 import json
 
-UDP_IP = "0.0.0.0"
+UDP_IP = "10.255.255.254"
 UDP_PORT = 8000
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
