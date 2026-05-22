@@ -1,33 +1,55 @@
 """
-ESP LAN JSON Receiver (Flask Server)
+ESP LAN UDP JSON Receiver
 
-This script starts a simple HTTP server that listens for JSON POST requests from ESP devices
-on the local network. It prints received data and responds with a confirmation.
+This script listens for UDP packets from ESP devices on the local network.
+Each UDP packet contains a JSON payload identical to the previous HTTP POST body.
 
 Usage:
-    1. Make sure your ESP devices are on the same LAN as this server.
+    1. Make sure your ESP devices are on the same LAN.
     2. Run the server:
          python info_server.py
-    3. ESP devices should send POST requests with JSON payload to:
-         http://10.255.255.254:8000/
+    3. ESP devices should send UDP packets to:
+         10.255.255.254:8000
 """
 
-from flask import Flask, request, jsonify
+import socket
+import json
 
-app = Flask(__name__)
+UDP_IP = "10.255.255.254"
+UDP_PORT = 8000
+BUFFER_SIZE = 4096
 
-@app.route('/', methods=['POST'])
-def receive_info():
-    data = request.get_json()
-    if not data:
-        return jsonify({"status": "error", "reason": "no JSON received"}), 400
+# Create UDP socket
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-    # Print the received JSON to verify
-    print("Received JSON from ESP:")
-    print(data)
+# Bind to fixed LAN IP + port
+sock.bind((UDP_IP, UDP_PORT))
 
-    return jsonify({"status": "ok"}), 200
+print(f"UDP server listening on {UDP_IP}:{UDP_PORT}")
 
-if __name__ == "__main__":
-    # Listen on the fixed IP 10.255.255.254 so ESPs on the LAN can reach it
-    app.run(host="10.255.255.254", port=8000)
+while True:
+    try:
+        # Receive UDP packet
+        data, addr = sock.recvfrom(BUFFER_SIZE)
+
+        print("\n==============================")
+        print(f"Packet from: {addr[0]}:{addr[1]}")
+        print(f"Bytes received: {len(data)}")
+
+        # Decode bytes to text
+        text = data.decode("utf-8")
+
+        print("\nRaw JSON:")
+        print(text)
+
+        # Parse JSON
+        parsed = json.loads(text)
+
+        print("\nParsed JSON:")
+        print(json.dumps(parsed, indent=4))
+
+    except json.JSONDecodeError as e:
+        print(f"\nJSON parse error: {e}")
+
+    except Exception as e:
+        print(f"\nServer error: {e}")
