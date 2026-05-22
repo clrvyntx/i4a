@@ -13,43 +13,60 @@ Usage:
 """
 
 import socket
+import struct
 import json
 
 UDP_IP = "10.255.255.254"
 UDP_PORT = 8000
-BUFFER_SIZE = 4096
 
-# Create UDP socket
+FMT = "<BBbIIII12s12s"
+SIZE = struct.calcsize(FMT)
+
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
-# Bind to fixed LAN IP + port
 sock.bind((UDP_IP, UDP_PORT))
 
-print(f"UDP server listening on {UDP_IP}:{UDP_PORT}")
+print(f"Listening on {UDP_IP}:{UDP_PORT}")
 
 while True:
-    try:
-        # Receive UDP packet
-        data, addr = sock.recvfrom(BUFFER_SIZE)
+    data, addr = sock.recvfrom(1024)
 
-        print("\n==============================")
-        print(f"Packet from: {addr[0]}:{addr[1]}")
-        print(f"Bytes received: {len(data)}")
+    print("\n====================")
+    print(f"From: {addr}")
 
-        # Decode bytes to text
-        text = data.decode("utf-8")
+    nodes = []
 
-        print("\nRaw JSON:")
-        print(text)
+    for i in range(0, len(data), SIZE):
+        chunk = data[i:i+SIZE]
+        if len(chunk) != SIZE:
+            continue
 
-        # Parse JSON
-        parsed = json.loads(text)
+        (orientation,
+         channel,
+         rssi,
+         subnet,
+         mask,
+         rx,
+         tx,
+         uuid,
+         link) = struct.unpack(FMT, chunk)
 
-        print("\nParsed JSON:")
-        print(json.dumps(parsed, indent=4))
+        node = {
+            "orientation": orientation,
+            "channel": channel,
+            "rssi": rssi,
+            "subnet": subnet,
+            "mask": mask,
+            "rx_bytes": rx,
+            "tx_bytes": tx,
+            "uuid": uuid.decode(errors="ignore").strip("\x00"),
+            "link": link.decode(errors="ignore").strip("\x00"),
+        }
 
-    except json.JSONDecodeError as e:
-        print(f"\nJSON parse error: {e}")
+        nodes.append(node)
 
-    except Exception as e:
-        print(f"\nServer error: {e}")
+    payload = {
+        "nodes": nodes,
+        "count": len(nodes)
+    }
+
+    print(json.dumps(payload, indent=2))
