@@ -13,14 +13,10 @@ Usage:
 """
 
 import socket
-import struct
 import json
 
-UDP_IP = "10.255.255.254"
+UDP_IP = "0.0.0.0"
 UDP_PORT = 8000
-
-FMT = "<BBbIIII12s12s"
-SIZE = struct.calcsize(FMT)
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.bind((UDP_IP, UDP_PORT))
@@ -28,45 +24,33 @@ sock.bind((UDP_IP, UDP_PORT))
 print(f"Listening on {UDP_IP}:{UDP_PORT}")
 
 while True:
-    data, addr = sock.recvfrom(1024)
+    data, addr = sock.recvfrom(4096)
 
     print("\n====================")
     print(f"From: {addr}")
 
+    try:
+        payload = json.loads(data.decode("utf-8"))
+    except Exception as e:
+        print("Failed to decode JSON:", e)
+        print("Raw data:", data)
+        continue
+
+    # Your ESP format:
+    # {"fields":[...], "data":[[...]...], "uptime_mins":...}
+
     nodes = []
+    fields = payload.get("fields", [])
+    rows = payload.get("data", [])
 
-    for i in range(0, len(data), SIZE):
-        chunk = data[i:i+SIZE]
-        if len(chunk) != SIZE:
-            continue
-
-        (orientation,
-         channel,
-         rssi,
-         subnet,
-         mask,
-         rx,
-         tx,
-         uuid,
-         link) = struct.unpack(FMT, chunk)
-
-        node = {
-            "orientation": orientation,
-            "channel": channel,
-            "rssi": rssi,
-            "subnet": subnet,
-            "mask": mask,
-            "rx_bytes": rx,
-            "tx_bytes": tx,
-            "uuid": uuid.decode(errors="ignore").strip("\x00"),
-            "link": link.decode(errors="ignore").strip("\x00"),
-        }
-
+    for row in rows:
+        node = dict(zip(fields, row))
         nodes.append(node)
 
-    payload = {
+    result = {
         "nodes": nodes,
-        "count": len(nodes)
+        "count": len(nodes),
+        "uptime_mins": payload.get("uptime_mins")
     }
 
-    print(json.dumps(payload, indent=2))
+    print(json.dumps(result, indent=2))
