@@ -22,8 +22,9 @@
 
 #define MAX_HTTP_OUTPUT_BUFFER 2048
 
-#define CLIENT_POST_INTERVAL_MS (5 * 60 * 1000)     // 5 min
 #define BROADCAST_INTERVAL_MS   (5 * 60 * 1000)     // 5 min
+#define CLIENT_INITIAL_DELAY_MS (5 * 60 * 1000)     // 5 min
+#define CLIENT_POST_INTERVAL_MS (60 * 1000)         // 1 min
 #define ORIENTATION_SPREAD_MS   (60 * 1000)         // 1 min per orientation
 
 static const char *TAG = "info_manager";
@@ -40,7 +41,7 @@ static const char *orientation_names[MAX_ORIENTATIONS] = {
 
 static void im_client_task(void *arg)
 {
-    vTaskDelay(pdMS_TO_TICKS(CLIENT_POST_INTERVAL_MS));
+    vTaskDelay(pdMS_TO_TICKS(CLIENT_INITIAL_DELAY_MS));
 
     char payload[MAX_HTTP_OUTPUT_BUFFER];
 
