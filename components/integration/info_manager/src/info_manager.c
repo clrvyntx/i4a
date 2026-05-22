@@ -20,7 +20,7 @@
 #define UDP_SERVER_IP   "10.255.255.254"
 #define UDP_SERVER_PORT 8000
 
-#define MAX_HTTP_OUTPUT_BUFFER 2048
+#define MAX_PAYLOAD_BUFFER 1400
 
 #define BROADCAST_INTERVAL_MS   (5 * 60 * 1000)     // 5 min
 #define CLIENT_INITIAL_DELAY_MS (5 * 60 * 1000)     // 5 min
@@ -43,7 +43,7 @@ static void im_client_task(void *arg)
 {
     vTaskDelay(pdMS_TO_TICKS(CLIENT_INITIAL_DELAY_MS));
 
-    char payload[MAX_HTTP_OUTPUT_BUFFER];
+    char payload[MAX_PAYLOAD_BUFFER];
 
     struct sockaddr_in dest_addr = {
         .sin_family = AF_INET,
@@ -111,7 +111,7 @@ static void im_client_task(void *arg)
                 ring[i].tx_bytes
             );
 
-            if (offset >= MAX_HTTP_OUTPUT_BUFFER - 50) {
+            if (offset >= MAX_PAYLOAD_BUFFER - 50) {
                 ESP_LOGW(TAG, "Payload truncated");
                 break;
             }
