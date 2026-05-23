@@ -16,12 +16,14 @@
 typedef enum remote_commands {
     AP_ENABLE = 0,
     AP_DISABLE,
+    RESET_NODE,
     REMOTE_COMMAND_NUMBER
 } remote_commands_t;
 
 static const char *command_table[REMOTE_COMMAND_NUMBER] = {
     [AP_ENABLE]  = "ap_enable",
-    [AP_DISABLE] = "ap_disable"
+    [AP_DISABLE] = "ap_disable",
+    [RESET_NODE] = "reset_node,
 };
 
 static const char *LOGGING_TAG = "remote_control_server";
@@ -82,6 +84,10 @@ static void apply_command(remote_commands_t command) {
     if (command == AP_ENABLE) {
         ESP_LOGI(LOGGING_TAG, "Enabling AP (allow new connections)...");
         node_enable_ap();
+    }
+
+    if (command == RESET_NODE) {
+        esp_restart();
     }
 
 }
