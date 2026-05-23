@@ -23,7 +23,7 @@ typedef enum remote_commands {
 static const char *command_table[REMOTE_COMMAND_NUMBER] = {
     [AP_ENABLE]  = "ap_enable",
     [AP_DISABLE] = "ap_disable",
-    [RESET_NODE] = "reset_node
+    [RESET_NODE] = "reset_node"
 };
 
 static const char *LOGGING_TAG = "remote_control_server";
