@@ -1,7 +1,6 @@
 #include "channel_manager/channel_manager.h"
 #include "esp_random.h"
 #include "esp_log.h"
-#include "node.h"
 
 #define CHANNELS 5
 
@@ -29,7 +28,7 @@ static void on_sibling_message(void *ctx, const uint8_t *msg, uint16_t len) {
 
 }
 
-void cm_init(ring_share_t *rs, orientation_t orientation) {
+void cm_init(ring_share_t *rs, node_device_orientation_t orientation) {
     cm->rs = rs;
     cm->orientation = orientation;
     cm->suggested_channel = formation_1[cm->orientation];
