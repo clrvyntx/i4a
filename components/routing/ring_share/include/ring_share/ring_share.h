@@ -21,6 +21,7 @@ typedef enum component_id {
     RS_CHANNEL_MANAGER = 3,
     RS_RESET_MANAGER = 4,
     RS_INFO_MANAGER = 5,
+    RS_UUID_BLOCKER = 6,
 
     /* Keep this variant last */
     RS_LAST_COMPONENT_ID,
