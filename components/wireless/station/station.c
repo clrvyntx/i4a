@@ -163,8 +163,8 @@ static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_
     switch (event_id) {
       case IP_EVENT_STA_GOT_IP:
         if(stationPtr->is_fully_connected) {
+          cm_provide_to_siblings(stationPtr->wifi_ap_found.primary);
           if(!stationPtr->is_apsta){
-            cm_provide_to_siblings(stationPtr->wifi_ap_found.primary);
             im_http_client_start();
           } else {
             node_disable_ap();
