@@ -33,6 +33,11 @@ static bool is_network_allowed(char* device_uuid, char* network_prefix, char* ne
     return false;
   }
 
+  // Must NOT contain UUIDs any other local device is connected to
+  if(cm_is_blocked_uuid(network_name)) {
+    return false;
+  }
+
   /* 
   // DEBUG: Connect ONLY to the allowed UUID
   const char *allowed_debug_uuid = "000000000000";
@@ -163,7 +168,7 @@ static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_
     switch (event_id) {
       case IP_EVENT_STA_GOT_IP:
         if(stationPtr->is_fully_connected) {
-          cm_provide_to_siblings(stationPtr->wifi_ap_found.primary);
+          cm_provide_to_siblings(stationPtr->wifi_ap_found.primary, (const char *)stationPtr->wifi_ap_found.ssid);
           if(!stationPtr->is_apsta){
             im_http_client_start();
           } else {
