@@ -11,7 +11,8 @@
 #include "device.h"
 #include "config.h"
 
-#define STA_INTERVAL_SECS 10
+#define STA_INTERVAL_SECS 15
+#define ORIENTATION_PRIORITY 0 // Placeholder, should be a readable hardware value from 0 to 3
 
 static const char *LOGGING_TAG = "device";
 static const char *dev_orientation[5] = {"_N_", "_S_", "_E_", "_W_", "_C_"};
@@ -176,9 +177,11 @@ void device_start_station(DevicePtr device_ptr) {
 
 static void device_connect_station_task(void* arg) {
   DevicePtr device_ptr = (DevicePtr)arg;  // Get the device pointer from the task argument
+  
+  uint8_t shifted_priorities = (device_ptr->device_orientation - ORIENTATION_PRIORITY + 4) % 4;
 
   // Wait in intervals of 10 seconds to avoid simultaneous node connection
-  vTaskDelay(pdMS_TO_TICKS(device_ptr->device_orientation * 1000 * STA_INTERVAL_SECS));
+  vTaskDelay(pdMS_TO_TICKS(shifted_priorities * 1000 * STA_INTERVAL_SECS));
 
   while (1) {
     if (device_ptr->sta_lock) {
