@@ -1,0 +1,15 @@
+[Unit]
+Description=I4A Raspberry Pi ESP Auto Flasher
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/home/i4a/i4a-flasher
+ExecStart=/home/i4a/i4a-flasher/.venv/bin/python /home/i4a/i4a-flasher/rpi_esp_autoflash_daemon.py --flash-args /home/i4a/i4a-flasher/firmware_bundle_idf/flash_args
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

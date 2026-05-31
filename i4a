@@ -1,0 +1,419 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+APP_DIR="${ROOT_DIR}/app"
+DOCKERFILE_PATH="${ROOT_DIR}/Dockerfile"
+DOCKER_BIN="${I4A_DOCKER_BIN:-docker}"
+IMAGE_NAME="${I4A_IMAGE_NAME:-i4a-esp-idf:v5.1.2}"
+FLASH_BAUD="${I4A_FLASH_BAUD:-921600}"
+MONITOR_BAUD="${I4A_MONITOR_BAUD:-115200}"
+HOME_CACHE_DIR="${I4A_HOME_CACHE:-${ROOT_DIR}/.i4a-home}"
+
+usage() {
+  cat <<'EOF'
+Uso:
+  ./i4a help
+  ./i4a image build
+  ./i4a image rebuild
+  ./i4a shell
+  ./i4a build
+  ./i4a clean
+  ./i4a fullclean
+  ./i4a menuconfig
+  ./i4a flash /dev/ttyUSB0
+  ./i4a flash-many /dev/ttyUSB0 /dev/ttyUSB1
+  ./i4a erase-flash /dev/ttyUSB0
+  ./i4a monitor /dev/ttyUSB0
+  ./i4a idf <args...>
+  ./i4a run <cmd...>
+  ./i4a list-ports
+
+Ejemplos:
+  ./i4a build
+  ./i4a flash /dev/ttyUSB0
+  ./i4a monitor /dev/ttyUSB0
+  ./i4a idf -p /dev/ttyUSB0 flash monitor
+  ./i4a run python --version
+
+Variables opcionales:
+  I4A_IMAGE_NAME        Nombre de la imagen Docker
+  I4A_DOCKER_BIN        Binario Docker a usar
+  I4A_FLASH_BAUD        Baudrate para flash (default: 921600)
+  I4A_MONITOR_BAUD      Baudrate para monitor (default: 115200)
+  I4A_DOCKER_RUN_ARGS   Args extra para docker run
+  I4A_FORCE_REBUILD=1   Fuerza rebuild de la imagen antes de ejecutar
+EOF
+}
+
+die() {
+  echo "Error: $*" >&2
+  exit 1
+}
+
+require_command() {
+  command -v "$1" >/dev/null 2>&1 || die "No se encontro el comando requerido: $1"
+}
+
+parse_extra_run_args() {
+  EXTRA_RUN_ARGS=()
+  if [[ -n "${I4A_DOCKER_RUN_ARGS:-}" ]]; then
+    # shellcheck disable=SC2206
+    EXTRA_RUN_ARGS=( ${I4A_DOCKER_RUN_ARGS} )
+  fi
+}
+
+image_exists() {
+  "${DOCKER_BIN}" image inspect "${IMAGE_NAME}" >/dev/null 2>&1
+}
+
+build_image() {
+  echo "[i4a] Construyendo imagen ${IMAGE_NAME}..."
+  "${DOCKER_BIN}" build -t "${IMAGE_NAME}" -f "${DOCKERFILE_PATH}" "${ROOT_DIR}"
+}
+
+ensure_image() {
+  if [[ "${I4A_FORCE_REBUILD:-0}" == "1" ]]; then
+    build_image
+    return
+  fi
+
+  if ! image_exists; then
+    build_image
+  fi
+}
+
+append_user_args() {
+  if command -v id >/dev/null 2>&1; then
+    DOCKER_RUN_ARGS+=(--user "$(id -u):$(id -g)")
+  fi
+}
+
+append_tty_args() {
+  if [[ -t 0 && -t 1 ]]; then
+    DOCKER_RUN_ARGS+=(-it)
+  fi
+}
+
+unique_group_add() {
+  local gid="$1"
+  local existing
+
+  for existing in "${DEVICE_GROUP_IDS[@]:-}"; do
+    if [[ "${existing}" == "${gid}" ]]; then
+      return
+    fi
+  done
+
+  DEVICE_GROUP_IDS+=("${gid}")
+  DOCKER_RUN_ARGS+=(--group-add "${gid}")
+}
+
+port_gid() {
+  local port="$1"
+
+  if command -v stat >/dev/null 2>&1; then
+    stat -c '%g' "${port}" 2>/dev/null && return 0
+    stat -f '%g' "${port}" 2>/dev/null && return 0
+  fi
+
+  return 1
+}
+
+append_device_args() {
+  local port="$1"
+  local gid
+
+  [[ -e "${port}" ]] || die "No existe el puerto ${port}"
+
+  DOCKER_RUN_ARGS+=(--device "${port}:${port}")
+
+  if gid="$(port_gid "${port}")"; then
+    unique_group_add "${gid}"
+  fi
+}
+
+prepare_docker_run_args() {
+  mkdir -p "${HOME_CACHE_DIR}"
+
+  DOCKER_RUN_ARGS=(run --rm --init)
+  DEVICE_GROUP_IDS=()
+  append_user_args
+  DOCKER_RUN_ARGS+=(
+    -v "${ROOT_DIR}:/workspace"
+    -v "${HOME_CACHE_DIR}:/tmp/i4a-home"
+    -e HOME=/tmp/i4a-home
+    -w /workspace/app
+  )
+  parse_extra_run_args
+  if [[ ${#EXTRA_RUN_ARGS[@]} -gt 0 ]]; then
+    DOCKER_RUN_ARGS+=("${EXTRA_RUN_ARGS[@]}")
+  fi
+}
+
+run_container() {
+  local interactive="$1"
+  shift
+
+  ensure_image
+  prepare_docker_run_args
+
+  if [[ "${interactive}" == "1" ]]; then
+    append_tty_args
+  fi
+
+  "${DOCKER_BIN}" "${DOCKER_RUN_ARGS[@]}" "${IMAGE_NAME}" "$@"
+}
+
+run_with_port() {
+  local interactive="$1"
+  local port="$2"
+  shift 2
+
+  ensure_image
+  prepare_docker_run_args
+  append_device_args "${port}"
+
+  if [[ "${interactive}" == "1" ]]; then
+    append_tty_args
+  fi
+
+  "${DOCKER_BIN}" "${DOCKER_RUN_ARGS[@]}" "${IMAGE_NAME}" "$@"
+}
+
+run_with_ports() {
+  local interactive="$1"
+  shift
+
+  local -a ports=()
+  while [[ $# -gt 0 ]]; do
+    if [[ "$1" == "--" ]]; then
+      shift
+      break
+    fi
+    ports+=("$1")
+    shift
+  done
+
+  ensure_image
+  prepare_docker_run_args
+
+  local port
+  for port in "${ports[@]}"; do
+    append_device_args "${port}"
+  done
+
+  if [[ "${interactive}" == "1" ]]; then
+    append_tty_args
+  fi
+
+  "${DOCKER_BIN}" "${DOCKER_RUN_ARGS[@]}" "${IMAGE_NAME}" "$@"
+}
+
+collect_ports_from_args() {
+  DETECTED_PORTS=()
+  local expect_port="0"
+  local arg
+
+  for arg in "$@"; do
+    if [[ "${expect_port}" == "1" ]]; then
+      DETECTED_PORTS+=("${arg}")
+      expect_port="0"
+      continue
+    fi
+
+    case "${arg}" in
+      -p|--port)
+        expect_port="1"
+        ;;
+      /dev/ttyUSB*|/dev/ttyACM*)
+        DETECTED_PORTS+=("${arg}")
+        ;;
+    esac
+  done
+
+  if [[ "${expect_port}" == "1" ]]; then
+    die "Falta el valor para -p/--port"
+  fi
+}
+
+args_require_tty() {
+  local arg
+  for arg in "$@"; do
+    case "${arg}" in
+      monitor|menuconfig)
+        return 0
+        ;;
+    esac
+  done
+  return 1
+}
+
+list_ports() {
+  shopt -s nullglob
+  local ports=(/dev/ttyUSB* /dev/ttyACM*)
+  shopt -u nullglob
+
+  if [[ ${#ports[@]} -eq 0 ]]; then
+    echo "No se detectaron puertos serie."
+    return 1
+  fi
+
+  printf '%s\n' "${ports[@]}"
+}
+
+command_image() {
+  local action="${1:-build}"
+
+  case "${action}" in
+    build)
+      if image_exists; then
+        echo "[i4a] La imagen ${IMAGE_NAME} ya existe."
+      else
+        build_image
+      fi
+      ;;
+    rebuild)
+      build_image
+      ;;
+    *)
+      die "Accion de imagen no soportada: ${action}"
+      ;;
+  esac
+}
+
+command_shell() {
+  run_container 1 bash
+}
+
+command_build() {
+  run_container 0 idf.py build
+}
+
+command_clean() {
+  run_container 0 idf.py clean
+}
+
+command_fullclean() {
+  run_container 0 idf.py fullclean
+}
+
+command_menuconfig() {
+  run_container 1 idf.py menuconfig
+}
+
+command_flash() {
+  local port="${1:-}"
+  [[ -n "${port}" ]] || die "Debes indicar un puerto. Ej: ./i4a flash /dev/ttyUSB0"
+  shift || true
+
+  run_with_port 0 "${port}" idf.py -p "${port}" -b "${FLASH_BAUD}" flash "$@"
+}
+
+command_flash_many() {
+  [[ $# -gt 0 ]] || die "Debes indicar al menos un puerto."
+  local port
+
+  for port in "$@"; do
+    echo "[i4a] Flasheando ${port}..."
+    run_with_port 0 "${port}" idf.py -p "${port}" -b "${FLASH_BAUD}" flash
+  done
+}
+
+command_erase_flash() {
+  local port="${1:-}"
+  [[ -n "${port}" ]] || die "Debes indicar un puerto. Ej: ./i4a erase-flash /dev/ttyUSB0"
+  shift || true
+
+  run_with_port 0 "${port}" python -m esptool --chip esp32 --port "${port}" --baud "${FLASH_BAUD}" erase_flash "$@"
+}
+
+command_monitor() {
+  local port="${1:-}"
+  [[ -n "${port}" ]] || die "Debes indicar un puerto. Ej: ./i4a monitor /dev/ttyUSB0"
+  shift || true
+
+  run_with_port 1 "${port}" idf.py -p "${port}" -b "${MONITOR_BAUD}" monitor --no-reset "$@"
+}
+
+command_idf() {
+  [[ $# -gt 0 ]] || die "Debes indicar argumentos para idf.py"
+
+  collect_ports_from_args "$@"
+
+  local interactive="0"
+  if args_require_tty "$@"; then
+    interactive="1"
+  fi
+
+  if [[ ${#DETECTED_PORTS[@]} -gt 0 ]]; then
+    run_with_ports "${interactive}" "${DETECTED_PORTS[@]}" -- idf.py "$@"
+  else
+    run_container "${interactive}" idf.py "$@"
+  fi
+}
+
+command_run() {
+  [[ $# -gt 0 ]] || die "Debes indicar un comando para ejecutar dentro del contenedor"
+  run_container 1 "$@"
+}
+
+main() {
+  require_command "${DOCKER_BIN}"
+  [[ -d "${APP_DIR}" ]] || die "No se encontro la carpeta app en ${ROOT_DIR}"
+
+  local command="${1:-help}"
+  if [[ $# -gt 0 ]]; then
+    shift
+  fi
+
+  case "${command}" in
+    help|-h|--help)
+      usage
+      ;;
+    image)
+      command_image "$@"
+      ;;
+    shell|bash)
+      command_shell
+      ;;
+    build)
+      command_build "$@"
+      ;;
+    clean)
+      command_clean "$@"
+      ;;
+    fullclean)
+      command_fullclean "$@"
+      ;;
+    menuconfig)
+      command_menuconfig "$@"
+      ;;
+    flash)
+      command_flash "$@"
+      ;;
+    flash-many)
+      command_flash_many "$@"
+      ;;
+    erase-flash)
+      command_erase_flash "$@"
+      ;;
+    monitor)
+      command_monitor "$@"
+      ;;
+    idf)
+      command_idf "$@"
+      ;;
+    run)
+      command_run "$@"
+      ;;
+    list-ports)
+      list_ports
+      ;;
+    *)
+      die "Comando no reconocido: ${command}. Ejecuta ./i4a help"
+      ;;
+  esac
+}
+
+main "$@"
