@@ -40,8 +40,8 @@ static void on_sibling_message(void *ctx, const uint8_t *msg, uint16_t len) {
     blocked_networks[network_orientation][UUID_LEN] = '\0';
     ESP_LOGI(TAG, "Stored network in block list: orientation=%d, ssid=%s", network_orientation, blocked_networks[network_orientation]);
 
-    // During AP+STA the device has already assigned channels
-    if(!node_is_device_apsta()) {
+    // After provision the device has already assigned channels
+    if(!node_is_network_provided()) {
         node_disable_sta(); // Disable STA to avoid multiple connections during initial node discovery
         cm->suggested_channel = packet->channels[cm->orientation];
         ESP_LOGI(TAG, "Updated suggested channel=%d", cm->suggested_channel);
