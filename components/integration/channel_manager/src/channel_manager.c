@@ -5,13 +5,15 @@
 #define CHANNELS 5
 #define MAX_PEERS 4
 #define MAX_NETWORK_NAME_LENGTH 33
+#define NETWORK_NAME_UUID_OFFSET 6
+#define UUID_LEN 12
 
 static const char *TAG = "channel_manager";
 
 static const uint8_t formation_1[CHANNELS] = {1, 7, 4, 10, 11};
 static const uint8_t formation_2[CHANNELS] = {5, 11, 8, 2, 11};
 
-static char blocked_networks[MAX_PEERS][MAX_NETWORK_NAME_LENGTH] = {"000000000001", "000000000002", "000000000003", "000000000004"}; // Use unblocked UUIDs for startup
+static char blocked_networks[MAX_PEERS][UUID_LEN + 1] = {"000000000001", "000000000002", "000000000003", "000000000004"}; // Use unblocked UUIDs for startup
 
 static channel_manager_t channel_manager = { 0 };
 static channel_manager_t *cm = &channel_manager;
@@ -34,8 +36,8 @@ static void on_sibling_message(void *ctx, const uint8_t *msg, uint16_t len) {
         network_orientation = MAX_PEERS - 1;
     }
     
-    strncpy(blocked_networks[network_orientation], packet->network_name, MAX_NETWORK_NAME_LENGTH - 1);
-    blocked_networks[network_orientation][MAX_NETWORK_NAME_LENGTH - 1] = '\0';
+    memcpy(blocked_networks[network_orientation], packet->network_name + NETWORK_NAME_UUID_OFFSET, UUID_LEN);
+    blocked_networks[network_orientation][UUID_LEN] = '\0';
     ESP_LOGI(TAG, "Stored network in block list: orientation=%d, ssid=%s", network_orientation, blocked_networks[network_orientation]);
 
     // During AP+STA the device has already assigned channels
