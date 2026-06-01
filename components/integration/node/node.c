@@ -313,3 +313,7 @@ bool node_is_sta_locked(void) {
 bool node_is_device_apsta(void) {
   return device_is_apsta(node_ptr->node_device_ptr);
 }
+
+bool node_is_network_provided(void){
+  return (node_ptr->node_device_subnet != DEFAULT_SUBNET);
+}
