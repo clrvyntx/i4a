@@ -61,6 +61,9 @@ bool pm_provide_to_siblings(int8_t rssi) {
     bool broadcast = rs_broadcast(pm->rs, RS_PRIORITY_MANAGER, (uint8_t *)&msg, sizeof(msg));
     if (broadcast) {
         ESP_LOGI(TAG, "Provided RSSI to siblings: orientation=%d, rssi=%d", msg.orientation, msg.rssi);
+    } else {
+    ESP_LOGE(TAG, "Failed to broadcast RSSI: orientation=%d, rssi=%d",
+             msg.orientation, msg.rssi);
     }
 
     return broadcast;
