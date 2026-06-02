@@ -54,7 +54,7 @@ bool station_is_active(StationPtr stationPtr);
 void station_find_ap(StationPtr stationPtr);
 bool station_found_ap(StationPtr station_ptr);
 void transform_wifi_ap_record_to_config(StationPtr stationPtr);
-station_scan_best_rssi(StationPtr stationPtr);
+int8_t station_scan_best_rssi(StationPtr stationPtr);
 
 /*
  * @brief Discover the AP with the name like 'ESP_' and return the AP
