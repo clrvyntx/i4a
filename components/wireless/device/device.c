@@ -13,8 +13,7 @@
 #include "config.h"
 
 #define STA_PRIORITY_WAIT_INTERVAL_SECS 15
-#define RSSI_PRIORITY_SCAN_INTERVAL_SECS 5
-#define RSSI_PRIORITY_SCANS 3
+#define RSSI_PRIORITY_SCAN_INTERVAL_SECS 10
 
 static const char *LOGGING_TAG = "device";
 static const char *dev_orientation[5] = {"_N_", "_S_", "_E_", "_W_", "_C_"};
@@ -184,13 +183,8 @@ static void device_connect_station_task(void* arg) {
   pm_reset_priority_list();
 
   // Start priority determination sequence
-  for(int i = 0; i < RSSI_PRIORITY_SCANS; i++) {
-    int8_t scan_rssi = station_scan_best_rssi(device_ptr->station_ptr);
-    pm_provide_to_siblings(scan_rssi);
-    vTaskDelay(pdMS_TO_TICKS(1000 * RSSI_PRIORITY_SCAN_INTERVAL_SECS));
-  }
-
-  // Wait one last time to avoid packet propagation issues
+  int8_t scan_rssi = station_scan_best_rssi(device_ptr->station_ptr);
+  pm_provide_to_siblings(scan_rssi);
   vTaskDelay(pdMS_TO_TICKS(1000 * RSSI_PRIORITY_SCAN_INTERVAL_SECS));
 
   uint8_t orientation_priority = pm_get_suggested_priority();
