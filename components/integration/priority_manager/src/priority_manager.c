@@ -53,11 +53,6 @@ bool pm_provide_to_siblings(int8_t rssi) {
         return false;
     }
 
-    // Silent exit if my discovered RSSI is lower than another I announced
-    if(devices_rssi[pm->orientation] > rssi) {
-        return true;
-    }
-
     devices_rssi[pm->orientation] = rssi;
     pm_message_t msg = {0};
     msg.orientation = pm->orientation;
