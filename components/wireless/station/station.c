@@ -266,5 +266,27 @@ void transform_wifi_ap_record_to_config(StationPtr stationPtr) {
   stationPtr->wifi_config.sta.bssid_set = true;
 }
 
+int8_t station_scan_best_rssi(StationPtr stationPtr) {
+  esp_wifi_scan_start(NULL, true);
 
+  wifi_ap_record_t ap;
+  int8_t best_rssi = -128;  // raw minimum possible RSSI
 
+  while (esp_wifi_scan_get_ap_record(&ap) == ESP_OK) {
+
+    if (ap.rssi < RSSI_THRESHOLD) {
+      continue;
+    }
+
+    if (!is_network_allowed(stationPtr->device_uuid, stationPtr->ssid_like, (char *)ap.ssid, stationPtr->is_apsta, stationPtr->device_orientation)) {
+      continue;
+    }
+
+    if (ap.rssi > best_rssi) {
+      best_rssi = ap.rssi;
+    }
+
+  }
+
+  return best_rssi;
+}
