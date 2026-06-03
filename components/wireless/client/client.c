@@ -15,7 +15,7 @@ static const char *LOGGING_TAG = "tcp_client";
 static int server_sock = -1;
 static bool sta_is_up = false;
 
-static bool_peer_connected = false;
+static bool peer_connected = false;
 static uint32_t peer_net = 0;
 static uint32_t peer_mask = 0;
 
