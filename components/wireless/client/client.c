@@ -66,8 +66,12 @@ static void socket_read_loop(const int sock, const char *server_ip) {
             }
         }
     }
-    node_on_peer_lost(peer_net, peer_mask, PEER_CLIENT);
-    peer_connected = false;
+    
+    if(peer_connected) {
+        node_on_peer_lost(peer_net, peer_mask, PEER_CLIENT);
+        peer_connected = false;
+    }
+
 }
 
 static void tcp_client_task(void *pvParameters) {
