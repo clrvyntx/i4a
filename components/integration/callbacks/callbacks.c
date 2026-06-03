@@ -11,7 +11,7 @@
 #define MAX_MESSAGE_SIZE 512
 #define SIBLING_QUEUE_LENGTH 10
 #define PEER_QUEUE_LENGTH 5
-#define PEER_DELAY_SECONDS 5
+#define PEER_DELAY_SECONDS 2
 
 static const char *TAG = "callbacks";
 
@@ -63,6 +63,7 @@ static void peer_event_task(void *arg) {
     peer_event_t event;
     while (1) {
         if (xQueueReceive(peer_event_queue, &event, portMAX_DELAY)) {
+            vTaskDelay(event.peer_type * pdMS_TO_TICKS(PEER_DELAY_SECONDS * 1000));
             ESP_LOGD(TAG, "Peer event received: type=%s", (event.type == PEER_EVENT_CONNECTED ? "CONNECTED" : "LOST"));
             if (event.type == PEER_EVENT_CONNECTED) {
                 wl->callbacks.on_peer_connected(wl->context, event.net, event.mask);
