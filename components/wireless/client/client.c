@@ -15,6 +15,7 @@ static const char *LOGGING_TAG = "tcp_client";
 static int server_sock = -1;
 static bool sta_is_up = false;
 
+static bool_peer_connected = false;
 static uint32_t peer_net = 0;
 static uint32_t peer_mask = 0;
 
@@ -47,7 +48,6 @@ static bool get_network_address_and_mask(void) {
 }
 
 static void socket_read_loop(const int sock, const char *server_ip) {
-    node_on_peer_connected(peer_net, peer_mask, PEER_CLIENT);
     uint8_t rx_buffer[BUFFER_SIZE];
 
     while (1) {
@@ -60,9 +60,14 @@ static void socket_read_loop(const int sock, const char *server_ip) {
             break;
         } else {
             node_on_peer_message(rx_buffer, len);
+            if(!peer_connected) {
+                node_on_peer_connected(peer_net, peer_mask, PEER_CLIENT);
+                peer_connected = true;
+            }
         }
     }
     node_on_peer_lost(peer_net, peer_mask, PEER_CLIENT);
+    peer_connected = false;
 }
 
 static void tcp_client_task(void *pvParameters) {
