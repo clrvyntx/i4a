@@ -10,9 +10,8 @@ extern "C" {
 #endif
 
 typedef enum peer_type {
-  PEER_NONE = 0,
   PEER_SERVER = 1,
-  PEER_CLIENT = 2
+  PEER_CLIENT = 0
 } peer_type_t;
 
 // Init
