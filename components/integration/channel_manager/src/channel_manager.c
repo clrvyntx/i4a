@@ -1,3 +1,4 @@
+#include <string.h>
 #include "channel_manager/channel_manager.h"
 #include "esp_random.h"
 #include "esp_log.h"
