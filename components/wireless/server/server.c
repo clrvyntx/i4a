@@ -19,6 +19,7 @@ static int client_sock = -1;
 static int listen_sock = -1;
 static bool server_is_up = false;
 
+static bool peer_connected = false;
 static uint32_t peer_net = 0;
 static uint32_t peer_mask = 0;
 
@@ -42,10 +43,15 @@ static void socket_read_loop(const int sock, const char *client_ip) {
 
   uint8_t rx_buffer[BUFFER_SIZE];
   client_sock = sock;
-  node_on_peer_connected(peer_net, peer_mask, PEER_SERVER);
   
   while (1) {
     int len = recv(sock, rx_buffer, sizeof(rx_buffer), 0);
+
+    if(!peer_connected) {
+      node_on_peer_connected(peer_net, peer_mask, PEER_SERVER);
+      peer_connected = true;
+    }
+    
     if (len < 0) {
       ESP_LOGE(LOGGING_TAG, "Receive error from %s: errno %d", client_ip, errno);
       break;
@@ -58,6 +64,7 @@ static void socket_read_loop(const int sock, const char *client_ip) {
   }
 
   node_on_peer_lost(peer_net, peer_mask, PEER_SERVER);
+  peer_connected = false;
   client_sock = -1;
 }
 
