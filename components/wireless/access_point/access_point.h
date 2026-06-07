@@ -55,6 +55,7 @@ void ap_destroy_netif(AccessPointPtr ap);
 void ap_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
 void ap_set_network(AccessPointPtr ap, const char *network_cidr, const char *network_gateway, const char *network_mask);
 void ap_disconnect_all_stations(AccessPointPtr ap);
+void ap_toggle_ssid_beacon(AccessPointPtr ap, bool enabled);
 
 #ifdef __cplusplus
 }
