@@ -155,6 +155,20 @@ void ap_destroy_netif(AccessPointPtr ap) {
   }
 }
 
+void ap_toggle_ssid_beacon(AccessPointPtr ap, bool enabled) {
+    ap->wifi_config.ap.ssid_hidden = enabled ? 0 : 1;
+
+    ESP_LOGI(LOGGING_TAG,
+             "SSID beacon %s",
+             enabled ? "enabled" : "disabled");
+
+    if (ap->state == active) {
+        ESP_ERROR_CHECK(
+            esp_wifi_set_config(WIFI_IF_AP, &ap->wifi_config)
+        );
+    }
+}
+
 void ap_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
   AccessPointPtr ap = (AccessPointPtr)arg;
   if (event_base == WIFI_EVENT) {
