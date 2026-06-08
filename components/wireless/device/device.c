@@ -450,8 +450,8 @@ void device_disable_ap(DevicePtr device_ptr) {
   
   device_ptr->ap_lock = true;
   if (device_ptr->mode == AP || device_ptr->mode == AP_STATION) {
-    ap_disable_ssid_beacon(device_ptr->access_point_ptr);
     ap_disconnect_all_stations(device_ptr->access_point_ptr);
+    ap_disable_ssid_beacon(device_ptr->access_point_ptr);
   }
 }
 
