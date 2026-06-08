@@ -48,9 +48,6 @@ esp_err_t device_wifi_init() {
   wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
   ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
-  // Disable Wi-Fi power saving
-  ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_NONE));
-
   return ESP_OK;
 }
 
