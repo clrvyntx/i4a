@@ -28,7 +28,6 @@ struct AccessPoint {
   bool is_center;
   bool server_is_up;
   bool is_apsta;
-  bool is_ssid_hidden;
   AccessPoint_State state;
   wifi_config_t wifi_config;
   char network_cidr[16];
@@ -56,9 +55,6 @@ void ap_destroy_netif(AccessPointPtr ap);
 void ap_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
 void ap_set_network(AccessPointPtr ap, const char *network_cidr, const char *network_gateway, const char *network_mask);
 void ap_disconnect_all_stations(AccessPointPtr ap);
-void ap_toggle_ssid_beacon(AccessPointPtr ap, bool enabled);
-void ap_enable_ssid_beacon(AccessPointPtr ap);
-void ap_disable_ssid_beacon(AccessPointPtr ap);
 
 #ifdef __cplusplus
 }
