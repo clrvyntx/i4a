@@ -99,6 +99,12 @@ bool cm_provide_to_siblings(uint8_t connected_channel,  const char *network_name
     return broadcast;
 }
 
+void cm_block_full_ap(const char *network_name) {
+    memcpy(blocked_networks[cm->orientation], network_name + NETWORK_NAME_UUID_OFFSET, UUID_LEN);
+    blocked_networks[cm->orientation][UUID_LEN] = '\0';
+    ESP_LOGI(TAG, "Blocked full AP: orientation=%d, uuid=%s", cm->orientation, blocked_networks[cm->orientation]);
+}
+
 // Expose the suggested channel
 uint8_t cm_get_suggested_channel(void) {
     if (cm->rs == NULL) {
