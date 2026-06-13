@@ -142,6 +142,12 @@ static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_
   if (event_base == WIFI_EVENT) {
     switch (event_id) {
       case WIFI_EVENT_STA_DISCONNECTED:
+        wifi_event_sta_disconnected_t *disconn = (wifi_event_sta_disconnected_t *)event_data;
+        if (disconn->reason == WIFI_REASON_ASSOC_TOOMANY) {
+          cm_block_full_ap((const char *)stationPtr->wifi_ap_found.ssid);
+          s_retry_num = MAX_RETRIES;
+        }
+        
         if(stationPtr->is_fully_connected){
           client_close();
           if(stationPtr->is_apsta){
@@ -149,6 +155,7 @@ static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_
           }
           stationPtr->is_fully_connected = false;
         }
+        
         if (s_retry_num < MAX_RETRIES) {
           esp_wifi_connect();
           s_retry_num++;
