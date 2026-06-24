@@ -96,7 +96,7 @@ static void apply_command(remote_commands_t command) {
 
     if (command == RESET_BYTE_COUNTER) {
         ESP_LOGI(LOGGING_TAG, "Resetting TX/RX byte counters...");
-        node_traffic_reset_counters();
+        rm_broadcast_traffic_reset();
     }
 
 }
