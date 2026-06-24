@@ -1,3 +1,3 @@
 idf_component_register(SRCS "remote_control.c"
                     INCLUDE_DIRS "."
-                    REQUIRES esp_netif task_config node traffic)
+                    REQUIRES esp_netif task_config node traffic reset_manager)
