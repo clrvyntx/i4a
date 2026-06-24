@@ -5,6 +5,7 @@
 #include "esp_mac.h"
 #include "esp_system.h"
 #include <string.h>
+#include "traffic.h"
 #include "reset_manager/reset_manager.h"
 
 #define ROOT_UUID "000000000000"
@@ -19,6 +20,7 @@ static reset_manager_t *rm = &reset_manager;
 
 #define RM_OPCODE_RESET    0xA5
 #define RM_OPCODE_STARTUP  0xB6
+#define RM_OPCODE_TRAFFIC_RESET 0xC3
 
 static void rm_generate_uuid_from_mac(char *uuid_out, size_t len) {
     uint8_t mac[6];
@@ -62,6 +64,11 @@ static void rm_on_sibling_message(void *ctx, const uint8_t *msg, uint16_t len) {
             }
             break;
 
+        case RM_OPCODE_TRAFFIC_RESET:
+            ESP_LOGI(TAG, "Resetting TX/RX byte counters...");
+            node_traffic_reset_counters();
+            break;
+
         default:
             ESP_LOGW(TAG, "Unknown message opcode: 0x%02X", msg[0]);
             break;
@@ -102,6 +109,24 @@ bool rm_broadcast_reset(void) {
 
     if(result) {
         ESP_LOGI(TAG, "Reset broadcast successfully sent to all devices");
+    }
+
+    return result;
+}
+
+bool rm_broadcast_traffic_reset(void) {
+        if (!rm->rs) {
+        ESP_LOGW(TAG, "Traffic reset broadcast skipped: manager not initialized");
+        return false;
+    }
+
+    node_traffic_reset_counters();
+    uint8_t opcode = RM_OPCODE_TRAFFIC_RESET;
+    
+    bool result = rs_broadcast(rm->rs, RS_RESET_MANAGER, &opcode, 1);
+
+    if(result) {
+        ESP_LOGI(TAG, "Traffic reset broadcast successfully sent to all devices");
     }
 
     return result;
