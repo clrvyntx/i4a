@@ -6,6 +6,7 @@
 #include "task_config.h"
 #include "remote_control.h"
 #include "traffic.h"
+#include "reset_manager/reset_manager.h"
 #include "node.h"
 
 #define PORT 3999
