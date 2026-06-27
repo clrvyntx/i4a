@@ -25,7 +25,6 @@ typedef struct reset_manager {
 
 void rm_init(ring_share_t *rs);
 bool rm_broadcast_reset(void);
-bool rm_broadcast_traffic_reset(void);
 bool rm_broadcast_startup_info(bool is_root);
 bool rm_is_device_up(void);
 bool rm_is_root(void);
