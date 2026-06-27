@@ -19,7 +19,6 @@ typedef enum remote_commands {
     AP_ENABLE = 0,
     AP_DISABLE,
     RESET_NODE,
-    RESET_BYTE_COUNTER,
     REMOTE_COMMAND_NUMBER
 } remote_commands_t;
 
@@ -27,7 +26,6 @@ static const char *command_table[REMOTE_COMMAND_NUMBER] = {
     [AP_ENABLE]  = "ap_enable",
     [AP_DISABLE] = "ap_disable",
     [RESET_NODE] = "reset_node",
-    [RESET_BYTE_COUNTER] = "reset_byte_counter"
 };
 
 static const char *LOGGING_TAG = "remote_control_server";
@@ -93,11 +91,6 @@ static void apply_command(remote_commands_t command) {
     if (command == RESET_NODE) {
         ESP_LOGI(LOGGING_TAG, "Resetting device...");
         esp_restart();
-    }
-
-    if (command == RESET_BYTE_COUNTER) {
-        ESP_LOGI(LOGGING_TAG, "Resetting TX/RX byte counters...");
-        rm_broadcast_traffic_reset();
     }
 
 }
