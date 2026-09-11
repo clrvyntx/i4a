@@ -15,6 +15,7 @@ extern "C" {
 typedef enum {
   AP = 0,  // Access Point is active
   STATION, // Access Point is inactive
+  AP_STA,
   NAN
 } Device_Mode;
 
