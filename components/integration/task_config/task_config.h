@@ -66,6 +66,10 @@
 #define TASK_DEVICE_STACK           4096
 #define TASK_DEVICE_PRIORITY        LOW_PRIORITY
 
+#define TASK_NODE_AP_STA_CORE        0
+#define TASK_NODE_AP_STA_STACK       4096
+#define TASK_NODE_AP_STA_PRIORITY    LOW_PRIORITY
+
 // Routing tasks
 
 #define TASK_ROUTING_CORE           0
