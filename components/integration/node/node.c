@@ -10,6 +10,7 @@
 #include "info_manager/info_manager.h"
 #include "traffic.h"
 #include "remote_control.h"
+#include "task_config.h"
 #include "node.h"
 
 #define MAX_DEVICES_PER_HOUSE 5
@@ -31,6 +32,8 @@
 
 #define DEFAULT_SUBNET 0x00000000
 #define DEFAULT_MASK 0xFFFFFFFF
+
+#define AP_STA_CYCLE_DELAY_MINUTES 10
 
 static const char *TAG = "node";
 
@@ -66,6 +69,33 @@ static node_device_orientation_t node_get_config_orientation(void){
       return NODE_DEVICE_ORIENTATION_CENTER;
   }
 }
+
+static void node_ap_sta_cycle_task(void *arg) {
+  uint32_t ap_subnet = node_ptr->node_device_subnet;
+  uint32_t ap_mask = node_ptr->node_device_mask;
+
+  //Task called after initializing AP in AP+STA mode, wait for the first check
+  vTaskDelay(pdMS_TO_TICKS(AP_STA_CYCLE_DELAY_MINUTES * 60 * 1000));
+
+  // Stay in AP while the AP condition is true
+  while (node_ptr->node_device_ptr->access_point_ptr->server_is_up) {
+    vTaskDelay(pdMS_TO_TICKS(AP_STA_CYCLE_DELAY_MINUTES * 60 * 1000));
+  }
+
+  // If condition isn't met, switch to STA mode
+  node_set_as_sta();
+  vTaskDelay(pdMS_TO_TICKS(AP_STA_CYCLE_DELAY_MINUTES * 60 * 1000));
+
+  // Stay in STA while the STA condition is true
+  while (node_ptr->node_device_ptr->station_ptr->is_fully_connected) {
+    vTaskDelay(pdMS_TO_TICKS(AP_STA_CYCLE_DELAY_MINUTES * 60 * 1000));
+  }
+
+  // Loop back around and start AP again
+  node_set_as_ap(ap_subnet, ap_mask);
+  vTaskDelete(NULL);
+}
+
 
 void node_setup(void){
   ESP_ERROR_CHECK(node_init_event_queues());
@@ -190,12 +220,12 @@ void node_set_as_ap(uint32_t network, uint32_t mask){
     device_start_ap(node_ptr->node_device_ptr);
     device_set_max_tx_power(node_ptr->node_device_ptr, 80);
   } else {
-    // Non root should do AP+STA, currently set to AP only due to performance issues on AP+STA mode while we look for a different way to implement it
     node_ptr->node_device_is_apsta = true;
     device_init(node_ptr->node_device_ptr, node_ptr->node_device_uuid, node_ptr->node_device_orientation, wifi_network_prefix, wifi_network_password, ap_channel_to_emit, ap_max_sta_connections, (uint8_t)node_ptr->node_device_is_center_root, (uint8_t)node_ptr->node_device_is_apsta, AP);
     device_set_network_ap(node_ptr->node_device_ptr, network_cidr, network_gateway, network_mask);
     device_start_ap(node_ptr->node_device_ptr);
     device_set_max_tx_power(node_ptr->node_device_ptr, 80);
+    xTaskCreatePinnedToCore(node_ap_sta_cycle_task, "node_ap_sta_cycle", TASK_NODE_AP_STA_STACK, NULL, TASK_NODE_AP_STA_PRIORITY, NULL, TASK_NODE_AP_STA_CORE);
   }
 
   if(node_ptr->node_device_orientation == NODE_DEVICE_ORIENTATION_CENTER) {
