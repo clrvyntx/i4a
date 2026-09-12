@@ -27,19 +27,8 @@ static sync_t _sync = { 0 };
 static shared_state_t ss = { 0 };
 
 struct netif *custom_ip4_route_src_hook(const ip4_addr_t *src, const ip4_addr_t *dest) {
-    /*
-     * lwIP deliberately calls LWIP_HOOK_IP4_ROUTE_SRC with src == NULL from
-     * ip4_route() when its regular netif search did not find a route. Keep the
-     * hook safe for that documented fallback path; hooks that do not need the
-     * source receive 0 and WIFI_NETIF_DEFAULT can simply return NULL.
-     */
-    uint32_t src_ip = src != NULL
-        ? lwip_ntohl(ip4_addr_get_u32(src))
-        : 0;
-    uint32_t dst_ip = dest != NULL
-        ? lwip_ntohl(ip4_addr_get_u32(dest))
-        : 0;
-
+    uint32_t src_ip = lwip_ntohl(ip4_addr_get_u32(src));
+    uint32_t dst_ip = lwip_ntohl(ip4_addr_get_u32(dest));
     return node_do_routing(src_ip, dst_ip);
 }
 

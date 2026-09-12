@@ -14,10 +14,12 @@
 #include "esp_system.h"
 #include "esp_timer.h"
 #include "esp_wifi.h"
+#include "esp_wifi_default.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "lwip/ip4_addr.h"
 #include "lwip/ip_addr.h"
+#include "lwip/esp_netif_net_stack.h"
 #include "dhcpserver/dhcpserver.h"
 
 #include "config_portal/config_portal.h"
@@ -25,6 +27,8 @@
 #include "reset_manager/reset_manager.h"
 #include "task_config.h"
 #include "wifi_credentials/wifi_credentials.h"
+#include "config_portal/configuration_ap_filter.h"
+#include "captive_dns.h"
 
 #define BOOT_BUTTON_GPIO GPIO_NUM_0
 
@@ -162,6 +166,7 @@ static const char USER_PORTAL_HTML_TEMPLATE[] =
     "<input id=\"wifi_confirm\" name=\"confirm\" type=\"password\" minlength=\"8\" maxlength=\"63\" required autocomplete=\"new-password\">"
     "<label class=\"check\"><input id=\"show_wifi\" type=\"checkbox\">Mostrar contrasena</label>"
     "<button type=\"submit\">Guardar y aplicar a la red</button></form>"
+    "<p><a href=\"/admin\" style=\"display:block;text-align:center;padding:13px;border-radius:9px;background:#0369a1;color:white;text-decoration:none\">Acceder a configuraci&oacute;n</a></p>"
     "<hr><h2>Restablecer red ComNetAR</h2>"
     "<p>Elimina la contrasena Wi-Fi y deja ComNetAR como una red abierta.</p>"
     "<form method=\"post\" action=\"/factory-reset\" onsubmit=\"return confirm('Confirma el restablecimiento de la red?')\">"
@@ -1265,6 +1270,11 @@ static esp_err_t portal_logout_handler(httpd_req_t *request)
     return send_redirect(request, "/admin");
 }
 
+static esp_err_t portal_captive_redirect(httpd_req_t *request)
+{
+    return send_redirect(request, "http://" CONFIG_PORTAL_IP "/");
+}
+
 static esp_err_t register_portal_handlers(void)
 {
     const httpd_uri_t handlers[] = {
@@ -1345,7 +1355,13 @@ static esp_err_t register_portal_handlers(void)
         }
     }
 
-    return ESP_OK;
+    /* Last: covers Android, Apple and Windows probes and unknown HTTP paths. */
+    const httpd_uri_t captive = {
+        .uri = "/*",
+        .method = HTTP_GET,
+        .handler = portal_captive_redirect,
+    };
+    return httpd_register_uri_handler(portal_server, &captive);
 }
 
 static esp_err_t config_portal_start_http(void)
@@ -1362,7 +1378,8 @@ static esp_err_t config_portal_start_http(void)
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     config.server_port = 80;
     config.stack_size = 8192;
-    config.max_uri_handlers = 11;
+    config.max_uri_handlers = 12;
+    config.uri_match_fn = httpd_uri_match_wildcard;
     config.lru_purge_enable = true;
 
     esp_err_t err = httpd_start(&portal_server, &config);
@@ -1402,6 +1419,7 @@ static esp_err_t config_portal_start_http(void)
 
 static void config_portal_stop(void)
 {
+    captive_dns_stop();
     if (portal_server != NULL) {
         httpd_stop(portal_server);
         portal_server = NULL;
@@ -1417,12 +1435,30 @@ static void config_portal_stop(void)
 
 static esp_err_t config_portal_start_access_point(void)
 {
-    portal_netif = esp_netif_create_default_wifi_ap();
+    static const esp_netif_netstack_config_t portal_stack = {
+        .lwip = {
+            .init_fn = configuration_ap_filter_init,
+            .input_fn = wlanif_input,
+        },
+    };
+    esp_netif_config_t netif_config = ESP_NETIF_DEFAULT_WIFI_AP();
+    netif_config.stack = &portal_stack;
+    portal_netif = esp_netif_new(&netif_config);
     if (portal_netif == NULL) {
         return ESP_FAIL;
     }
 
-    esp_err_t err = esp_netif_dhcps_stop(portal_netif);
+    esp_err_t err = esp_netif_attach_wifi_ap(portal_netif);
+    if (err == ESP_OK) {
+        err = esp_wifi_set_default_wifi_ap_handlers();
+    }
+    if (err != ESP_OK) {
+        esp_netif_destroy_default_wifi(portal_netif);
+        portal_netif = NULL;
+        return err;
+    }
+
+    err = esp_netif_dhcps_stop(portal_netif);
     if (err != ESP_OK && err != ESP_ERR_ESP_NETIF_DHCP_ALREADY_STOPPED) {
         return err;
     }
@@ -1433,6 +1469,20 @@ static esp_err_t config_portal_start_access_point(void)
         .netmask = {.addr = ESP_IP4TOADDR(255, 255, 255, 0)},
     };
     err = esp_netif_set_ip_info(portal_netif, &ip_info);
+    if (err == ESP_OK) {
+        esp_netif_dns_info_t dns_info = {
+            .ip = {.type = IPADDR_TYPE_V4,
+                   .u_addr.ip4.addr = ESP_IP4TOADDR(192, 168, 4, 1)},
+        };
+        dhcps_offer_t dns_offer = OFFER_DNS;
+        err = esp_netif_dhcps_option(portal_netif, ESP_NETIF_OP_SET,
+                                     ESP_NETIF_DOMAIN_NAME_SERVER,
+                                     &dns_offer, sizeof(dns_offer));
+        if (err == ESP_OK) {
+            err = esp_netif_set_dns_info(portal_netif, ESP_NETIF_DNS_MAIN,
+                                         &dns_info);
+        }
+    }
     if (err == ESP_OK) {
         err = esp_netif_dhcps_start(portal_netif);
     }
@@ -1630,9 +1680,13 @@ esp_err_t config_portal_run(void)
         err = config_portal_start_http();
     }
     if (err == ESP_OK) {
+        err = captive_dns_start();
+    }
+    if (err == ESP_OK) {
         err = start_boot_button_task();
     }
     if (err != ESP_OK) {
+        config_portal_stop();
         ESP_LOGE(TAG, "Unable to start configuration mode: %s",
                  esp_err_to_name(err));
     }

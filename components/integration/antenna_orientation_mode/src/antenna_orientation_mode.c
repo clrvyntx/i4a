@@ -17,6 +17,9 @@
 #include "esp_system.h"
 #include "esp_timer.h"
 #include "esp_wifi.h"
+#include "esp_wifi_default.h"
+#include "lwip/esp_netif_net_stack.h"
+#include "config_portal/configuration_ap_filter.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
 #include "freertos/semphr.h"
@@ -827,12 +830,30 @@ static void aom_dns_task(void *argument) {
 
 static esp_err_t aom_start_access_point(void) {
     ESP_LOGI(TAG, "iniciando AP de portal cautivo");
-    s_ap_netif = esp_netif_create_default_wifi_ap();
+    static const esp_netif_netstack_config_t portal_stack = {
+        .lwip = {
+            .init_fn = configuration_ap_filter_init,
+            .input_fn = wlanif_input,
+        },
+    };
+    esp_netif_config_t netif_config = ESP_NETIF_DEFAULT_WIFI_AP();
+    netif_config.stack = &portal_stack;
+    s_ap_netif = esp_netif_new(&netif_config);
     if (s_ap_netif == NULL) {
         return ESP_FAIL;
     }
 
-    esp_err_t err = esp_netif_dhcps_stop(s_ap_netif);
+    esp_err_t err = esp_netif_attach_wifi_ap(s_ap_netif);
+    if (err == ESP_OK) {
+        err = esp_wifi_set_default_wifi_ap_handlers();
+    }
+    if (err != ESP_OK) {
+        esp_netif_destroy_default_wifi(s_ap_netif);
+        s_ap_netif = NULL;
+        return err;
+    }
+
+    err = esp_netif_dhcps_stop(s_ap_netif);
     if (err != ESP_OK && err != ESP_ERR_ESP_NETIF_DHCP_ALREADY_STOPPED) {
         return err;
     }
