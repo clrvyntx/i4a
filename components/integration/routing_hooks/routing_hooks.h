@@ -10,6 +10,7 @@ typedef enum routing_hook_type {
     ROUTING_HOOK_ROOT_CENTER,
     ROUTING_HOOK_FORWARDER,
     ROUTING_HOOK_HOME,
+    ROUTING_HOOK_WIFI_NETIF_DEFAULT,
     ROUTING_HOOK_CUSTOM,
     ROUTING_HOOK_COUNT
 } routing_hook_type_t;
