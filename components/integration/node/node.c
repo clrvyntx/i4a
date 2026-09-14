@@ -71,10 +71,11 @@ static node_device_orientation_t node_get_config_orientation(void){
 }
 
 static void node_ap_sta_cycle_task(void *arg) {
-  uint32_t ap_subnet = node_ptr->node_device_subnet;
-  uint32_t ap_mask = node_ptr->node_device_mask;
-
   while(1) {
+    // Save current AP values so they don't get lost during STA mode
+    uint32_t ap_subnet = node_ptr->node_device_subnet;
+    uint32_t ap_mask = node_ptr->node_device_mask;
+    
     //Task called after initializing AP in AP+STA mode, wait for the first check
     vTaskDelay(pdMS_TO_TICKS(AP_STA_CYCLE_DELAY_MINUTES * 60 * 1000));
   
